@@ -1,0 +1,23 @@
+[
+  {
+    "version": "4.6.0",
+    "date": "2026-11-25",
+    "tag": "v4.6.0",
+    "notes_en": "- Voice History on/off switch in Settings.\n- Automatic update checks with a one-click \"Update now\" that downloads and verifies the installer.\n- Mandatory (force) updates for important fixes.\n- Idea form in More Apps fixed.\n- Faster typing: transcription starts on a short pause, Quick is the default.\n- Mic pop-up text overlap fixed.",
+    "notes_bn": "- সেটিংসে ভয়েস হিস্টোরি অন/অফ সুইচ।\n- নিজে থেকে আপডেট চেক, আর এক ক্লিকে \"এখনই আপডেট\" যা ইনস্টলার ডাউনলোড করে যাচাই করে নেয়।\n- জরুরি ফিক্সের জন্য বাধ্যতামূলক আপডেটের ব্যবস্থা।\n- More Apps-এর আইডিয়া ফর্ম ঠিক করা হয়েছে।\n- আরও দ্রুত লেখা: ছোট বিরতিতেই লেখা তৈরি শুরু হয়, ডিফল্ট Quick।\n- মাইক পপ-আপে লেখা একটার ওপর আরেকটা আসার সমস্যা ঠিক করা হয়েছে।"
+  },
+  {
+    "version": "4.5.0",
+    "date": "2026-11-25",
+    "tag": "v4.5.0",
+    "notes_en": "- Added a clear note on the dashboard about the Gemini API key and free usage limits.\n- Added a Copy button next to each text entry in Voice History.\n- Added an Apps page and an idea submission form under More Apps.\n- Fixed an issue that caused the dashboard to get stuck.\n- Improved the microphone pop-up for a cleaner and more polished experience.",
+    "notes_bn": "- ড্যাশবোর্ডে Gemini API Key ও ফ্রি ব্যবহারের সীমা সম্পর্কে পরিষ্কার নোট যুক্ত করা হয়েছে।\n- Voice History-র প্রতিটি লেখার পাশে Copy বাটন যুক্ত করা হয়েছে।\n- More Apps সেকশনে অ্যাপস পেজ ও আইডিয়া জমা দেওয়ার ফর্ম যুক্ত করা হয়েছে।\n- ড্যাশবোর্ড আটকে যাওয়ার সমস্যা সমাধান করা হয়েছে।\n- মাইক্রোফোন পপ-আপ আরও পরিচ্ছন্ন ও সুন্দর করা হয়েছে।"
+  },
+  {
+    "version": "4.4.0",
+    "date": "2026-11-25",
+    "tag": "v4.4.0",
+    "notes_en": "- First public release of SHUNCHi: free AI voice typing for Windows 10 and 11.\n- Speak in Bangla or English and it types in any app (browser, WhatsApp, Word and more).\n- Win + Left Ctrl for Bangla, Win + Left Shift for English.\n- Uses your own free Gemini API key.\n- Includes an automatic update notice and a small web installer.",
+    "notes_bn": "- শুনছি-র প্রথম পাবলিক রিলিজ: উইন্ডোজ ১০ ও ১১-এর জন্য ফ্রি এআই ভয়েস টাইপিং।\n- বাংলা বা ইংরেজিতে বলুন, ব্রাউজার, হোয়াটসঅ্যাপ, ওয়ার্ডসহ যেকোনো অ্যাপে লেখা হয়ে যাবে।\n- বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।\n- আপনার নিজের ফ্রি Gemini API কী ব্যবহার করে।\n- নতুন ভার্সনের নোটিশ আর ছোট ওয়েব ইনস্টলারও আছে।"
+  }
+]

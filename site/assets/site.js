@@ -80,12 +80,16 @@
     var d = new FormData(form);
     if (d.get("_honey")) return;
     var title = (d.get("title") || "").trim(), details = (d.get("details") || "").trim();
+    var uname = (d.get("name") || "").trim(), email = (d.get("email") || "").trim(), phone = (d.get("phone") || "").trim(), address = (d.get("address") || "").trim();
     if (!title || !details) { say("Please add the idea name and what it should do.", "আইডিয়ার নাম ও এটি কী কাজ করবে তা লিখুন।", false); return; }
+    if (!uname || !email || !phone || !address) { say("Name, email, phone and address are required.", "নাম, ইমেইল, ফোন ও ঠিকানা দিতে হবে।", false); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { say("Please enter a valid email.", "সঠিক ইমেইল দিন।", false); return; }
+    if (!/^[0-9+()\-\s]{6,30}$/.test(phone)) { say("Please enter a valid phone number.", "সঠিক ফোন নম্বর দিন।", false); return; }
     btn.disabled = true; say("Sending…", "পাঠানো হচ্ছে…", true);
     var payload = {
       _subject: "SHUNCHi idea: " + title, _template: "table", _captcha: "false",
       Type: d.get("type"), Idea: title, Details: details,
-      Name: d.get("name") || "-", Contact: d.get("contact") || "-", Language: document.documentElement.lang, Page: location.href
+      Name: uname, Email: email, Phone: phone, Address: address, Contact: email + " · " + phone, Language: document.documentElement.lang, Page: location.href
     };
     var ctl = window.AbortController ? new AbortController() : null, timer = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
     function viaFormSubmit() {
@@ -97,8 +101,8 @@
     function viaGitHub() {
       return fetch("/data/ideas-config.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (cfg) {
         if (!cfg || !cfg.repo || !cfg.token) throw new Error("inbox not configured");
-        var meta = JSON.stringify({ Type: payload.Type, Idea: title, Details: details, Name: payload.Name, Contact: payload.Contact, Language: payload.Language, Page: payload.Page, Source: "Website" }).replace(/>/g, "\\u003e");
-        var text = "**Type:** " + payload.Type + "\n**Name:** " + payload.Name + "\n**Contact:** " + payload.Contact + "\n**Language:** " + payload.Language + "\n\n" + details + "\n\n<!--shunchi:" + meta + "-->";
+        var meta = JSON.stringify({ Type: payload.Type, Idea: title, Details: details, Name: payload.Name, Email: email, Phone: phone, Address: address, Contact: payload.Contact, Language: payload.Language, Page: payload.Page, Source: "Website" }).replace(/>/g, "\\u003e");
+        var text = "**Type:** " + payload.Type + "\n**Name:** " + payload.Name + "\n**Email:** " + email + "\n**Phone:** " + phone + "\n**Address:** " + address + "\n**Language:** " + payload.Language + "\n\n" + details + "\n\n<!--shunchi:" + meta + "-->";
         return fetch("https://api.github.com/repos/" + cfg.repo + "/issues", {
           method: "POST", headers: { "Authorization": "Bearer " + cfg.token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
           body: JSON.stringify({ title: ("[" + payload.Type + "] " + title).slice(0, 120), body: text }), signal: ctl ? ctl.signal : undefined
@@ -109,7 +113,7 @@
       .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); })
       .catch(function (err) {
         try { console.warn("Idea form failed:", err && err.message); } catch (x) {}
-        var body = "Type: " + payload.Type + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + payload.Name + "\nContact: " + payload.Contact;
+        var body = "Type: " + payload.Type + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + payload.Name + "\nEmail: " + email + "\nPhone: " + phone + "\nAddress: " + address;
         location.href = "mailto:" + TO + "?subject=" + encodeURIComponent(payload._subject) + "&body=" + encodeURIComponent(body);
         say("Could not send directly. Your mail app opened instead.", "সরাসরি পাঠানো যায়নি। তাই আপনার মেইল অ্যাপ খুলেছে।", false);
       }).then(function () { clearTimeout(timer); btn.disabled = false; });

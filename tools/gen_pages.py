@@ -27,6 +27,30 @@ GTM_BODY = ('<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=
 try: APPS_JSON = json.load(open(os.path.join(SITE, "data", "apps.json"), encoding="utf-8")) or []
 except Exception: APPS_JSON = []
 
+try: VERSIONS_JSON = [x for x in (json.load(open(os.path.join(SITE, "data", "versions.json"), encoding="utf-8")) or []) if re.fullmatch(r"\d+(\.\d+){1,3}", str(x.get("version", "")))]
+except Exception: VERSIONS_JSON = []
+
+def notes_ul(text, cls):
+    items = []
+    for l in str(text or "").splitlines():
+        l = re.sub(r"^\s*(?:[-*\u2022]\s*|#+\s*)", "", l.replace("**", "")).strip()
+        if l: items.append(f"<li>{esc(l)}</li>")
+    return f'<ul class="{cls}">' + "".join(items) + "</ul>" if items else ""
+
+def history_block():
+    if not VERSIONS_JSON: return ""
+    rows = []
+    for i, x in enumerate(VERSIONS_JSON):
+        ver, date = esc(x["version"]), esc(str(x.get("date", "")))
+        en, bn = notes_ul(x.get("notes_en"), "en"), notes_ul(x.get("notes_bn") or x.get("notes_en"), "bn")
+        tag = esc(str(x.get("tag") or "v" + x["version"]))
+        size = f' · {round(x["size"] / 1048576)} MB' if x.get("size") else ""
+        latest = '<span class="vh-badge"><span class="en">Latest</span><span class="bn">সর্বশেষ</span></span>' if i == 0 else ""
+        rows.append(f'<details class="vh-item"{" open" if i == 0 else ""}><summary><span class="vh-ver">SHUNCHi {ver}</span>{latest}<span class="vh-date">{date}{size}</span></summary>'
+                    f'<div class="vh-body">{en}{bn}<p class="vh-link"><a href="https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/tag/{tag}" rel="noopener"><span class="en">Release page on GitHub</span><span class="bn">GitHub-এ রিলিজ পেজ</span> →</a></p></div></details>')
+    return ('<section class="vh" id="history"><h2><span class="en">Version history</span><span class="bn">ভার্সনের ইতিহাস</span></h2>'
+            '<p class="vh-sub"><span class="en">Every SHUNCHi version and what changed in it.</span><span class="bn">শুনছি-র প্রতিটি ভার্সন আর তাতে কী বদলেছে।</span></p>' + "".join(rows) + '</section>')
+
 try: VIDEOS_JSON = [v for v in (json.load(open(os.path.join(SITE, "data", "videos.json"), encoding="utf-8")) or []) if re.fullmatch(r"[A-Za-z0-9_-]{11}", str(v.get("id", "")))]
 except Exception: VIDEOS_JSON = []
 
@@ -160,10 +184,14 @@ SUGGEST_FORM = '''<div class="idea-box" id="suggest">
       <input type="text" name="title" maxlength="80" required></label>
     <label class="f full"><span class="lab"><span class="en">What should it do?</span><span class="bn">এটি কী কাজ করবে?</span></span>
       <textarea name="details" rows="4" maxlength="1200" required></textarea></label>
-    <label class="f"><span class="lab"><span class="en">Your name (optional)</span><span class="bn">আপনার নাম (ঐচ্ছিক)</span></span>
-      <input type="text" name="name" maxlength="60" autocomplete="name"></label>
-    <label class="f"><span class="lab"><span class="en">Email or phone (optional)</span><span class="bn">ইমেইল বা ফোন (ঐচ্ছিক)</span></span>
-      <input type="text" name="contact" maxlength="80" autocomplete="email"></label>
+    <label class="f"><span class="lab"><span class="en">Your name *</span><span class="bn">আপনার নাম *</span></span>
+      <input type="text" name="name" maxlength="60" autocomplete="name" required></label>
+    <label class="f"><span class="lab"><span class="en">Email *</span><span class="bn">ইমেইল *</span></span>
+      <input type="email" name="email" maxlength="80" autocomplete="email" required></label>
+    <label class="f"><span class="lab"><span class="en">Phone *</span><span class="bn">ফোন নম্বর *</span></span>
+      <input type="tel" name="phone" maxlength="30" autocomplete="tel" inputmode="tel" pattern="[0-9+()\\-\\s]{6,30}" required></label>
+    <label class="f"><span class="lab"><span class="en">Address *</span><span class="bn">ঠিকানা *</span></span>
+      <input type="text" name="address" maxlength="160" autocomplete="street-address" required></label>
     <div class="full suggest-act">
       <button class="btn btn-primary" type="submit"><span class="en">Send my idea</span><span class="bn">আইডিয়া পাঠান</span></button>
       <p class="suggest-msg" id="suggest-msg" role="status" aria-live="polite"></p>
@@ -495,7 +523,7 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
 </div></section>
 </main>
 ''' + footer("") + '''<script src="assets/catalog.js?v=28" data-base=""></script>
-<script src="assets/site.js?v=28"></script>
+<script src="assets/site.js?v=29"></script>
 <script>
 (function () {
   function drawApps() { renderApps(document.getElementById("app-list"), 4); }
@@ -544,7 +572,7 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 <section><div class="wrap">''' + SUGGEST_FORM + '''</div></section>
 </main>
 ''' + footer("../") + '''<script src="../assets/catalog.js?v=28" data-base="../"></script>
-<script src="../assets/site.js?v=28"></script>
+<script src="../assets/site.js?v=29"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
@@ -584,7 +612,7 @@ tmpl = head("../", "Tool name | SHUNCHi", "One sentence about the tool.", "apps/
   <div class="dl-card" id="tool-area"><p><span class="en">Build the tool here.</span><span class="bn">টুলটি এখানে বানান।</span></p></div>
 </div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=28"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=29"></script>
 </body>
 </html>
 '''
@@ -616,7 +644,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
     <details class="dl-notes" id="notes-box" hidden open><summary><span class="en">What is new in this version</span><span class="bn">এই ভার্সনে নতুন কী</span></summary>
       <ul class="en" id="notes-en"></ul><ul class="bn" id="notes-bn"></ul></details>
   </div>
-''' + videos_block("../", 3, True) + '''
+''' + history_block() + videos_block("../", 3, True) + '''
   <div class="dl-help">
     <h2 style="font-size:22px;margin-bottom:12px"><span class="en">After downloading</span><span class="bn">ডাউনলোডের পর</span></h2>
     <ol class="steps" style="margin-left:17px">
@@ -627,7 +655,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   </div>
 </div>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=28"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=29"></script>
 <script>
 (function () {
   if (!window.fetch) return;
@@ -691,7 +719,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/site.js?v=28"></script>
+''' + footer("") + '''<script src="assets/site.js?v=29"></script>
 </body>
 </html>
 '''
@@ -707,7 +735,7 @@ nf = head("/", "Page not found | SHUNCHi", "This page does not exist.", "404.htm
   <p><span class="en">The link may be old or mistyped.</span><span class="bn">লিংকটি পুরনো বা ভুল হতে পারে।</span></p>
   <p style="margin-top:22px"><a class="btn btn-primary" href="/index.html"><span class="en">Back to home</span><span class="bn">হোমে ফিরুন</span></a></p>
 </div></main>
-''' + footer("/") + '<script src="/assets/site.js?v=28"></script>\n</body>\n</html>\n'
+''' + footer("/") + '<script src="/assets/site.js?v=29"></script>\n</body>\n</html>\n'
 write("404.html", nf)
 print("pages written")
 
@@ -752,7 +780,7 @@ for p in POSTS:
 </article>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=28"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=29"></script>\n</body>\n</html>\n'
     write(url, page)
 
 reg("blog/", "0.8", "weekly", POSTS[0]["date"] if POSTS else TODAY)
@@ -771,7 +799,7 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
 </div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=28"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=29"></script>\n</body>\n</html>\n'
 write("blog/index.html", blog_index)
 
 
@@ -793,7 +821,7 @@ if VIDEOS_JSON:
 </div>
 <section style="padding-top:28px"><div class="wrap"><div class="vids all">{"".join(video_card(v) for v in VIDEOS_JSON)}</div></div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=28"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=29"></script>\n</body>\n</html>\n'
     write("videos/index.html", vpage)
 
 # RSS feed
@@ -834,7 +862,7 @@ for a in APPS_JSON:
     {dlbtn}</div>
 </div>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=28"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=29"></script>\n</body>\n</html>\n'
     write(url, page)
 
 # ====================================================================== SITEMAP + ROBOTS

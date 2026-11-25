@@ -879,7 +879,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       if (!details && title.length > 90) { details = title; title = title.slice(0, 80).replace(/\s+\S*$/, "") + "…"; }   // app ideas are one long text
       var id = (at + "|" + g("Name") + "|" + title).slice(0, 140) || String(i);
       if (seen[id]) id += "#" + (++seen[id]); else seen[id] = 1;
-      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at), n: s._n || 0, closed: !!s._closed };
+      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact") || [g("Email"), g("Phone")].filter(Boolean).join(" · "), email: g("Email"), phone: g("Phone"), address: g("Address"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at), n: s._n || 0, closed: !!s._closed };
     }).sort(function (a, b) { return (b.t - a.t) || String(b.at).localeCompare(String(a.at)); });
   }
   function setIdeas(subs, fromCache) {
@@ -923,7 +923,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       $("#ideas-card").classList.add("hidden"); setStat("s-ideas", "-", T("Could not load", "লোড হয়নি")); if (manual) toast(T("Could not load ideas.", "আইডিয়া লোড হয়নি।"), "er");
     });
   }
-  function ideaMail(x) { var c = String(x.contact || ""); var m = /[^\s@]+@[^\s@]+\.[^\s@]+/.exec(c); return m ? "mailto:" + m[0] + "?subject=" + encodeURIComponent("Re: " + x.title) : ""; }
+  function ideaMail(x) { var c = String(x.email || x.contact || ""); var m = /[^\s@]+@[^\s@]+\.[^\s@]+/.exec(c); return m ? "mailto:" + m[0] + "?subject=" + encodeURIComponent("Re: " + x.title) : ""; }
   function newCount() { var seen = 0; try { seen = +localStorage.getItem(SEEN) || 0; } catch (e) {} return S.ideas ? Math.max(0, S.ideas.length - seen) : 0; }
   function updateIdeaBadge() {
     var n = newCount(), b = $("#b-ideas"); b.textContent = n; b.classList.toggle("hidden", !n || S.tab === "ideas");
@@ -938,10 +938,10 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     list.innerHTML = rows.map(function (x) {
       var mail = ideaMail(x), isDone = x.n ? x.closed : done[x.id];
       return '<div class="idea' + (x._i < nn ? " new" : "") + '" style="' + (isDone ? "opacity:.6" : "") + '"><div class="row"><h3 style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(x.title) + '</h3>' + (x._i < nn ? '<span class="pill">' + T("new", "নতুন") + '</span>' : "") + (x.type ? '<span class="pill wn">' + esc(x.type) + '</span>' : "") + (isDone ? '<span class="pill ok">' + T("done", "শেষ") + '</span>' : "") + '</div>' +
-        '<div class="body">' + esc(x.details) + '</div><div class="mt"><span>' + esc(x.name && x.name !== "-" ? x.name : T("No name", "নাম নেই")) + '</span><span>·</span><span>' + esc(x.contact && x.contact !== "-" ? x.contact : T("No contact", "যোগাযোগ নেই")) + '</span><span>·</span><span>' + esc(x.at ? ago(x.at) : "") + '</span>' + (x.src ? '<span class="pill">' + esc(/app/i.test(x.src) ? "App" : "Website") + '</span>' : "") + (x.lang ? '<span class="pill">' + esc(x.lang) + '</span>' : "") + '</div>' +
+        '<div class="body">' + esc(x.details) + '</div><div class="mt"><span>' + esc(x.name && x.name !== "-" ? x.name : T("No name", "নাম নেই")) + '</span><span>·</span><span>' + esc(x.contact && x.contact !== "-" ? x.contact : T("No contact", "যোগাযোগ নেই")) + '</span>' + (x.address ? '<span>·</span><span>' + esc(x.address) + '</span>' : "") + '<span>·</span><span>' + esc(x.at ? ago(x.at) : "") + '</span>' + (x.src ? '<span class="pill">' + esc(/app/i.test(x.src) ? "App" : "Website") + '</span>' : "") + (x.lang ? '<span class="pill">' + esc(x.lang) + '</span>' : "") + '</div>' +
         '<div class="row">' + (mail ? '<a class="btn sm" href="' + esc(mail) + '">' + T("Reply by email", "ইমেইলে উত্তর") + '</a>' : "") + '<button class="btn sm" data-copy="' + x._i + '" type="button">' + T("Copy", "কপি") + '</button><button class="btn sm" data-done="' + esc(x.id) + '" type="button">' + (isDone ? T("Mark open", "আবার খুলুন") : T("Mark done", "শেষ করুন")) + '</button></div></div>';
     }).join("");
-    $$("[data-copy]", list).forEach(function (b) { b.onclick = function () { var x = S.ideas[+b.dataset.copy]; var t = x.title + "\n\n" + x.details + "\n\n" + x.name + " · " + x.contact; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast(T("Copied.", "কপি হয়েছে।"), "ok"); }, function () { toast(T("Copy failed.", "কপি হয়নি।"), "er"); }); }; });
+    $$("[data-copy]", list).forEach(function (b) { b.onclick = function () { var x = S.ideas[+b.dataset.copy]; var t = x.title + "\n\n" + x.details + "\n\n" + x.name + " · " + x.contact + (x.phone ? " · " + x.phone : "") + (x.address ? "\n" + x.address : ""); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast(T("Copied.", "কপি হয়েছে।"), "ok"); }, function () { toast(T("Copy failed.", "কপি হয়নি।"), "er"); }); }; });
     $$("[data-done]", list).forEach(function (b) { b.onclick = function () { var it = S.ideas.filter(function (y) { return y.id === b.dataset.done; })[0]; if (it && it.n) { b.disabled = true; ghIdeas("/issues/" + it.n, { method: "PATCH", body: { state: it.closed ? "open" : "closed" } }).then(function () { it.closed = !it.closed; renderIdeas(); }, function (e) { b.disabled = false; toast(errText(e), "er"); }); return; } var d = doneMap(); if (d[b.dataset.done]) delete d[b.dataset.done]; else d[b.dataset.done] = 1; try { localStorage.setItem(DONE, JSON.stringify(d)); } catch (e) {} renderIdeas(); }; });
   }
   REND.push(function () { if (S.ideas) { renderIdeas(); updateIdeaBadge(); } });
@@ -954,7 +954,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   $("#ideas-csv").addEventListener("click", function () {
     if (!S.ideas || !S.ideas.length) { toast(T("No ideas to export.", "এক্সপোর্ট করার কিছু নেই।"), "er"); return; }
     var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
-    var csv = "﻿" + ["Date", "Type", "Idea", "Details", "Name", "Contact", "Language"].join(",") + "\n" + S.ideas.map(function (x) { return [x.at, x.type, x.title, x.details, x.name, x.contact, x.lang].map(q).join(","); }).join("\n");
+    var csv = "﻿" + ["Date", "Type", "Idea", "Details", "Name", "Email", "Phone", "Address", "Contact", "Language"].join(",") + "\n" + S.ideas.map(function (x) { return [x.at, x.type, x.title, x.details, x.name, x.email, x.phone, x.address, x.contact, x.lang].map(q).join(","); }).join("\n");
     var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "shunchi-ideas-" + today() + ".csv"; document.body.appendChild(a); a.click(); a.remove();
   });
 

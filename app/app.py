@@ -940,7 +940,8 @@ class IdeaSender(threading.Thread):
         meta = dict(f, Type="App idea", Language="-", Page="-", Source=f"SHUNCHi app {APP_VERSION}", Details="")
         meta_json = json.dumps(meta, ensure_ascii=False).replace(">", "\\u003e")
         idea = str(f.get("Idea", "")).strip()
-        body = (f"**Name:** {f.get('Name', '-')}\n**Contact:** {f.get('Contact', '-')}\n**Source:** SHUNCHi app {APP_VERSION}\n\n"
+        body = (f"**Name:** {f.get('Name', '-')}\n**Email:** {f.get('Email', '-')}\n**Phone:** {f.get('Phone', '-')}\n"
+                f"**Address:** {f.get('Address', '-')}\n**Source:** SHUNCHi app {APP_VERSION}\n\n"
                 f"{idea}\n\n<!--shunchi:{meta_json}-->")
         req = urllib.request.Request(
             f"https://api.github.com/repos/{repo}/issues", method="POST",
@@ -2384,11 +2385,17 @@ class MoreAppsPage(QWidget):
         idea_text.setObjectName("cardText")
         idea_text.setWordWrap(True)
         self.idea_name = QLineEdit()
-        self.idea_name.setPlaceholderText("Your name (optional)")
-        self.idea_name.setMaxLength(80)
-        self.idea_contact = QLineEdit()
-        self.idea_contact.setPlaceholderText("Phone, Facebook or email, so we can reach you (optional)")
-        self.idea_contact.setMaxLength(120)
+        self.idea_name.setPlaceholderText("Your name *")
+        self.idea_name.setMaxLength(60)
+        self.idea_email = QLineEdit()
+        self.idea_email.setPlaceholderText("Email *")
+        self.idea_email.setMaxLength(80)
+        self.idea_phone = QLineEdit()
+        self.idea_phone.setPlaceholderText("Phone *")
+        self.idea_phone.setMaxLength(30)
+        self.idea_address = QLineEdit()
+        self.idea_address.setPlaceholderText("Address *")
+        self.idea_address.setMaxLength(160)
         self.idea_text = QPlainTextEdit()
         self.idea_text.setPlaceholderText("Describe the app or tool you need…")
         self.idea_text.setFixedHeight(92)
@@ -2402,7 +2409,7 @@ class MoreAppsPage(QWidget):
         bottom = QHBoxLayout()
         bottom.addWidget(self.idea_button)
         bottom.addWidget(self.idea_status, 1)
-        for widget in (idea_title, idea_text, self.idea_name, self.idea_contact, self.idea_text):
+        for widget in (idea_title, idea_text, self.idea_text, self.idea_name, self.idea_email, self.idea_phone, self.idea_address):
             idea_layout.addWidget(widget)
         idea_layout.addLayout(bottom)
         root.addWidget(idea)
@@ -2426,14 +2433,26 @@ class MoreAppsPage(QWidget):
             self.idea_status.setStyleSheet(f"color:{C_ERR};font-size:12px;")
             self.idea_status.setText("Please describe your idea in a few words.")
             return
+        name, email = self.idea_name.text().strip(), self.idea_email.text().strip()
+        phone, address = self.idea_phone.text().strip(), self.idea_address.text().strip()
+        problem = ""
+        if not (name and email and phone and address):
+            problem = "Name, email, phone and address are required."
+        elif not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+            problem = "Please enter a valid email."
+        elif not re.fullmatch(r"[0-9+()\-\s]{6,30}", phone):
+            problem = "Please enter a valid phone number."
+        if problem:
+            self.idea_status.setStyleSheet(f"color:{C_ERR};font-size:12px;")
+            self.idea_status.setText(problem)
+            return
         if self.signals is None:
             return
         self.idea_button.setEnabled(False)
         self.idea_status.setStyleSheet(f"color:{C_MUTED};font-size:12px;")
         self.idea_status.setText("Sending…")
-        IdeaSender(self.signals, {"Name": self.idea_name.text().strip() or "-",
-                                  "Contact": self.idea_contact.text().strip() or "-",
-                                  "Idea": text[:2000]}).start()
+        IdeaSender(self.signals, {"Name": name, "Email": email, "Phone": phone, "Address": address,
+                                  "Contact": f"{email} · {phone}", "Idea": text[:2000]}).start()
 
     def _idea_done(self, ok, message):
         self.idea_button.setEnabled(True)

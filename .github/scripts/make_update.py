@@ -56,4 +56,18 @@ else:
     # mandatory update: this version becomes the minimum. Otherwise the old minimum stays (it can never be above the newest version).
     data["min_version"] = ver if force else (previous_min if re.fullmatch(r"\d+(\.\d+){1,3}", previous_min) else "")
     (site / "update.json").write_text(json.dumps(data, indent=2, ensure_ascii=False))
+if not slug:     # keep a readable history of every version for the download page
+    vf = site / "data" / "versions.json"
+    try: hist = json.loads(vf.read_text(encoding="utf-8") or "[]")
+    except Exception: hist = []
+    old = next((h for h in hist if h.get("version") == ver), {})
+    weak = lambda t: (not t) or re.fullmatch(r"(?i)\s*(version\s*)?v?[\d.]+\s*", t) is not None
+    entry = {"version": ver, "date": old.get("date") or data["released"], "tag": tag,
+             "notes_en": old.get("notes_en", "") if weak(notes_en) and old.get("notes_en") else (notes_en or ""),
+             "notes_bn": old.get("notes_bn", "") if weak(notes_en) and old.get("notes_bn") else (notes_bn or "")}
+    if data.get("installer_size"): entry["size"] = data["installer_size"]
+    hist = [h for h in hist if h.get("version") != ver] + [entry]
+    key = lambda h: tuple(int(x) for x in re.findall(r"\d+", h.get("version", "0")))
+    hist.sort(key=key, reverse=True)
+    vf.write_text(json.dumps(hist, indent=2, ensure_ascii=False), encoding="utf-8")
 print("wrote", slug or "update.json", ver, full)
