@@ -903,3 +903,28 @@ body.auth-open{overflow:hidden}
 .ac-pane,.ac-panes{align-content:start}
 .account section,.ac-pane{padding:0}
 .auth-head img{display:block;margin:0 auto 10px}
+/* ---- mobile profile v3 ---- */
+.ac-who h1{font-size:24px}.ac-who p{font-size:14px;word-break:break-all}
+@media (max-width:860px){
+  .account{padding:12px 12px 110px}
+  .ac-hero{border-radius:20px}
+  .ac-cover{height:72px}
+  .ac-id{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"av out" "who who";gap:0 12px;padding:0 16px 16px;align-items:end}
+  .ac-hero .ac-av{grid-area:av;width:72px;height:72px;font-size:26px;margin-top:-36px}
+  .ac-out{grid-area:out;justify-self:end;margin:10px 0 0;order:0}
+  .ac-who{grid-area:who;flex:none;margin:10px 0 0;padding:0}
+  .ac-who h1{font-size:20px}.ac-who p{font-size:13.5px;margin:2px 0 8px}
+  .ac-stats{margin-top:0}.ac-stats>div{padding:12px 2px}.ac-stats b{font-size:17px}.ac-stats span{font-size:11px;display:block;line-height:1.25}
+  /* nav: 5 equal icon tabs, no scrolling/cut-off */
+  .ac-nav{position:sticky;top:58px;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:5px;overflow:visible;margin:0}
+  .ac-nav button{flex-direction:column;gap:4px;padding:9px 2px;font-size:11px;line-height:1.15;text-align:center;justify-content:center;white-space:normal;min-width:0;border-radius:12px}
+  .ac-nav button svg{width:20px;height:20px}
+  .ac-nav button span{display:block;overflow-wrap:anywhere}
+  .pane-h{flex-direction:column;align-items:stretch}
+  .ideas-list .idea-card{padding:14px}
+  .ic-top{flex-direction:column;gap:6px}
+  .ac-row{flex-wrap:wrap}
+  .method{flex-wrap:wrap}.method .btn{width:100%}
+  .c-act .btn,.ac-form .btn,#pw-form .btn{width:100%;justify-content:center}
+  .ac-verify .row .btn{flex:1}
+}

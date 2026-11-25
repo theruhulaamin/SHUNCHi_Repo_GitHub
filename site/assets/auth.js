@@ -366,9 +366,9 @@
     var root = $("#account"); if (!root) return;
     var out = $("#acct-body"), guest = $("#acct-guest");
     guest.hidden = !!api.user; out.hidden = !api.user; if (!api.user) return;
-    var u = api.user, p = api.profile || {}, nm = p.name || u.name || u.email;
+    var u = api.user, p = api.profile || {}, nm = p.name || u.name || (u.email || "").split("@")[0];
     $("#ac-av").innerHTML = u.photo ? '<img src="' + esc(u.photo) + '" alt="" referrerpolicy="no-referrer">' : esc(initials(nm));
-    $("#ac-name").textContent = nm; $("#ac-mail").textContent = u.email;
+    $("#ac-name").textContent = nm; $("#ac-mail").textContent = u.email; $("#ac-mail").hidden = !u.email || nm === u.email;
     $("#ac-since").textContent = u.created ? new Date(u.created).toLocaleDateString(bn() ? "bn-BD" : "en-GB", { month: "short", year: "numeric" }) : "-";
     $("#ac-verify").hidden = u.verified; $("#ac-ver-ok").hidden = !u.verified;
     $("#ac-prov").textContent = (api.hasGoogle() ? "Google" : "") + (api.hasGoogle() && api.hasPassword() ? " + " : "") + (api.hasPassword() ? L("Password", "পাসওয়ার্ড") : "");
