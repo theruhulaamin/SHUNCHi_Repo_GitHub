@@ -48,3 +48,12 @@ Release ট্যাব → ভার্সন লিখে বাটন চা�
 - নিয়মিত ব্লগ (সপ্তাহে ১–২টি): "বাংলা ভয়েস টাইপিং", "Bangla voice typing Windows", "ফ্রি Gemini API key" এই ধরনের প্রশ্নের উত্তর।
 - প্রতিটি টুল চালু করার সময় আলাদা পেজ ও তার ব্যবহার-গাইড।
 - ইউটিউব ভিডিও, ফেসবুক গ্রুপে শেয়ার, অন্য সাইট থেকে লিংক।
+
+## Notun Admin panel (v2): ki ki ache
+
+- **Dashboard**: total download (release wise), live version, website build status, GitHub stars, repo views, recent builds.
+- **Ideas**: website-er idea form-er sob data. Ekbar FormSubmit API key boshale (Ideas tab-e dhap deya ache) shob idea ekhane dekha jay. Search, filter, CSV download, "Reply by email".
+- **Software**: add/edit/delete, logo upload, protiti software-er download count.
+- **Blog**: WYSIWYG editor (Word-er moto). Image paste/drag-drop/upload (auto chhoto hoy), alt text, cover image, SEO checklist, Draft/Publish, Markdown mode.
+- **Release**: 4 dhap-er wizard (Bangla + English). Version, note, duita installer file dile admin nijei GitHub-e upload kore release publish kore, tarpor website live howa porjonto dekhay. Browser upload block korle "Do it on GitHub instead" button ache.
+- Token-e **Administration: Read** permission dile repo view-er number-o dekha jay (optional).

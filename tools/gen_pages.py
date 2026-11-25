@@ -227,7 +227,7 @@ def parse_post(path):
     md = _md.Markdown(extensions=["extra", "sane_lists", "toc"], extension_configs={"toc": {"permalink": False}})
     return {"slug": slug, "title": meta.get("title", slug), "desc": meta.get("description", ""), "date": meta.get("date", TODAY),
             "updated": meta.get("updated", meta.get("date", TODAY)), "lang": lang, "tags": [t.strip() for t in meta.get("tags", "").split(",") if t.strip()],
-            "cover": meta.get("cover", ""), "draft": meta.get("draft", "").lower() in ("1", "true", "yes"), "html": md.convert(body),
+            "cover": meta.get("cover", ""), "draft": meta.get("draft", "").lower() in ("1", "true", "yes"), "html": md.convert(body).replace("<img ", '<img loading="lazy" decoding="async" '),
             "mins": max(1, round(words / (170 if lang == "bn" else 220)))}
 POSTS = []
 _bd = os.path.join(ROOT, "content", "blog")
