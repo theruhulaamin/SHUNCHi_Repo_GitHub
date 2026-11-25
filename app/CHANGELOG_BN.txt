@@ -8,6 +8,11 @@ SHUNCHi 5.0.0 — Account in the dashboard corner, professional Official SHUNCHi
 3. Account: sign-up passwords are at least 8 characters (same as the website). After sign-up the app tells you
    that a verification link was emailed (needed to comment on the website).
 4. Same account on the app and on shunchiai.com. Everything from 4.7.0 and earlier is kept.
+5. Login / Google login now opens shunchiai.com in your browser, you sign in there, and the app shows
+   "Login successful". Benefits of an account are listed on the Account page.
+6. Voice History: on/off switch on the page itself, fixed clipped Copy buttons, full Bangla text.
+7. How to use: Bangla + English, plus the YouTube video guides from the website.
+8. Faster start: a splash screen appears instantly; the history table loads only when opened.
 
 SHUNCHi 4.7.0 — Optional account, idea tracking number, encrypted idea details
 ==============================================================================================

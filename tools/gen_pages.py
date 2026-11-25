@@ -1004,7 +1004,7 @@ for a in APPS_JSON:
 SITEMAP.sort(key=lambda r: (-float(r[2]), r[0]))
 write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "".join(
     f"<url><loc>{DOMAIN}/{p}</loc><lastmod>{lm}</lastmod><changefreq>{fr}</changefreq><priority>{pr}</priority></url>\n" for p, lm, pr, fr in SITEMAP) + "</urlset>\n")
-write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /apps/_template.html\n\nSitemap: {DOMAIN}/sitemap.xml\n")
+write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /apps/_template.html\nDisallow: /app-login/\n\nSitemap: {DOMAIN}/sitemap.xml\n")
 print("sitemap urls:", len(SITEMAP), "posts:", len(POSTS), "software pages:", len([a for a in APPS_JSON if a.get('id')]))
 
 

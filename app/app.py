@@ -18,10 +18,6 @@ import threading
 from pathlib import Path
 from datetime import datetime, timedelta
 
-import numpy as np
-import sounddevice as sd
-import pyperclip
-import keyring
 
 from PySide6.QtCore import (
     Qt, Signal, QObject, QTimer, QSettings, QElapsedTimer, QUrl, QRectF, QRect, QPointF, QPoint, QSize,
@@ -80,6 +76,61 @@ logging.basicConfig(level=logging.INFO, handlers=[_log_handler])
 def resource_path(relative):
     base = getattr(sys, "_MEIPASS", str(Path(__file__).parent))
     return str(Path(base) / relative)
+
+
+# ----------------------------------------------------------------------------------------------
+# Instant splash: the window below appears at once, BEFORE the slow libraries (NumPy, PortAudio,
+# Credential Manager) are loaded, so SHUNCHi never looks like it is doing nothing.
+# ----------------------------------------------------------------------------------------------
+SPLASH = None
+
+
+def _show_splash():
+    global SPLASH
+    try:
+        from PySide6.QtWidgets import QSplashScreen
+        app = QApplication.instance() or QApplication(sys.argv)
+        pix = QPixmap(420, 210)
+        pix.fill(QColor("#FFFFFF"))
+        painter = QPainter(pix)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(QPen(QColor("#E3E9F2"), 2))
+        painter.drawRect(1, 1, 418, 208)
+        logo = QPixmap(resource_path("assets/shunchi-full-logo.png"))
+        if not logo.isNull():
+            logo = logo.scaledToWidth(210, Qt.SmoothTransformation)
+            painter.drawPixmap((420 - logo.width()) // 2, 36, logo)
+        painter.setPen(QColor("#64748B"))
+        painter.setFont(QFont("Segoe UI", 10))
+        painter.drawText(QRect(0, 140, 420, 26), Qt.AlignCenter, "Starting SHUNCHi…  ·  SHUNCHi চালু হচ্ছে…")
+        painter.setPen(QPen(QColor("#2563EB"), 4, Qt.SolidLine, Qt.RoundCap))
+        painter.drawLine(150, 184, 270, 184)
+        painter.end()
+        SPLASH = QSplashScreen(pix, Qt.WindowStaysOnTopHint)
+        SPLASH.show()
+        app.processEvents()
+    except Exception:
+        SPLASH = None
+
+
+def _another_copy_running():
+    try:
+        handle = ctypes.windll.kernel32.OpenMutexW(0x00100000, False, "Local\\SHUNCHi_4_SingleInstance")
+        if handle:
+            ctypes.windll.kernel32.CloseHandle(handle)
+            return True
+    except Exception:
+        pass
+    return False
+
+
+if __name__ == "__main__" and os.name == "nt" and "--minimized" not in sys.argv and not _another_copy_running():
+    _show_splash()
+
+import numpy as np
+import sounddevice as sd
+import pyperclip
+import keyring
 
 
 # ----------------------------------------------------------------------------------------------
@@ -610,6 +661,7 @@ class AppSignals(QObject):
     spec_done = Signal(int, str, str, str)   # token, text, friendly message, error kind ("" = success)
     update_result = Signal(object)
     notices_ready = Signal(object)
+    videos_ready = Signal(object)
     idea_result = Signal(bool, str)
     account_done = Signal(str, bool, object)
     update_progress = Signal(int)
@@ -868,6 +920,39 @@ class NoticeChecker(threading.Thread):
             logging.info("Notices not available: %s", exc)
 
 
+class VideoLoader(threading.Thread):
+    """Reads the video list that the website already shows (YouTube ids) and fetches the small thumbnails. Never raises into the UI."""
+    URL = WEBSITE_URL + "/data/videos.json"
+
+    def __init__(self, signals):
+        super().__init__(daemon=True, name="SHUNCHi-Videos")
+        self.signals = signals
+
+    def run(self):
+        videos = []
+        try:
+            request = urllib.request.Request(self.URL + "?t=" + str(int(time.time() // 300)),
+                                             headers={"User-Agent": f"SHUNCHi/{APP_VERSION}", "Cache-Control": "no-cache"})
+            with urllib.request.urlopen(request, timeout=8) as response:
+                raw = json.loads(response.read(131072).decode("utf-8"))
+            for item in (raw if isinstance(raw, list) else [])[:6]:
+                vid = str(item.get("id", ""))
+                if not re.fullmatch(r"[A-Za-z0-9_-]{11}", vid):
+                    continue
+                thumb = b""
+                try:
+                    with urllib.request.urlopen(urllib.request.Request(
+                            f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg", headers={"User-Agent": f"SHUNCHi/{APP_VERSION}"}), timeout=6) as r:
+                        thumb = r.read(400000)
+                except Exception:
+                    thumb = b""
+                videos.append({"id": vid, "title_en": str(item.get("title_en") or item.get("title_bn") or "")[:160],
+                               "title_bn": str(item.get("title_bn") or item.get("title_en") or "")[:160], "thumb": thumb})
+        except Exception as exc:
+            logging.info("Videos not available: %s", exc)
+        self.signals.videos_ready.emit(videos)
+
+
 class InstallerDownloader(threading.Thread):
     """Downloads the installer, checks its size and SHA-256, and only then reports success."""
     def __init__(self, signals, url, sha256, size, destination):
@@ -963,6 +1048,27 @@ def fs_fields(doc):
     return out
 
 
+WEB_LOGIN_DONE_HTML = """<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><title>SHUNCHi</title>
+<style>body{font-family:'Segoe UI','Nirmala UI',sans-serif;background:#F6F8FC;color:#0F172A;display:grid;place-items:center;min-height:100vh;margin:0}
+.b{background:#fff;border:1px solid #E3E9F2;border-radius:20px;padding:36px 32px;max-width:420px;text-align:center;box-shadow:0 18px 50px rgba(15,23,42,.08)}
+.i{width:64px;height:64px;border-radius:50%;background:#ECFDF3;color:#15803D;font-size:34px;display:grid;place-items:center;margin:0 auto 14px}
+h1{font-size:22px;margin:0 0 8px}p{color:#64748B;margin:4px 0;line-height:1.55}.e{color:#B91C1C}</style></head><body><div class="b">
+<div class="i" id="i">&#8987;</div><h1 id="h">Please wait&hellip;</h1><p id="p"></p></div>
+<script>
+(function(){
+var h=new URLSearchParams(location.hash.slice(1)),s=h.get("state"),r=h.get("rt");
+try{history.replaceState(null,"","/cb")}catch(e){}
+function ok(){document.getElementById("i").innerHTML="&#10003;";document.getElementById("h").textContent="Login successful / লগইন সফল হয়েছে";
+document.getElementById("p").innerHTML="You can close this tab and go back to SHUNCHi.<br>এই ট্যাব বন্ধ করে SHUNCHi অ্যাপে ফিরে যান।"}
+function bad(){var i=document.getElementById("i");i.innerHTML="!";i.style.background="#FEF2F2";i.className="i e";i.style.color="#B91C1C";document.getElementById("h").textContent="Login failed / লগইন হয়নি";
+document.getElementById("p").innerHTML="Go back to SHUNCHi and try again.<br>অ্যাপে ফিরে আবার চেষ্টা করুন।"}
+if(!s||!r){bad();return}
+fetch("/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({state:s,rt:r})}).then(function(x){x.ok?ok():bad()},bad);
+})();
+</script></body></html>"""
+
+
 class AccountService:
     """Optional account (Firebase). Nothing in the app needs it. Uses the public REST endpoints, so no extra package."""
 
@@ -1003,6 +1109,8 @@ class AccountService:
                 body = json.dumps(data).encode("utf-8")
                 hdrs["Content-Type"] = "application/json"
         hdrs.update(headers or {})
+        if "googleapis.com" in url:
+            hdrs.setdefault("Referer", WEBSITE_URL + "/")   # keeps working if the Firebase key is limited to shunchiai.com
         req = urllib.request.Request(url, data=body, method=method or ("POST" if body is not None else "GET"), headers=hdrs)
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -1097,6 +1205,74 @@ class AccountService:
     def reset_password(self, email):
         self._http(f"{IDT_URL}/accounts:sendOobCode" + self._key(), {"requestType": "PASSWORD_RESET", "email": email})
         return True
+
+    def web_login(self, cancel=None, timeout=300):
+        """Login in the browser. The app opens shunchiai.com/app-login, the website signs the user in (Google or email) and
+        hands the session back through a one-shot page on 127.0.0.1 (this computer only). Nothing is typed inside the app."""
+        import http.server
+        import webbrowser
+        import hmac
+        self.config()   # a clear error here if accounts are switched off
+        state = _b64url(os.urandom(18))
+        got = {}
+        page = WEB_LOGIN_DONE_HTML.encode("utf-8")
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def _send(self, code, body, ctype="text/html; charset=utf-8"):
+                self.send_response(code)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Referrer-Policy", "no-referrer")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_GET(self):
+                if urllib.parse.urlparse(self.path).path == "/cb":
+                    self._send(200, page)
+                else:
+                    self._send(404, b"", "text/plain")
+
+            def do_POST(self):
+                try:
+                    size = min(int(self.headers.get("Content-Length") or 0), 8000)
+                    data = json.loads(self.rfile.read(size).decode("utf-8") or "{}")
+                except Exception:
+                    return self._send(400, b"{}", "application/json")
+                rt = str(data.get("rt") or "")
+                if urllib.parse.urlparse(self.path).path == "/token" and rt and not got and hmac.compare_digest(str(data.get("state") or ""), state):
+                    got["rt"] = rt
+                    return self._send(200, b"{}", "application/json")
+                self._send(403, b"{}", "application/json")
+
+            def log_message(self, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        server.timeout = 1
+        url = f"{WEBSITE_URL}/app-login/?" + urllib.parse.urlencode({"port": server.server_address[1], "state": state, "lang": "bn" if UI_BN else "en"})
+        try:
+            if not webbrowser.open(url):
+                raise AccountError(f"Could not open your browser. Open {WEBSITE_LABEL} in a browser and log in there.")
+            end = time.time() + timeout
+            while not got and time.time() < end and not (cancel is not None and cancel.is_set()):
+                server.handle_request()
+        finally:
+            server.server_close()
+        if cancel is not None and cancel.is_set():
+            raise AccountError("Login cancelled.")
+        if not got:
+            raise AccountError("Login timed out. Try again.")
+        info = self._http(STS_URL + self._key(), {"grant_type": "refresh_token", "refresh_token": got["rt"]}, form=True)
+        self._store(info)
+        look = self._http(f"{IDT_URL}/accounts:lookup" + self._key(), {"idToken": self._id_token})
+        user = (look.get("users") or [{}])[0]
+        self.settings.setValue("acct/email", user.get("email", ""))
+        self.settings.setValue("acct/name", user.get("displayName") or "")
+        if not self._read_user():
+            self._write_user({"name": self.name, "email": self.email, "phone": "", "address": "", "createdAt": datetime.utcnow()})
+        self._touch()
+        return {"name": self.name, "email": self.email}
 
     def google_login(self, open_browser=None, timeout=180):
         """Google sign-in for a desktop app: browser + a one-shot local page (loopback), then Firebase signInWithIdp."""
@@ -2148,6 +2324,20 @@ class MicPopup(QWidget):
 # ----------------------------------------------------------------------------------------------
 # Pages
 # ----------------------------------------------------------------------------------------------
+class ClickFrame(QFrame):
+    """A frame that behaves like a button (used for the channel rows and the video cards)."""
+    clicked = Signal()
+
+    def __init__(self):
+        super().__init__()
+        self.setCursor(Qt.PointingHandCursor)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton and self.rect().contains(event.position().toPoint()):
+            self.clicked.emit()
+        super().mouseReleaseEvent(event)
+
+
 def page_header(title, subtitle):
     box = QVBoxLayout()
     box.setSpacing(3)
@@ -2462,22 +2652,49 @@ class DashboardPage(QWidget):
 
 
 class HistoryPage(QWidget):
-    def __init__(self):
+    def __init__(self, on_toggle=None):
         super().__init__()
+        self.on_toggle = on_toggle
+        self._recording = True
         root = QVBoxLayout(self)
         root.setContentsMargins(30, 28, 30, 20)
         root.setSpacing(14)
-        root.addLayout(page_header("Voice History", "Your recent dictations. They are stored only on this computer."))
+        self._opened = False        # the table is built the first time the page is opened (faster start-up)
+        self.header = page_header("Voice History", "Your recent dictations. They are stored only on this computer.")
+        root.addLayout(self.header)
+
+        # on / off switch, right here on the page
+        sw_card, sw_box = make_card((20, 14, 20, 14), 6)
+        sw_row = QHBoxLayout()
+        sw_row.setSpacing(14)
+        sw_col = QVBoxLayout()
+        sw_col.setSpacing(2)
+        self.sw_title = QLabel()
+        self.sw_title.setObjectName("cardTitle")
+        self.sw_desc = QLabel()
+        self.sw_desc.setObjectName("cardText")
+        self.sw_desc.setWordWrap(True)
+        sw_col.addWidget(self.sw_title)
+        sw_col.addWidget(self.sw_desc)
+        self.state_pill = QLabel()
+        self.state_pill.setAlignment(Qt.AlignCenter)
+        self.rec_switch = ToggleSwitch()
+        self.rec_switch.setChecked(True)
+        self.rec_switch.toggled.connect(self._switch_toggled)
+        sw_row.addLayout(sw_col, 1)
+        sw_row.addWidget(self.state_pill, 0, Qt.AlignVCenter)
+        sw_row.addWidget(self.rec_switch, 0, Qt.AlignVCenter)
+        sw_box.addLayout(sw_row)
+        root.addWidget(sw_card)
 
         controls = QHBoxLayout()
         controls.setSpacing(10)
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Search your dictations…")
         self.search.textChanged.connect(self.refresh)
-        self.copy_button = QPushButton("Copy")
+        self.copy_button = QPushButton()
         self.copy_button.setObjectName("secondary")
         self.copy_button.clicked.connect(self.copy_selected)
-        self.clear_button = QPushButton("Clear history")
+        self.clear_button = QPushButton()
         self.clear_button.setObjectName("danger")
         self.clear_button.clicked.connect(self.clear_all)
         controls.addWidget(self.search, 1)
@@ -2486,40 +2703,77 @@ class HistoryPage(QWidget):
         root.addLayout(controls)
 
         self.table = QTableWidget(0, 4)
-        self.table.setHorizontalHeaderLabels(["Time", "Language", "Text", ""])
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.Stretch)
         header.setSectionResizeMode(3, QHeaderView.Fixed)
-        self.table.setColumnWidth(3, 84)
+        self.table.setColumnWidth(3, 96)
         self.table.verticalHeader().setVisible(False)
-        self.table.verticalHeader().setDefaultSectionSize(46)
+        self.table.verticalHeader().setDefaultSectionSize(56)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.setShowGrid(False)
         self.table.setTextElideMode(Qt.ElideRight)
+        self.table.setMinimumHeight(220)
         self.table.cellDoubleClicked.connect(lambda *_: self.copy_selected())
         root.addWidget(self.table, 1)
 
-        self.off_note = QLabel("Voice history is turned off. New dictations are not saved. Turn it on in Settings.")
+        self.off_note = QLabel()
         self.off_note.setObjectName("muted")
         self.off_note.setWordWrap(True)
         self.off_note.setVisible(False)
         root.addWidget(self.off_note)
-        self.empty = QLabel("No dictations yet. Press a shortcut and speak to get started.")
+        self.empty = QLabel()
         self.empty.setObjectName("muted")
         self.empty.setAlignment(Qt.AlignCenter)
+        self.empty.setWordWrap(True)
         root.addWidget(self.empty)
-        self.refresh()
+        self.retranslate()
+
+    # ---- texts (English / বাংলা)
+    def retranslate(self):
+        self.header.itemAt(0).widget().setText(T("Voice History"))
+        self.header.itemAt(1).widget().setText(T("Your recent dictations. They are stored only on this computer."))
+        self.sw_title.setText(T("Save my dictations"))
+        self.sw_desc.setText(T("Keep a list of what you dictate on this computer. Turn it off and nothing new is saved."))
+        self.search.setPlaceholderText(T("Search your dictations…"))
+        self.copy_button.setText(T("Copy"))
+        self.clear_button.setText(T("Clear history"))
+        self.table.setHorizontalHeaderLabels([T("Time"), T("Language"), T("Text"), ""])
+        self.off_note.setText(T("History is off, so new dictations are not saved. Turn the switch above on to save them again."))
+        self.empty.setText(T("No dictations yet. Press a shortcut and speak to get started."))
+        self._paint_state()
+        if self._opened:
+            self.refresh()
+
+    def _paint_state(self):
+        on = self.rec_switch.isChecked()
+        self.state_pill.setText(T("ON") if on else T("OFF"))
+        color, bg = (C_OK, C_OK_SOFT) if on else (C_MUTED, "#EEF2F7")
+        self.state_pill.setStyleSheet(f"background:{bg};color:{color};border-radius:11px;padding:3px 12px;font-size:11.5px;font-weight:700;")
+        self.off_note.setVisible(not on)
+
+    def _switch_toggled(self, on):
+        self._paint_state()
+        if self.on_toggle is not None:
+            try:
+                self.on_toggle(bool(on))
+            except Exception:
+                logging.exception("History switch failed")
 
     def set_recording(self, enabled):
-        self.off_note.setVisible(not enabled)
+        """Called by the main window when the setting changes elsewhere (Settings page, startup)."""
+        self.rec_switch.blockSignals(True)
+        self.rec_switch.setChecked(bool(enabled))
+        self.rec_switch.blockSignals(False)
+        self._paint_state()
 
     def refresh(self, *_):
+        self._opened = True
         needle = self.search.text().strip().casefold()
-        rows = [r for r in read_history() if not needle or needle in r[4].casefold()]
+        rows = [r for r in read_history() if not needle or needle in r[4].casefold()][:200]
         self.table.setRowCount(len(rows))
         for row, (_, created, language, _, transcript) in enumerate(rows):
             cells = (created[5:16], "বাংলা" if language == "bn-BD" else "English", transcript.replace("\n", " "))
@@ -2527,31 +2781,34 @@ class HistoryPage(QWidget):
                 item = QTableWidgetItem(value)
                 item.setData(Qt.UserRole, transcript)
                 self.table.setItem(row, col, item)
-            button = QPushButton("Copy")
+            button = QPushButton(T("Copy"))
             button.setObjectName("secondary")
             button.setCursor(Qt.PointingHandCursor)
-            button.setToolTip("Copy this dictation")
-            button.setStyleSheet("padding:4px 10px;min-height:0;font-size:12px;")
+            button.setToolTip(T("Copy this dictation"))
+            button.setFixedHeight(32)
+            button.setStyleSheet("padding:0 12px;min-height:0;font-size:12px;")
             button.clicked.connect(lambda _=False, b=button, t=transcript: self.copy_text(b, t))
             holder = QWidget()
             holder_layout = QHBoxLayout(holder)
-            holder_layout.setContentsMargins(6, 6, 6, 6)
+            holder_layout.setContentsMargins(6, 0, 10, 0)
+            holder_layout.setAlignment(Qt.AlignVCenter)
             holder_layout.addWidget(button)
             self.table.setCellWidget(row, 3, holder)
-        self.empty.setVisible(not rows)
+        self.empty.setVisible(not rows and self.rec_switch.isChecked())
         self.table.setVisible(bool(rows))
+        self.table.scrollToTop()
         self.copy_button.setEnabled(bool(rows))
         self.clear_button.setEnabled(bool(rows))
 
     def copy_text(self, button, text):
         QApplication.clipboard().setText(text)
-        button.setText("Copied ✓")
+        button.setText(T("Copied ✓"))
         QTimer.singleShot(1400, lambda: self._reset_button(button))
 
     @staticmethod
     def _reset_button(button):
         try:
-            button.setText("Copy")
+            button.setText(T("Copy"))
         except RuntimeError:      # the table was rebuilt meanwhile
             pass
 
@@ -2563,11 +2820,11 @@ class HistoryPage(QWidget):
             item = self.table.item(row, 2)
             if item is not None:
                 QApplication.clipboard().setText(item.data(Qt.UserRole))
-                self.copy_button.setText("Copied ✓")
-                QTimer.singleShot(1400, lambda: self.copy_button.setText("Copy"))
+                self.copy_button.setText(T("Copied ✓"))
+                QTimer.singleShot(1400, lambda: self.copy_button.setText(T("Copy")))
 
     def clear_all(self):
-        if QMessageBox.question(self, APP_NAME, "Delete all saved dictations from this computer?") == QMessageBox.Yes:
+        if QMessageBox.question(self, APP_NAME, T("Delete all saved dictations from this computer?")) == QMessageBox.Yes:
             clear_history()
             self.refresh()
 
@@ -3087,6 +3344,30 @@ BN.update({
     "Log in / Sign up": "লগইন / সাইন আপ", "Open my profile": "আমার প্রোফাইল খুলুন", "Not added": "যোগ করা হয়নি",
     "Your profile": "আপনার প্রোফাইল", "Account menu": "অ্যাকাউন্ট মেনু",
     "Password must be at least 8 characters.": "পাসওয়ার্ড কমপক্ষে ৮ অক্ষর হতে হবে।",
+    "Save my dictations": "আমার ডিকটেশন সেভ করুন",
+    "History is on": "হিস্টোরি চালু", "History is off": "হিস্টোরি বন্ধ",
+    "Keep a list of what you dictate on this computer. Turn it off and nothing new is saved.": "আপনি যা বলেন তার তালিকা এই কম্পিউটারে রাখে। বন্ধ করলে নতুন কিছু সেভ হবে না।",
+    "Your recent dictations. They are stored only on this computer.": "আপনার সাম্প্রতিক ডিকটেশন। এগুলো শুধু এই কম্পিউটারে থাকে।",
+    "ON": "চালু", "OFF": "বন্ধ", "Search your dictations…": "ডিকটেশন খুঁজুন…", "Copy": "কপি", "Copied ✓": "কপি হয়েছে ✓",
+    "Clear history": "হিস্টোরি মুছুন", "Time": "সময়", "Language": "ভাষা", "Text": "লেখা", "Copy this dictation": "এই ডিকটেশন কপি করুন",
+    "History is off, so new dictations are not saved. Turn the switch above on to save them again.": "হিস্টোরি বন্ধ, তাই নতুন ডিকটেশন সেভ হচ্ছে না। আবার সেভ করতে উপরের সুইচ চালু করুন।",
+    "No dictations yet. Press a shortcut and speak to get started.": "এখনো কোনো ডিকটেশন নেই। শর্টকাট চেপে কথা বলুন।",
+    "Delete all saved dictations from this computer?": "এই কম্পিউটার থেকে সব সেভ করা ডিকটেশন মুছে ফেলবেন?",
+    "Five quick steps. After that SHUNCHi works in any app.": "পাঁচটি সহজ ধাপ। এরপর যেকোনো অ্যাপে SHUNCHi কাজ করবে।",
+    "Good to know": "জেনে রাখুন", "Video guides": "ভিডিও গাইড", "More videos on shunchiai.com": "আরও ভিডিও shunchiai.com-এ",
+    "Watch on YouTube": "YouTube-এ দেখুন", "Loading videos…": "ভিডিও লোড হচ্ছে…",
+    "Connect to the internet to see the video guides.": "ভিডিও গাইড দেখতে ইন্টারনেট সংযোগ দিন।",
+    "Voice History": "ভয়েস হিস্টোরি", "How to use": "কীভাবে ব্যবহার করবেন",
+    "Log in / Sign up in browser": "ব্রাউজারে লগইন / সাইন আপ", "Cancel": "বাতিল",
+    "or use email and password here": "অথবা এখানে ইমেইল ও পাসওয়ার্ড দিন", "Why log in?": "কেন লগইন করবেন?",
+    "Track every idea you send, with its status and the developer's feedback": "আপনার পাঠানো প্রতিটি আইডিয়ার স্ট্যাটাস ও ডেভেলপারের মতামত দেখুন",
+    "Fill your name, phone and address in one click": "নাম, ফোন ও ঠিকানা এক ক্লিকে বসান",
+    "One account for this app and shunchiai.com": "এই অ্যাপ ও shunchiai.com-এ একই অ্যাকাউন্ট",
+    "Your data for the upcoming tools stays with your account": "আসন্ন টুলগুলোর ডেটা আপনার অ্যাকাউন্টে থাকবে",
+    "Your browser opened. Log in there with Google or email, then come back here.": "আপনার ব্রাউজার খুলেছে। সেখানে Google বা ইমেইল দিয়ে লগইন করে এখানে ফিরে আসুন।",
+    "Login successful. Welcome": "লগইন সফল হয়েছে। স্বাগতম", "Login cancelled.": "লগইন বাতিল হয়েছে।",
+    "Login timed out. Try again.": "সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।",
+    "Could not open your browser. Open shunchiai.com in a browser and log in there.": "ব্রাউজার খোলা যায়নি। ব্রাউজারে shunchiai.com খুলে সেখানে লগইন করুন।",
     "Account created. We emailed you a verification link (needed to comment on the website).":
         "অ্যাকাউন্ট তৈরি হয়েছে। আপনার ইমেইলে একটি ভেরিফিকেশন লিংক পাঠানো হয়েছে (ওয়েবসাইটে মন্তব্য করতে লাগবে)।",
 })
@@ -3128,20 +3409,37 @@ class AccountPage(QWidget):
         self.go_button.setCursor(Qt.PointingHandCursor)
         self.go_button.clicked.connect(self._submit)
         self.f_pass.returnPressed.connect(self._submit)
+        # Main way in: the browser (Google or email on the website), then straight back here.
         self.google_button = QPushButton()
+        self.google_button.setObjectName("primary")
+        self.google_button.setMinimumHeight(42)
         self.google_button.setCursor(Qt.PointingHandCursor)
         self.google_button.clicked.connect(self._google)
+        self.cancel_button = QPushButton()
+        self.cancel_button.setObjectName("link")
+        self.cancel_button.setCursor(Qt.PointingHandCursor)
+        self.cancel_button.clicked.connect(self._cancel_web)
+        self.cancel_button.setVisible(False)
+        self.benefits = QLabel()
+        self.benefits.setTextFormat(Qt.RichText)
+        self.benefits.setWordWrap(True)
+        self.benefits.setStyleSheet(f"background:{C_PRIMARY_SOFT};border-radius:12px;padding:12px 14px;font-size:13px;color:{C_TEXT};")
+        self.or_label = QLabel()
+        self.or_label.setObjectName("muted")
+        self.or_label.setAlignment(Qt.AlignCenter)
+        self._web_cancel = None
+        self._login_kind = ""
         self.forgot = QPushButton()
         self.forgot.setObjectName("link")
         self.forgot.setCursor(Qt.PointingHandCursor)
         self.forgot.clicked.connect(self._forgot)
         self.out_status = QLabel("")
         self.out_status.setWordWrap(True)
-        for w in (self.intro, self.tabs, self.f_name, self.f_email, self.f_pass):
+        for w in (self.intro, self.benefits, self.google_button, self.cancel_button, self.or_label,
+                  self.tabs, self.f_name, self.f_email, self.f_pass):
             out.addWidget(w)
         row = QHBoxLayout()
         row.addWidget(self.go_button)
-        row.addWidget(self.google_button)
         row.addStretch()
         out.addLayout(row)
         out.addWidget(self.forgot, 0, Qt.AlignLeft)
@@ -3227,7 +3525,15 @@ class AccountPage(QWidget):
         self.f_name.setPlaceholderText(T("Name") + " *")
         self.f_email.setPlaceholderText(T("Email") + " *")
         self.f_pass.setPlaceholderText(T("Password") + " *")
-        self.google_button.setText(T("Continue with Google"))
+        self.google_button.setText(T("Log in / Sign up in browser"))
+        self.cancel_button.setText(T("Cancel"))
+        self.or_label.setText(T("or use email and password here"))
+        self.benefits.setText(
+            "<b>" + T("Why log in?") + "</b><br>"
+            + "✓ " + T("Track every idea you send, with its status and the developer's feedback") + "<br>"
+            + "✓ " + T("Fill your name, phone and address in one click") + "<br>"
+            + "✓ " + T("One account for this app and shunchiai.com") + "<br>"
+            + "✓ " + T("Your data for the upcoming tools stays with your account"))
         self.forgot.setText(T("Forgot password?"))
         self.logout_button.setText(T("Log out"))
         self.det_title.setText(T("My details"))
@@ -3274,9 +3580,17 @@ class AccountPage(QWidget):
             AccountTask(self.signals, "login", self.account.login, email, pw).start()
 
     def _google(self):
+        """Opens shunchiai.com/app-login in the browser; the website signs in and hands the session back to this app."""
         self._busy(True)
-        self._say(self.out_status, "A browser window opened. Choose your Google account there.")
-        AccountTask(self.signals, "login", self.account.google_login).start()
+        self._login_kind = "web"
+        self._web_cancel = threading.Event()
+        self.cancel_button.setVisible(True)
+        self._say(self.out_status, "Your browser opened. Log in there with Google or email, then come back here.")
+        AccountTask(self.signals, "login", self.account.web_login, self._web_cancel).start()
+
+    def _cancel_web(self):
+        if self._web_cancel is not None:
+            self._web_cancel.set()
 
     def _forgot(self):
         email = self.f_email.text().strip()
@@ -3300,12 +3614,19 @@ class AccountPage(QWidget):
     def _done(self, action, ok, data):
         if action == "login":
             self._busy(False)
+            self.cancel_button.setVisible(False)
             if not ok:
+                self._login_kind = ""
                 return self._say(self.out_status, str(data), False)
-            was_signup = self.mode == "signup"
+            via_web = self._login_kind == "web"
+            was_signup = self.mode == "signup" and not via_web
+            self._login_kind = ""
             self.f_pass.clear()
             self.refresh()
             self.on_change()
+            if via_web:
+                self._bring_to_front()
+                self._say(self.in_status, T("Login successful. Welcome") + (", " + self.account.name if self.account.name else "") + "!", True)
             if was_signup:
                 self._say(self.in_status, "Account created. We emailed you a verification link (needed to comment on the website).", True)
         elif action == "reset":
@@ -3328,6 +3649,19 @@ class AccountPage(QWidget):
             self._show_ideas(data or [])
         elif action == "idea_saved" and ok:
             self.refresh()
+
+    def _bring_to_front(self):
+        """After a browser login: show the app again so the user sees that the login worked."""
+        try:
+            w = self.window()
+            if w.isMinimized():
+                w.showNormal()
+            w.show()
+            w.raise_()
+            w.activateWindow()
+            QApplication.alert(w, 4000)
+        except Exception:
+            logging.exception("Could not bring the window to the front")
 
     @staticmethod
     def _initials(text):
@@ -3374,22 +3708,43 @@ def html_escape(text):
 
 
 class HelpPage(QWidget):
+    STEPS = (
+        ("Get a free key", "Open Google AI Studio and create a Gemini API key (Settings has a shortcut).",
+         "ফ্রি কী নিন", "Google AI Studio খুলে একটি Gemini API key বানান (Settings-এ শর্টকাট আছে)।"),
+        ("Save it in Settings", "Paste the key and choose Save & test. It is stored in Windows Credential Manager.",
+         "Settings-এ সেভ করুন", "কী পেস্ট করে Save & test চাপুন। এটি Windows Credential Manager-এ নিরাপদে থাকে।"),
+        ("Click where you want to type", "A browser, WhatsApp, Word, Notepad… any text field.",
+         "যেখানে লিখবেন সেখানে ক্লিক করুন", "ব্রাউজার, WhatsApp, Word, Notepad… যেকোনো টেক্সট বক্স।"),
+        ("Press a shortcut and speak", "Win + Left Ctrl for Bangla, Win + Left Shift for English.",
+         "শর্টকাট চেপে কথা বলুন", "বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।"),
+        ("Pause", "When you stop speaking, SHUNCHi stops by itself and types the finished text at your cursor.",
+         "একটু থামুন", "কথা শেষ করে থামলে SHUNCHi নিজে থেকেই থামে এবং তৈরি লেখা আপনার কার্সারে বসিয়ে দেয়।"),
+    )
+    TIPS = (
+        ("Press the same shortcut again to finish early.", "আগে শেষ করতে চাইলে একই শর্টকাট আবার চাপুন।"),
+        ("You can mix English words into Bangla speech.", "বাংলা কথার মধ্যে ইংরেজি শব্দ মেশাতে পারেন।"),
+        ("If a program runs as administrator, Windows may block auto-typing; the text is then copied so you can press Ctrl + V.",
+         "কোনো প্রোগ্রাম অ্যাডমিন হিসেবে চললে Windows অটো-টাইপিং আটকাতে পারে; তখন লেখাটি কপি হয়ে যায়, Ctrl + V চাপুন।"),
+        ("Windows Settings > Privacy > Microphone must allow desktop apps to use the microphone.",
+         "Windows Settings > Privacy > Microphone-এ ডেস্কটপ অ্যাপকে মাইক্রোফোন ব্যবহারের অনুমতি থাকতে হবে।"),
+        ("Your Gemini key is yours. Never share it and never install modified copies of SHUNCHi.",
+         "Gemini key আপনার নিজের। কাউকে দেবেন না, আর SHUNCHi-র পরিবর্তিত কপি ইনস্টল করবেন না।"),
+        (f"New versions, downloads and help are published at {WEBSITE_LABEL}.",
+         f"নতুন ভার্সন, ডাউনলোড ও সাহায্য {WEBSITE_LABEL}-এ প্রকাশিত হয়।"),
+    )
+
     def __init__(self):
         super().__init__()
+        self._videos = None
         root = QVBoxLayout(self)
         root.setContentsMargins(30, 28, 30, 24)
         root.setSpacing(16)
-        root.addLayout(page_header("How to use", "Five quick steps. After that SHUNCHi works in any app."))
+        self.header = page_header("How to use", "Five quick steps. After that SHUNCHi works in any app.")
+        root.addLayout(self.header)
 
         card, layout = make_card((20, 16, 20, 16), 14)
-        steps = [
-            ("Get a free key", "Open Google AI Studio and create a Gemini API key (Settings has a shortcut)."),
-            ("Save it in Settings", "Paste the key and choose Save && test. It is stored in Windows Credential Manager."),
-            ("Click where you want to type", "A browser, WhatsApp, Word, Notepad… any text field."),
-            ("Press a shortcut and speak", "Win + Left Ctrl for Bangla, Win + Left Shift for English."),
-            ("Pause", "When you stop speaking, SHUNCHi stops by itself and types the finished text at your cursor."),
-        ]
-        for number, (title, text) in enumerate(steps, 1):
+        self.step_labels = []
+        for number, _step in enumerate(self.STEPS, 1):
             row = QHBoxLayout()
             row.setSpacing(14)
             badge = QLabel(str(number))
@@ -3398,9 +3753,10 @@ class HelpPage(QWidget):
             badge.setStyleSheet(f"background:{C_PRIMARY_SOFT};color:{C_PRIMARY_DARK};border-radius:15px;font-weight:700;font-size:13px;")
             col = QVBoxLayout()
             col.setSpacing(1)
-            t = QLabel(title)
+            t = QLabel()
             t.setStyleSheet(f"font-size:14px;font-weight:600;color:{C_TEXT};")
-            d = QLabel(text.replace("&&", "&"))
+            t.setWordWrap(True)
+            d = QLabel()
             d.setObjectName("cardText")
             d.setWordWrap(True)
             col.addWidget(t)
@@ -3408,26 +3764,124 @@ class HelpPage(QWidget):
             row.addWidget(badge, 0, Qt.AlignTop)
             row.addLayout(col, 1)
             layout.addLayout(row)
+            self.step_labels.append((t, d))
         root.addWidget(card)
 
+        # video guides (the same videos as on the website)
+        vcard, vbox = make_card((20, 16, 20, 16), 12)
+        vhead = QHBoxLayout()
+        self.video_title = QLabel()
+        self.video_title.setObjectName("cardTitle")
+        self.video_site = QPushButton()
+        self.video_site.setObjectName("link")
+        self.video_site.setCursor(Qt.PointingHandCursor)
+        self.video_site.clicked.connect(lambda: open_website("/videos/"))
+        vhead.addWidget(self.video_title, 1)
+        vhead.addWidget(self.video_site, 0, Qt.AlignRight)
+        vbox.addLayout(vhead)
+        self.video_box = QVBoxLayout()
+        self.video_box.setSpacing(10)
+        vbox.addLayout(self.video_box)
+        root.addWidget(vcard)
+
         tips, tips_layout = make_card((20, 16, 20, 16), 8)
-        tt = QLabel("Good to know")
-        tt.setObjectName("cardTitle")
-        tips_layout.addWidget(tt)
-        for line in (
-            "Press the same shortcut again to finish early.",
-            "You can mix English words into Bangla speech.",
-            "If a program runs as administrator, Windows may block auto-typing; the text is then copied so you can press Ctrl + V.",
-            "Windows Settings > Privacy > Microphone must allow desktop apps to use the microphone.",
-            "Your Gemini key is yours. Never share it and never install modified copies of SHUNCHi.",
-            f"New versions, downloads and help are published at {WEBSITE_LABEL}.",
-        ):
-            label = QLabel("•  " + line)
+        self.tips_title = QLabel()
+        self.tips_title.setObjectName("cardTitle")
+        tips_layout.addWidget(self.tips_title)
+        self.tip_labels = []
+        for _tip in self.TIPS:
+            label = QLabel()
             label.setObjectName("cardText")
             label.setWordWrap(True)
             tips_layout.addWidget(label)
+            self.tip_labels.append(label)
         root.addWidget(tips)
         root.addStretch()
+        self.retranslate()
+        self._fill_videos()
+
+    def retranslate(self):
+        self.header.itemAt(0).widget().setText(T("How to use"))
+        self.header.itemAt(1).widget().setText(T("Five quick steps. After that SHUNCHi works in any app."))
+        for (t, d), (te, de, tb, db) in zip(self.step_labels, self.STEPS):
+            t.setText(tb if UI_BN else te)
+            d.setText(db if UI_BN else de)
+        self.tips_title.setText(T("Good to know"))
+        for label, (en, bn) in zip(self.tip_labels, self.TIPS):
+            label.setText("•  " + (bn if UI_BN else en))
+        self.video_title.setText(T("Video guides"))
+        self.video_site.setText(T("More videos on shunchiai.com") + "  ↗")
+        self._fill_videos()
+
+    def set_videos(self, videos):
+        self._videos = list(videos or [])
+        self._fill_videos()
+
+    def _fill_videos(self):
+        while self.video_box.count():
+            item = self.video_box.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        if self._videos is None:
+            msg = QLabel(T("Loading videos…"))
+            msg.setObjectName("cardText")
+            self.video_box.addWidget(msg)
+            return
+        if not self._videos:
+            msg = QLabel(T("Connect to the internet to see the video guides."))
+            msg.setObjectName("cardText")
+            msg.setWordWrap(True)
+            self.video_box.addWidget(msg)
+            return
+        for video in self._videos:
+            self.video_box.addWidget(self._video_card(video))
+
+    def _video_card(self, video):
+        url = "https://www.youtube.com/watch?v=" + video["id"]
+        frame = ClickFrame()
+        frame.setObjectName("vidRow")
+        frame.setStyleSheet(
+            f"QFrame#vidRow{{background:#F8FAFD;border:1px solid {C_BORDER};border-radius:12px;}}"
+            f"QFrame#vidRow:hover{{background:{C_PRIMARY_SOFT};border:1px solid #C7DBFB;}}")
+        row = QHBoxLayout(frame)
+        row.setContentsMargins(10, 10, 14, 10)
+        row.setSpacing(14)
+        thumb = QLabel()
+        thumb.setFixedSize(160, 90)
+        thumb.setAlignment(Qt.AlignCenter)
+        pix = QPixmap()
+        if video.get("thumb") and pix.loadFromData(video["thumb"]):
+            pix = pix.scaled(160, 90, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+            rounded = QPixmap(160, 90)
+            rounded.fill(Qt.transparent)
+            painter = QPainter(rounded)
+            painter.setRenderHint(QPainter.Antialiasing)
+            clip = QPainterPath()
+            clip.addRoundedRect(QRectF(0, 0, 160, 90), 9, 9)
+            painter.setClipPath(clip)
+            painter.drawPixmap(0, 0, pix)
+            painter.end()
+            thumb.setPixmap(rounded)
+        else:
+            thumb.setText("▶")
+            thumb.setStyleSheet(f"background:{C_TEXT};color:white;border-radius:9px;font-size:26px;")
+        col = QVBoxLayout()
+        col.setSpacing(4)
+        title = QLabel(video["title_bn"] if UI_BN else video["title_en"])
+        title.setWordWrap(True)
+        title.setStyleSheet(f"background:transparent;border:0;font-size:13.5px;font-weight:700;color:{C_TEXT};")
+        watch = QLabel(T("Watch on YouTube") + "  ↗")
+        watch.setStyleSheet(f"background:transparent;border:0;font-size:12.5px;font-weight:600;color:{C_PRIMARY_DARK};")
+        for w in (thumb, title, watch):
+            w.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        col.addStretch()
+        col.addWidget(title)
+        col.addWidget(watch)
+        col.addStretch()
+        row.addWidget(thumb)
+        row.addLayout(col, 1)
+        frame.clicked.connect(lambda u=url: QDesktopServices.openUrl(QUrl(u)))
+        return frame
 
 
 class DeveloperPage(QWidget):
@@ -3526,32 +3980,29 @@ class DeveloperPage(QWidget):
     @staticmethod
     def _channel_button(glyph, color, title, handle, url):
         """One official channel as a clickable row: coloured badge, name, handle and an arrow."""
-        button = QPushButton()
-        button.setObjectName("chRow")
-        button.setCursor(Qt.PointingHandCursor)
-        button.setMinimumHeight(64)
-        button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        button.setStyleSheet(
-            f"QPushButton#chRow{{background:#F8FAFD;border:1px solid {C_BORDER};border-radius:12px;text-align:left;padding:0;min-height:0;}}"
-            f"QPushButton#chRow:hover{{background:{C_PRIMARY_SOFT};border:1px solid #C7DBFB;}}")
-        row = QHBoxLayout(button)
-        row.setContentsMargins(14, 0, 14, 0)
+        row_frame = ClickFrame()
+        row_frame.setObjectName("chRow")
+        row_frame.setFixedHeight(66)
+        row_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        row_frame.setStyleSheet(
+            f"QFrame#chRow{{background:#F8FAFD;border:1px solid {C_BORDER};border-radius:12px;}}"
+            f"QFrame#chRow:hover{{background:{C_PRIMARY_SOFT};border:1px solid #C7DBFB;}}")
+        row = QHBoxLayout(row_frame)
+        row.setContentsMargins(14, 8, 14, 8)
         row.setSpacing(12)
         badge = QLabel(glyph)
         badge.setFixedSize(38, 38)
         badge.setAlignment(Qt.AlignCenter)
         badge.setStyleSheet(f"background:{color};color:white;border-radius:19px;font-size:13px;font-weight:700;")
         col = QVBoxLayout()
-        col.setSpacing(1)
+        col.setSpacing(2)
         col.setContentsMargins(0, 0, 0, 0)
         t = QLabel(title)
         t.setStyleSheet(f"background:transparent;border:0;font-size:13.5px;font-weight:700;color:{C_TEXT};")
         h = QLabel(handle)
         h.setStyleSheet(f"background:transparent;border:0;font-size:12px;color:{C_MUTED};")
-        col.addStretch()
         col.addWidget(t)
         col.addWidget(h)
-        col.addStretch()
         arrow = QLabel("↗")
         arrow.setStyleSheet(f"background:transparent;border:0;font-size:15px;color:{C_FAINT};")
         for w in (badge, t, h, arrow):
@@ -3559,8 +4010,8 @@ class DeveloperPage(QWidget):
         row.addWidget(badge)
         row.addLayout(col, 1)
         row.addWidget(arrow)
-        button.clicked.connect(lambda _c=False, u=url: QDesktopServices.openUrl(QUrl(u)))
-        return button
+        row_frame.clicked.connect(lambda u=url: QDesktopServices.openUrl(QUrl(u)))
+        return row_frame
 
     def _official_card(self):
         card, layout = make_card((24, 22, 24, 22), 14)
@@ -3766,6 +4217,8 @@ class MainWindow(QMainWindow):
         self.more_apps_page.set_apps(self.load_remote_apps())
         self.dashboard_page.update_button.clicked.connect(self.start_update_install)
         self.show_status(READY_TEXT)
+        self.signals.videos_ready.connect(self.help_page.set_videos)
+        QTimer.singleShot(1500, lambda: VideoLoader(self.signals).start())
         self.mic_scanner = MicrophoneScanner(self.signals)
         self.mic_scanner.start()
         self.hotkeys.start()
@@ -3844,7 +4297,7 @@ class MainWindow(QMainWindow):
         right.setContentsMargins(0, 0, 0, 0)
         right.setSpacing(0)
         self.dashboard_page = DashboardPage(lambda: self.switch_page(2), self.set_ui_language, self._dashboard_account)
-        self.history_page = HistoryPage()
+        self.history_page = HistoryPage(self._history_toggled)
         self.settings_page = SettingsPage(self)
         self.help_page = HelpPage()
         self.more_apps_page = MoreAppsPage()
@@ -3893,6 +4346,8 @@ class MainWindow(QMainWindow):
         self.dashboard_page.retranslate()
         self.account_page.retranslate()
         self.more_apps_page.retranslate_account()
+        self.history_page.retranslate()
+        self.help_page.retranslate()
 
     def _account_changed(self):
         self.more_apps_page.refresh_account()
@@ -3964,6 +4419,17 @@ class MainWindow(QMainWindow):
         QMessageBox.warning(self, APP_NAME, str(message))
 
     # ------------------------------------------------------------------ settings
+    def _history_toggled(self, enabled):
+        """The History page switch: keep the Settings page and the saved setting in step."""
+        self.save_history_enabled = bool(enabled)
+        self.settings.setValue("save_history", self.save_history_enabled)
+        self.settings.sync()
+        page = self.settings_page
+        page.history_on.blockSignals(True)
+        page.history_on.setChecked(self.save_history_enabled)
+        page.history_on.blockSignals(False)
+        self.show_status(T("History is on") if enabled else T("History is off"))
+
     def on_settings_changed(self):
         page = self.settings_page
         self.smart_mode = page.smart.isChecked()
@@ -4568,7 +5034,7 @@ class ShunchiApp:
         if self.mutex is False:
             raise SystemExit(0)
         APP_OWNER["app"] = self
-        self.qt = QApplication(sys.argv)
+        self.qt = QApplication.instance() or QApplication(sys.argv)
         self.qt.setApplicationName(APP_NAME)
         self.qt.setQuitOnLastWindowClosed(False)
         self.qt.setWindowIcon(QIcon(resource_path("assets/shunchi.ico")))
@@ -4600,6 +5066,11 @@ class ShunchiApp:
         self.tray.activated.connect(self.tray_activated)
         self.tray.messageClicked.connect(self.on_tray_message)
         self.tray.show()
+        try:
+            if SPLASH is not None:
+                SPLASH.close()
+        except Exception:
+            logging.exception("Splash close failed")
 
     def acquire_mutex(self):
         if os.name != "nt":

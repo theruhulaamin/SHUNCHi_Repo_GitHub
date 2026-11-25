@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Log in to the SHUNCHi app</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="base-uri 'none'; object-src 'none'; form-action 'none'">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<script>try{var l=new URLSearchParams(location.search).get("lang")||localStorage.getItem("shunchi-lang2");document.documentElement.lang=l==="en"?"en":"bn"}catch(e){}</script>
+<style>
+:root{--bg:#F6F8FC;--card:#fff;--line:#E3E9F2;--text:#0F172A;--muted:#64748B;--pri:#2563EB;--pri2:#1D4ED8;--soft:#EAF2FF;--ok:#15803D;--err:#B91C1C}
+*{box-sizing:border-box}html,body{margin:0}body{font-family:"Segoe UI","Nirmala UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:grid;place-items:center;padding:20px}
+.box{width:100%;max-width:460px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px 26px;box-shadow:0 18px 50px rgba(15,23,42,.08)}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:6px}.logo img{height:40px;width:auto}.logo b{font-size:19px}
+h1{font-size:21px;margin:14px 0 6px}p.sub{margin:0 0 14px;color:var(--muted);font-size:14.5px;line-height:1.55}
+ul.ben{list-style:none;margin:0 0 18px;padding:14px 16px;background:var(--soft);border-radius:14px;display:grid;gap:8px;font-size:14px;line-height:1.45}
+ul.ben li{position:relative;padding-left:24px}ul.ben li:before{content:"✓";position:absolute;left:0;top:0;color:var(--ok);font-weight:800}
+.tabs{display:flex;gap:6px;background:#F1F5F9;padding:4px;border-radius:12px;margin:14px 0 12px}.tabs button{flex:1;border:0;background:none;padding:9px;border-radius:9px;font:600 14px inherit;color:var(--muted);cursor:pointer}.tabs button.on{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(15,23,42,.1)}
+input{width:100%;font:inherit;font-size:15px;padding:11px 13px;border:1px solid #D5DDE9;border-radius:11px;background:#F8FAFD;margin-bottom:10px}input:focus{outline:0;border-color:var(--pri);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;font:700 15px inherit;border:0;border-radius:12px;padding:12px 14px;cursor:pointer}
+.btn.p{background:var(--pri);color:#fff}.btn.p:hover{background:var(--pri2)}.btn.g{background:#fff;color:var(--text);border:1px solid #D5DDE9}.btn.g:hover{background:#F8FAFD}.btn:disabled{opacity:.6;cursor:default}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px;margin:14px 0}.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+.msg{font-size:13.5px;margin:6px 0 10px;min-height:18px}.msg.er{color:var(--err)}.msg.ok{color:var(--ok)}
+.lnk{background:none;border:0;color:var(--pri2);font:600 13.5px inherit;cursor:pointer;padding:4px 0}
+.hide{display:none!important}.en,.bn{display:none}html[lang=en] .en{display:inline}html[lang=bn] .bn{display:inline}
+.note{margin-top:16px;font-size:12.5px;color:var(--muted);line-height:1.5;text-align:center}
+.who{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;margin:6px 0 12px;background:#F8FAFD}.who i{width:40px;height:40px;border-radius:50%;background:var(--pri);color:#fff;display:grid;place-items:center;font:700 15px inherit;font-style:normal}.who b{display:block;font-size:14.5px}.who span{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main class="box" id="box">
+  <div class="logo"><img src="../assets/shunchi-logo.png" alt="SHUNCHi"></div>
+
+  <div id="bad" class="hide">
+    <h1><span class="en">Open this page from the app</span><span class="bn">অ্যাপ থেকে এই পেজ খুলুন</span></h1>
+    <p class="sub"><span class="en">This page is only for signing in to the SHUNCHi desktop app. In the app, open Account and click “Log in / Sign up in browser”.</span><span class="bn">এই পেজ শুধু SHUNCHi ডেস্কটপ অ্যাপে লগইনের জন্য। অ্যাপের Account পেজে গিয়ে “ব্রাউজারে লগইন / সাইন আপ” চাপুন।</span></p>
+  </div>
+
+  <div id="main" class="hide">
+    <h1><span class="en">Log in to the SHUNCHi app</span><span class="bn">SHUNCHi অ্যাপে লগইন করুন</span></h1>
+    <p class="sub"><span class="en">Sign in once here, then you are taken back to the app automatically.</span><span class="bn">এখানে একবার লগইন করুন, তারপর নিজে থেকেই অ্যাপে ফিরে যাবেন।</span></p>
+    <ul class="ben">
+      <li><span class="en">Track every idea you send, with its status and the developer’s feedback.</span><span class="bn">আপনার পাঠানো প্রতিটি আইডিয়ার স্ট্যাটাস ও ডেভেলপারের মতামত দেখুন।</span></li>
+      <li><span class="en">Fill your name, phone and address in one click.</span><span class="bn">নাম, ফোন ও ঠিকানা এক ক্লিকে বসান।</span></li>
+      <li><span class="en">One account for the app and shunchiai.com (comments, profile).</span><span class="bn">অ্যাপ ও shunchiai.com-এ একই অ্যাকাউন্ট (মন্তব্য, প্রোফাইল)।</span></li>
+      <li><span class="en">Your data for the upcoming tools stays with your account.</span><span class="bn">আসন্ন টুলগুলোর ডেটা আপনার অ্যাকাউন্টে থাকবে।</span></li>
+    </ul>
+
+    <div id="have" class="hide">
+      <div class="who"><i id="who-i">?</i><div><b id="who-n"></b><span id="who-m"></span></div></div>
+      <button class="btn p" id="go" type="button"><span class="en">Continue to the app</span><span class="bn">অ্যাপে চালিয়ে যান</span></button>
+      <div class="or"><span class="en">or</span><span class="bn">অথবা</span></div>
+      <button class="btn g" id="other" type="button"><span class="en">Use another account</span><span class="bn">অন্য অ্যাকাউন্ট</span></button>
+    </div>
+
+    <div id="form" class="hide">
+      <button class="btn g" id="google" type="button">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.1 6.9-10.2 6.9-17.7z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        <span class="en">Continue with Google</span><span class="bn">Google দিয়ে চালিয়ে যান</span></button>
+      <div class="or"><span class="en">or use email</span><span class="bn">অথবা ইমেইল দিয়ে</span></div>
+      <div class="tabs"><button type="button" id="t-in" class="on"><span class="en">Log in</span><span class="bn">লগইন</span></button><button type="button" id="t-up"><span class="en">Sign up</span><span class="bn">সাইন আপ</span></button></div>
+      <input id="f-name" class="hide" type="text" autocomplete="name" maxlength="60" placeholder="Name / নাম">
+      <input id="f-mail" type="email" autocomplete="email" maxlength="80" placeholder="Email / ইমেইল">
+      <input id="f-pass" type="password" autocomplete="current-password" maxlength="100" placeholder="Password / পাসওয়ার্ড">
+      <div class="msg" id="msg" role="status"></div>
+      <button class="btn p" id="submit" type="button"><span class="en">Log in</span><span class="bn">লগইন</span></button>
+      <div style="text-align:center;margin-top:8px"><button class="lnk" id="forgot" type="button"><span class="en">Forgot password?</span><span class="bn">পাসওয়ার্ড ভুলে গেছেন?</span></button></div>
+    </div>
+  </div>
+
+  <div id="done" class="hide">
+    <h1><span class="en">Signing you in to the app…</span><span class="bn">অ্যাপে লগইন হচ্ছে…</span></h1>
+    <p class="sub" id="done-sub"><span class="en">If the app does not open by itself, make sure SHUNCHi is running, then try again.</span><span class="bn">অ্যাপ নিজে থেকে না খুললে SHUNCHi চালু আছে কিনা দেখুন, তারপর আবার চেষ্টা করুন।</span></p>
+  </div>
+  <p class="note"><span class="en">SHUNCHi works without an account. Logging in is optional.</span><span class="bn">অ্যাকাউন্ট ছাড়াও SHUNCHi কাজ করে। লগইন ঐচ্ছিক।</span></p>
+</main>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const bn = () => document.documentElement.lang !== "en";
+const T = (en, b) => (bn() ? b : en);
+const q = new URLSearchParams(location.search);
+const port = parseInt(q.get("port") || "", 10), state = q.get("state") || "";
+const valid = port >= 1024 && port <= 65535 && /^[A-Za-z0-9_-]{8,80}$/.test(state);
+const show = (id) => { for (const x of ["bad", "main", "done"]) $(x).classList.toggle("hide", x !== id); };
+if (!valid) { show("bad"); throw new Error("bad params"); }
+show("main");
+
+const V = "10.14.1", B = "https://www.gstatic.com/firebasejs/" + V + "/";
+let F, auth, mode = "in", busy = false;
+const msg = (t, k) => { const m = $("msg"); m.textContent = t || ""; m.className = "msg" + (k ? " " + k : ""); };
+const ERR = {
+  "auth/invalid-credential": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল।"], "auth/wrong-password": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল।"],
+  "auth/user-not-found": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল।"], "auth/email-already-in-use": ["This email already has an account. Use Log in.", "এই ইমেইলে অ্যাকাউন্ট আছে। লগইন করুন।"],
+  "auth/weak-password": ["Password is too weak (use 8+ characters).", "পাসওয়ার্ড দুর্বল (৮+ অক্ষর দিন)।"], "auth/invalid-email": ["Enter a valid email.", "সঠিক ইমেইল দিন।"],
+  "auth/too-many-requests": ["Too many attempts. Try again in a few minutes.", "অনেকবার চেষ্টা হয়েছে। কয়েক মিনিট পর আবার চেষ্টা করুন।"],
+  "auth/network-request-failed": ["No internet connection.", "ইন্টারনেট সংযোগ নেই।"], "auth/popup-blocked": ["The browser blocked the Google window. Allow pop-ups and try again.", "ব্রাউজার Google উইন্ডো আটকেছে। পপ-আপ অনুমতি দিয়ে আবার চেষ্টা করুন।"],
+  "auth/popup-closed-by-user": ["The Google window was closed.", "Google উইন্ডো বন্ধ হয়েছে।"], "auth/unauthorized-domain": ["This website is not allowed for Google sign-in yet.", "এই ওয়েবসাইটে Google লগইন এখনো চালু নেই।"]
+};
+const say = (e) => { const x = ERR[e && e.code]; msg(x ? T(x[0], x[1]) : T("Could not sign in. Try again.", "লগইন হয়নি। আবার চেষ্টা করুন।"), "er"); };
+const initials = (s) => ((s || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("") || "?").toUpperCase();
+
+function finish(user) {
+  show("done");
+  const rt = user.refreshToken || "";
+  if (!rt) { show("main"); msg(T("Could not finish the sign-in. Try again.", "লগইন শেষ হয়নি। আবার চেষ্টা করুন।"), "er"); return; }
+  location.replace("http://127.0.0.1:" + port + "/cb#state=" + encodeURIComponent(state) + "&rt=" + encodeURIComponent(rt));
+}
+function setMode(m) {
+  mode = m; $("t-in").classList.toggle("on", m === "in"); $("t-up").classList.toggle("on", m === "up");
+  $("f-name").classList.toggle("hide", m !== "up"); $("f-pass").autocomplete = m === "up" ? "new-password" : "current-password";
+  $("submit").innerHTML = m === "up" ? '<span class="en">Create account</span><span class="bn">অ্যাকাউন্ট খুলুন</span>' : '<span class="en">Log in</span><span class="bn">লগইন</span>';
+  $("forgot").classList.toggle("hide", m === "up"); msg("");
+}
+function lock(on) { busy = on; for (const id of ["google", "submit", "go", "other"]) { const b = $(id); if (b) b.disabled = on; } }
+
+async function boot() {
+  const cfg = await fetch("../data/firebase-config.json?t=" + Date.now(), { cache: "no-store" }).then((r) => r.json());
+  const mods = await Promise.all([import(B + "firebase-app.js"), import(B + "firebase-auth.js")]);
+  F = Object.assign({}, ...mods);
+  const app = F.initializeApp({ apiKey: cfg.apiKey, authDomain: cfg.authDomain || cfg.projectId + ".firebaseapp.com", projectId: cfg.projectId, appId: cfg.appId }, "applogin");
+  auth = F.getAuth(app);
+  const u = await new Promise((res) => { const off = F.onAuthStateChanged(auth, (x) => { off(); res(x); }); });
+  if (u) {
+    $("who-n").textContent = u.displayName || u.email || ""; $("who-m").textContent = u.email || ""; $("who-i").textContent = initials(u.displayName || u.email);
+    $("have").classList.remove("hide");
+    $("go").onclick = () => finish(u);
+    $("other").onclick = async () => { await F.signOut(auth); $("have").classList.add("hide"); $("form").classList.remove("hide"); };
+  } else $("form").classList.remove("hide");
+
+  $("t-in").onclick = () => setMode("in"); $("t-up").onclick = () => setMode("up");
+  $("google").onclick = async () => {
+    if (busy) return; lock(true); msg("");
+    try { const r = await F.signInWithPopup(auth, new F.GoogleAuthProvider()); finish(r.user); } catch (e) { say(e); lock(false); }
+  };
+  $("submit").onclick = async () => {
+    if (busy) return; msg("");
+    const em = $("f-mail").value.trim(), pw = $("f-pass").value, nm = $("f-name").value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return msg(T("Enter a valid email.", "সঠিক ইমেইল দিন।"), "er");
+    if (mode === "up" && !nm) return msg(T("Enter your name.", "নাম লিখুন।"), "er");
+    if (pw.length < (mode === "up" ? 8 : 6)) return msg(mode === "up" ? T("Password must be at least 8 characters.", "পাসওয়ার্ড কমপক্ষে ৮ অক্ষর হতে হবে।") : T("Enter your password.", "পাসওয়ার্ড দিন।"), "er");
+    lock(true);
+    try {
+      if (mode === "up") {
+        const r = await F.createUserWithEmailAndPassword(auth, em, pw);
+        try { await F.updateProfile(r.user, { displayName: nm }); } catch (e) {}
+        try { await F.sendEmailVerification(r.user); } catch (e) {}
+        finish(r.user);
+      } else { const r = await F.signInWithEmailAndPassword(auth, em, pw); finish(r.user); }
+    } catch (e) { say(e); lock(false); }
+  };
+  $("f-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") $("submit").click(); });
+  $("forgot").onclick = async () => {
+    const em = $("f-mail").value.trim(); if (!em) return msg(T("Type your email first.", "আগে ইমেইল লিখুন।"), "er");
+    try { await F.sendPasswordResetEmail(auth, em); msg(T("If this account exists, a reset link was emailed.", "অ্যাকাউন্ট থাকলে রিসেট লিংক ইমেইলে গেছে।"), "ok"); } catch (e) { say(e); }
+  };
+}
+boot().catch(() => { $("form").classList.remove("hide"); msg(T("Could not load sign-in. Check your internet and reload.", "লগইন লোড হয়নি। ইন্টারনেট দেখে রিলোড করুন।"), "er"); });
+</script>
+</body>
+</html>
