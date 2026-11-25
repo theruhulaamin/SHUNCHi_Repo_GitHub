@@ -192,7 +192,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 .spark{display:flex;align-items:flex-end;gap:3px;height:56px}.spark i{flex:1;background:linear-gradient(180deg,var(--accent),#6aa5ff);border-radius:4px 4px 0 0;min-height:2px;opacity:.9}
 
 /* ---------- responsive ---------- */
-@media (max-width:1100px){.ed-grid{grid-template-columns:1fr}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1100px){.ed-grid{grid-template-columns:minmax(0,1fr)}.ed-grid>*{min-width:0}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){
   .app{display:block}
   .side{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line);z-index:60;gap:0;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(14px)}
