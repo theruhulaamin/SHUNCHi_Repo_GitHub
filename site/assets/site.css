@@ -589,3 +589,8 @@ img{max-width:100%;height:auto}
   .tabbar a span{max-width:100%;overflow:hidden;text-overflow:clip}
 }
 @media (max-width:360px){.tabbar a{font-size:8.8px}.tabbar svg{width:19px;height:19px}}
+/* hero glows must never widen the page (this pushed the tab bar off-screen on phones) */
+.hero{overflow-x:clip}
+.hero::before{inset:-40px 0 auto auto}
+.hero::after{left:0}
+html,body{max-width:100%}
