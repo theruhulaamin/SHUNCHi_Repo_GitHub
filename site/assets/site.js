@@ -202,9 +202,9 @@
 /* Public download count: live from GitHub when possible, otherwise the hourly site/stats.json */
 (function () {
   var els = document.querySelectorAll("[data-dlcount]"); if (!els.length || !window.fetch) return;
-  var el0 = els[0], repo = el0.getAttribute("data-repo");
+  var el0 = els[0], repo = el0.getAttribute("data-repo"), OFFSET = Number(el0.getAttribute("data-offset")) || 0;
   function show(n) {
-    if (!n || n < 1) return;
+    n = (Number(n) || 0) + OFFSET; if (n < 1) return;
     var en = n.toLocaleString("en-US"), bn; try { bn = n.toLocaleString("bn-BD"); } catch (e) { bn = en; }
     els.forEach(function (el) { var s = el.querySelectorAll(".num"); if (s[0]) s[0].textContent = en; if (s[1]) s[1].textContent = bn; el.hidden = false; });
   }
@@ -219,7 +219,7 @@
     return Math.max(0, total - (base || 0));
   }
   fetch(el0.getAttribute("data-dlcount"), { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (st) {
-    var base = st && Number(st.baseline) || 0; if (st && st.downloads) show(Number(st.downloads));
+    var base = 0; if (st && st.downloads != null) show(Number(st.downloads));
     if (!repo) return;
     return fetch("https://api.github.com/repos/" + repo + "/releases?per_page=100", { headers: { Accept: "application/vnd.github+json" } })
       .then(function (r) { return r.ok ? r.json() : null; }).then(function (rels) { if (rels) show(calc(rels, base)); }).catch(function () {});
