@@ -151,7 +151,7 @@ SUGGEST_FORM = '''<div class="idea-box" id="suggest">
   <form class="suggest-form" id="suggest-form" novalidate>
     <input type="text" name="_honey" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
     <label class="f"><span class="lab"><span class="en">I want a</span><span class="bn">আমি চাই</span></span>
-      <select name="type"><option value="Free tool">Free web tool · ফ্রি ওয়েব টুল</option><option value="Windows app">Windows app · উইন্ডোজ অ্যাপ</option><option value="SHUNCHi feature">SHUNCHi feature · শুনছির নতুন ফিচার</option><option value="Other">Other · অন্যকিছু</option></select></label>
+      <select name="type"><option value="Free tool">Free web tool · ফ্রি ওয়েব টুল</option><option value="Windows app">Windows app · উইন্ডোজ অ্যাপ</option><option value="SHUNCHi feature">SHUNCHi feature · SHUNCHi-র নতুন ফিচার</option><option value="Other">Other · অন্যকিছু</option></select></label>
     <label class="f"><span class="lab"><span class="en">Idea name</span><span class="bn">আইডিয়ার নাম</span></span>
       <input type="text" name="title" maxlength="80" required></label>
     <label class="f full"><span class="lab"><span class="en">What should it do?</span><span class="bn">এটি কী কাজ করবে?</span></span>
@@ -286,18 +286,18 @@ def q(en, bn, ae, ab):
             f'<div class="en">{ae}</div><div class="bn">{ab}</div></div></details>')
 
 faq = "".join([
-    q("Is SHUNCHi really free?", "শুনছি কি সত্যিই ফ্রি?",
+    q("Is SHUNCHi really free?", "SHUNCHi কি সত্যিই ফ্রি?",
       "<p>Yes. The app is free. It uses your own Gemini API key, and Google's free tier has daily limits. If you reach the limit, SHUNCHi tells you and works again after it resets.</p>",
-      "<p>হ্যাঁ, অ্যাপটি সম্পূর্ণ ফ্রি। এটি আপনার নিজের Gemini API কী ব্যবহার করে, আর গুগলের ফ্রি টিয়ারে দৈনিক একটা সীমা আছে। সীমা শেষ হলে শুনছি আপনাকে জানায় এবং রিসেটের পর আবার চলে।</p>"),
+      "<p>হ্যাঁ, অ্যাপটি সম্পূর্ণ ফ্রি। এটি আপনার নিজের Gemini API কী ব্যবহার করে, আর গুগলের ফ্রি টিয়ারে দৈনিক একটা সীমা আছে। সীমা শেষ হলে SHUNCHi আপনাকে জানায় এবং রিসেটের পর আবার চলে।</p>"),
     q("Do I need a microphone?", "আমার কি মাইক্রোফোন লাগবে?",
       "<p>Yes, SHUNCHi listens through a microphone. Most laptops have one built in, so you need nothing extra. A desktop computer usually has none, so plug in a microphone or a headset (USB or 3.5 mm).</p>",
-      "<p>হ্যাঁ, শুনছি মাইক্রোফোনের মাধ্যমে আপনার কথা শোনে। বেশিরভাগ ল্যাপটপে মাইক্রোফোন বিল্ট-ইন থাকে, তাই আলাদা কিছু লাগে না। ডেস্কটপ কম্পিউটারে সাধারণত থাকে না, তাই একটি মাইক্রোফোন বা হেডসেট (USB বা ৩.৫ মিমি) লাগাতে হবে।</p>"),
+      "<p>হ্যাঁ, SHUNCHi মাইক্রোফোনের মাধ্যমে আপনার কথা শোনে। বেশিরভাগ ল্যাপটপে মাইক্রোফোন বিল্ট-ইন থাকে, তাই আলাদা কিছু লাগে না। ডেস্কটপ কম্পিউটারে সাধারণত থাকে না, তাই একটি মাইক্রোফোন বা হেডসেট (USB বা ৩.৫ মিমি) লাগাতে হবে।</p>"),
     q("Nothing happens when I press the shortcut", "শর্টকাট চাপলে কিছুই হয় না",
       "<p>Check that SHUNCHi is running (its icon sits in the system tray) and that Settings shows <b>Connected</b> next to your key. Press the left Win key together with the left Ctrl or left Shift key.</p>",
-      "<p>শুনছি চলছে কিনা দেখুন (সিস্টেম ট্রেতে এর আইকন থাকে) এবং Settings-এ কী-র পাশে <b>Connected</b> লেখা আছে কিনা মিলিয়ে নিন। বাঁ পাশের Win কী-র সাথে বাঁ Ctrl বা বাঁ Shift একসাথে চাপুন।</p>"),
+      "<p>SHUNCHi চলছে কিনা দেখুন (সিস্টেম ট্রেতে এর আইকন থাকে) এবং Settings-এ কী-র পাশে <b>Connected</b> লেখা আছে কিনা মিলিয়ে নিন। বাঁ পাশের Win কী-র সাথে বাঁ Ctrl বা বাঁ Shift একসাথে চাপুন।</p>"),
     q("It says it did not hear anything", "“কিছু শোনা যায়নি” বলছে",
       "<p>Open Windows Settings, then Privacy, then Microphone, and allow desktop apps to use the microphone. Then choose the right input under Microphone in SHUNCHi Settings and speak a little closer.</p>",
-      "<p>Windows Settings > Privacy > Microphone-এ গিয়ে ডেস্কটপ অ্যাপকে মাইক্রোফোন ব্যবহারের অনুমতি দিন। এরপর শুনছির Settings-এর Microphone অংশ থেকে সঠিক ইনপুট বেছে নিন এবং মাইকের একটু কাছে বলুন।</p>"),
+      "<p>Windows Settings > Privacy > Microphone-এ গিয়ে ডেস্কটপ অ্যাপকে মাইক্রোফোন ব্যবহারের অনুমতি দিন। এরপর SHUNCHi-র Settings-এর Microphone অংশ থেকে সঠিক ইনপুট বেছে নিন এবং মাইকের একটু কাছে বলুন।</p>"),
     q("The text is copied but not typed", "লেখা কপি হয় কিন্তু বসে না",
       "<p>Programs running as administrator can block automatic typing. SHUNCHi keeps the text on your clipboard, so press Ctrl + V.</p>",
       "<p>অ্যাডমিন হিসেবে চলা প্রোগ্রাম স্বয়ংক্রিয় টাইপিং আটকে দিতে পারে। লেখাটি আপনার ক্লিপবোর্ডে থেকে যায়, তাই Ctrl + V চাপুন।</p>"),
@@ -306,13 +306,13 @@ faq = "".join([
       "<p>Google AI Studio থেকে কী আবার কপি করুন এবং মাঝে কোনো ফাঁকা জায়গা আছে কিনা দেখুন। কী বেশ লম্বা হয় এবং সাধারণত “AIza” দিয়ে শুরু হয়। কীটি যে প্রজেক্টের, সেখানে আপনার দেশে Gemini API চালু আছে কিনা তাও দেখে নিন।</p>"),
     q("Does it work offline?", "ইন্টারনেট ছাড়া কি চলে?",
       "<p>No. Your recording is sent to Google to be transcribed, so you need an internet connection. Without one, SHUNCHi shows a clear notice and keeps running.</p>",
-      "<p>না। আপনার রেকর্ডিং লেখায় রূপান্তরের জন্য গুগলে পাঠানো হয়, তাই ইন্টারনেট লাগে। ইন্টারনেট না থাকলে শুনছি পরিষ্কার একটি বার্তা দেখায়, বন্ধ হয়ে যায় না।</p>"),
+      "<p>না। আপনার রেকর্ডিং লেখায় রূপান্তরের জন্য গুগলে পাঠানো হয়, তাই ইন্টারনেট লাগে। ইন্টারনেট না থাকলে SHUNCHi পরিষ্কার একটি বার্তা দেখায়, বন্ধ হয়ে যায় না।</p>"),
     q("What happens to my audio and my text?", "আমার অডিও আর লেখার কী হয়?",
       "<p>Audio goes to Google only to be transcribed, using your own key. On Google's free tier, content may be used to improve Google's products, so avoid dictating secrets. Your history stays on your computer and your key stays in Windows Credential Manager. Read the <a href=\"privacy.html\">privacy page</a>.</p>",
       "<p>অডিও শুধু লেখায় রূপান্তরের জন্য আপনার নিজের কী দিয়ে গুগলে যায়। গুগলের ফ্রি টিয়ারে কনটেন্ট তাদের পণ্যের উন্নয়নে ব্যবহৃত হতে পারে, তাই গোপন কিছু ডিকটেট না করাই ভালো। হিস্ট্রি থাকে শুধু আপনার কম্পিউটারে আর কী থাকে Windows Credential Manager-এ। বিস্তারিত <a href=\"privacy.html\">গোপনীয়তা পাতায়</a>।</p>"),
     q("How do I update or uninstall?", "কীভাবে আপডেট বা আনইনস্টল করব?",
       "<p>When a newer version is out, SHUNCHi shows a banner on its Dashboard with a Download button. Run the new installer over the old one; your settings and key are kept. To uninstall, use Windows Settings, then Apps.</p>",
-      "<p>নতুন ভার্সন এলে শুনছির Dashboard-এ ডাউনলোড বাটনসহ একটি ব্যানার দেখা যায়। নতুন ইনস্টলার পুরনোটার ওপরেই চালান, সেটিংস ও কী অক্ষত থাকবে। আনইনস্টল করতে Windows Settings > Apps ব্যবহার করুন।</p>"),
+      "<p>নতুন ভার্সন এলে SHUNCHi-র Dashboard-এ ডাউনলোড বাটনসহ একটি ব্যানার দেখা যায়। নতুন ইনস্টলার পুরনোটার ওপরেই চালান, সেটিংস ও কী অক্ষত থাকবে। আনইনস্টল করতে Windows Settings > Apps ব্যবহার করুন।</p>"),
 ])
 
 SOCIAL_ICONS = {
@@ -383,13 +383,13 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
     <li><h3><span class="en">Works in every app</span><span class="bn">সব অ্যাপে কাজ করে</span></h3><p><span class="en">The text is pasted at your cursor, so no plugin or extension is needed for any program.</span><span class="bn">লেখা কার্সরের জায়গায় বসে যায়, তাই কোনো প্রোগ্রামের জন্য আলাদা প্লাগইন বা এক্সটেনশন লাগে না।</span></p></li>
     <li><h3><span class="en">Stops by itself</span><span class="bn">নিজে থেকেই থামে</span></h3><p><span class="en">Stop talking and it finishes. It learns the sound of your room, so a fan or an AC does not confuse it.</span><span class="bn">কথা থামালেই রেকর্ডিং শেষ হয়। ঘরের আওয়াজ বুঝে নেয়, তাই ফ্যান বা এসির শব্দে আটকে থাকে না।</span></p></li>
     <li><h3><span class="en">Your key, your data</span><span class="bn">আপনার কী, আপনার তথ্য</span></h3><p><span class="en">You use your own free Gemini key, kept in Windows Credential Manager. Your history stays on your PC.</span><span class="bn">আপনি নিজের ফ্রি Gemini কী ব্যবহার করেন, যা থাকে Windows Credential Manager-এ। হিস্ট্রি থাকে শুধু আপনার পিসিতে।</span></p></li>
-    <li><h3><span class="en">Told about updates</span><span class="bn">আপডেটের খবর পাবেন</span></h3><p><span class="en">When a new version is released, SHUNCHi tells you and links to the download.</span><span class="bn">নতুন ভার্সন এলে শুনছি নিজেই জানায় এবং ডাউনলোডের লিংক দেখায়।</span></p></li>
+    <li><h3><span class="en">Told about updates</span><span class="bn">আপডেটের খবর পাবেন</span></h3><p><span class="en">When a new version is released, SHUNCHi tells you and links to the download.</span><span class="bn">নতুন ভার্সন এলে SHUNCHi নিজেই জানায় এবং ডাউনলোডের লিংক দেখায়।</span></p></li>
   </ul>
   <div class="head" style="margin:56px 0 28px"><div class="eyebrow"><span class="en">How it works</span><span class="bn">কীভাবে কাজ করে</span></div>
     <h2><span class="en">Three moves</span><span class="bn">তিনটি ধাপ</span></h2></div>
   <ol class="flow">
     <li><strong><span class="en">Press and speak</span><span class="bn">চেপে বলুন</span></strong><span><span class="en">Win + Left Ctrl for Bangla, Win + Left Shift for English.</span><span class="bn">বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।</span></span></li>
-    <li><strong><span class="en">Pause</span><span class="bn">থামুন</span></strong><span><span class="en">SHUNCHi sends your recording to Gemini for transcription.</span><span class="bn">শুনছি আপনার রেকর্ডিং লেখায় রূপান্তরের জন্য Gemini-তে পাঠায়।</span></span></li>
+    <li><strong><span class="en">Pause</span><span class="bn">থামুন</span></strong><span><span class="en">SHUNCHi sends your recording to Gemini for transcription.</span><span class="bn">SHUNCHi আপনার রেকর্ডিং লেখায় রূপান্তরের জন্য Gemini-তে পাঠায়।</span></span></li>
     <li><strong><span class="en">The text appears</span><span class="bn">লেখা বসে যায়</span></strong><span><span class="en">The polished text is typed at your cursor.</span><span class="bn">গোছানো লেখা কার্সরের জায়গায় বসে যায়।</span></span></li>
   </ol>
 </div></section>
@@ -401,21 +401,21 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
   <ol class="steps">
     <li><h3><span class="en">Get a free Gemini API key</span><span class="bn">ফ্রি Gemini API কী নিন</span></h3>
       <div class="en"><p>The key lets SHUNCHi use Google's speech recognition on your own free quota.</p><ul><li>Open <a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a> and sign in with a Google account.</li><li>Choose <b>Create API key</b> and copy it.</li></ul></div>
-      <div class="bn"><p>এই কী দিয়ে শুনছি আপনার নিজের ফ্রি কোটায় গুগলের স্পিচ রিকগনিশন ব্যবহার করে।</p><ul><li><a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a> খুলে গুগল অ্যাকাউন্টে সাইন ইন করুন।</li><li><b>Create API key</b> চেপে কী-টি কপি করুন।</li></ul></div></li>
+      <div class="bn"><p>এই কী দিয়ে SHUNCHi আপনার নিজের ফ্রি কোটায় গুগলের স্পিচ রিকগনিশন ব্যবহার করে।</p><ul><li><a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a> খুলে গুগল অ্যাকাউন্টে সাইন ইন করুন।</li><li><b>Create API key</b> চেপে কী-টি কপি করুন।</li></ul></div></li>
     <li><h3><span class="en">Download and install</span><span class="bn">ডাউনলোড ও ইনস্টল করুন</span></h3>
       <div class="en"><p>Download the installer and run it. No administrator rights are needed.</p><ul><li>The desktop shortcut and “start with Windows” options are already ticked. Untick what you do not want.</li><li>When installation finishes, SHUNCHi opens by itself.</li></ul></div>
-      <div class="bn"><p>ইনস্টলার ডাউনলোড করে চালান। অ্যাডমিন অনুমতি লাগে না।</p><ul><li>ডেস্কটপ শর্টকাট আর “উইন্ডোজের সাথে চালু” অপশন দুটি আগে থেকেই টিক দেওয়া থাকে। যেটা চান না সেটা বাদ দিন।</li><li>ইনস্টল শেষ হলেই শুনছি নিজে থেকে খুলে যাবে।</li></ul></div>
+      <div class="bn"><p>ইনস্টলার ডাউনলোড করে চালান। অ্যাডমিন অনুমতি লাগে না।</p><ul><li>ডেস্কটপ শর্টকাট আর “উইন্ডোজের সাথে চালু” অপশন দুটি আগে থেকেই টিক দেওয়া থাকে। যেটা চান না সেটা বাদ দিন।</li><li>ইনস্টল শেষ হলেই SHUNCHi নিজে থেকে খুলে যাবে।</li></ul></div>
       <a class="btn btn-primary" href="download/index.html"><span class="en">Go to download</span><span class="bn">ডাউনলোড পাতায় যান</span></a>
       <div class="note"><b>SmartScreen</b><span><span class="en">If Windows shows “Windows protected your PC”, choose <b>More info</b>, then <b>Run anyway</b>. The installer is new and not yet widely downloaded.</span><span class="bn">উইন্ডোজ “Windows protected your PC” দেখালে <b>More info</b> চেপে <b>Run anyway</b> দিন। ইনস্টলারটি নতুন বলে এমন দেখায়।</span></span></div></li>
     <li><h3><span class="en">Paste your key in Settings</span><span class="bn">Settings-এ কী বসান</span></h3>
       <div class="en"><ul><li>In the SHUNCHi window, open <b>Settings</b>.</li><li>Paste the key into the Gemini API key box and choose <b>Save &amp; test</b>.</li><li>A green <b>Connected</b> label means you are ready.</li></ul></div>
-      <div class="bn"><ul><li>শুনছির উইন্ডোতে <b>Settings</b> খুলুন।</li><li>Gemini API key বক্সে কী পেস্ট করে <b>Save &amp; test</b> চাপুন।</li><li>সবুজ রঙে <b>Connected</b> দেখালে আপনি তৈরি।</li></ul></div></li>
+      <div class="bn"><ul><li>SHUNCHi-র উইন্ডোতে <b>Settings</b> খুলুন।</li><li>Gemini API key বক্সে কী পেস্ট করে <b>Save &amp; test</b> চাপুন।</li><li>সবুজ রঙে <b>Connected</b> দেখালে আপনি তৈরি।</li></ul></div></li>
     <li><h3><span class="en">Try it</span><span class="bn">চালিয়ে দেখুন</span></h3>
       <div class="en"><ul><li>Click where you want to type: a browser, WhatsApp, Word, Notepad.</li><li>Press <kbd>Win</kbd> + <kbd>Left Ctrl</kbd> for Bangla or <kbd>Win</kbd> + <kbd>Left Shift</kbd> for English, and speak.</li><li>Stop talking. The popup shows “Writing” and the text appears at your cursor.</li><li>Press the same shortcut again to finish early.</li></ul></div>
       <div class="bn"><ul><li>যেখানে লিখতে চান সেখানে ক্লিক করুন: ব্রাউজার, হোয়াটসঅ্যাপ, ওয়ার্ড বা নোটপ্যাড।</li><li>বাংলার জন্য <kbd>Win</kbd> + <kbd>Left Ctrl</kbd>, ইংরেজির জন্য <kbd>Win</kbd> + <kbd>Left Shift</kbd> চেপে কথা বলুন।</li><li>থামলেই পপআপে “Writing” দেখাবে এবং লেখা কার্সরের জায়গায় বসে যাবে।</li><li>আগে শেষ করতে চাইলে একই শর্টকাট আবার চাপুন।</li></ul></div></li>
     <li><h3><span class="en">Tune it (optional)</span><span class="bn">নিজের মতো সাজান (ঐচ্ছিক)</span></h3>
       <div class="en"><ul><li><b>Finish after a pause:</b> Quick, Normal or Relaxed. Choose Relaxed if you speak slowly.</li><li><b>Microphone:</b> pick another input if the default is wrong.</li><li><b>Start with Windows:</b> on by default. Closing the window keeps SHUNCHi running in the system tray. Use Exit in the tray menu to quit.</li></ul></div>
-      <div class="bn"><ul><li><b>Finish after a pause:</b> Quick, Normal বা Relaxed। ধীরে কথা বললে Relaxed বেছে নিন।</li><li><b>Microphone:</b> ডিফল্ট মাইক ঠিক না হলে অন্যটি বেছে নিন।</li><li><b>Start with Windows:</b> ডিফল্টে চালু। উইন্ডো বন্ধ করলে শুনছি সিস্টেম ট্রেতে চলতে থাকে। পুরোপুরি বন্ধ করতে ট্রে মেনুর Exit চাপুন।</li></ul></div></li>
+      <div class="bn"><ul><li><b>Finish after a pause:</b> Quick, Normal বা Relaxed। ধীরে কথা বললে Relaxed বেছে নিন।</li><li><b>Microphone:</b> ডিফল্ট মাইক ঠিক না হলে অন্যটি বেছে নিন।</li><li><b>Start with Windows:</b> ডিফল্টে চালু। উইন্ডো বন্ধ করলে SHUNCHi সিস্টেম ট্রেতে চলতে থাকে। পুরোপুরি বন্ধ করতে ট্রে মেনুর Exit চাপুন।</li></ul></div></li>
   </ol>
 </div>
 {videos_block("", 3)}</section>
@@ -450,7 +450,7 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
   <div>
     <div class="eyebrow"><span class="en">Creator and developer</span><span class="bn">নির্মাতা ও ডেভেলপার</span></div>
     <h2>Ruhul Amin</h2>
-    <p class="role"><span class="en">Builder of SHUNCHi · Bangladesh</span><span class="bn">শুনছির নির্মাতা · বাংলাদেশ</span></p>
+    <p class="role"><span class="en">Builder of SHUNCHi · Bangladesh</span><span class="bn">SHUNCHi-র নির্মাতা · বাংলাদেশ</span></p>
     <div class="story">
       <div class="en">
         <p><strong>SHUNCHi began with one question: why should voice typing in Bangla not be easy, fast and free for everyone?</strong></p>
@@ -475,7 +475,7 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
       <a class="pill" href="https://www.linkedin.com/search/results/people/?keywords=iamruhulaamin" rel="noopener">{SOCIAL_ICONS["in"]}LinkedIn</a>
     </div>
     <div class="official">
-      <div class="official-title"><span class="en">Official SHUNCHi pages</span><span class="bn">অফিসিয়াল শুনছি পেজ</span></div>
+      <div class="official-title"><span class="en">Official SHUNCHi pages</span><span class="bn">অফিসিয়াল SHUNCHi পেজ</span></div>
       <div class="official-links">
         <a href="https://www.facebook.com/voice.shunchi" rel="noopener">{SOCIAL_ICONS["fb"]}<span>Facebook</span></a>
         <a href="https://www.instagram.com/voice.shunchi/" rel="noopener">{SOCIAL_ICONS["ig"]}<span>Instagram</span></a>
@@ -510,7 +510,7 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 <div class="wrap page-head">
   <ol class="crumbs"><li><a href="../index.html"><span class="en">Home</span><span class="bn">হোম</span></a></li><li aria-current="page"><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></li></ol>
   <h1><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></h1>
-  <p><span class="en">Software and free everyday tools from the maker of SHUNCHi, all in one place. Private, free and without sign-up. New tools go live as soon as they are ready.</span><span class="bn">শুনছির নির্মাতার সফটওয়্যার ও দৈনন্দিন কাজের ফ্রি টুল, সবকিছু এক জায়গায়। প্রাইভেট, ফ্রি এবং সাইন আপ ছাড়া। নতুন টুল তৈরি হওয়ামাত্র চালু হবে।</span></p>
+  <p><span class="en">Software and free everyday tools from the maker of SHUNCHi, all in one place. Private, free and without sign-up. New tools go live as soon as they are ready.</span><span class="bn">SHUNCHi-র নির্মাতার সফটওয়্যার ও দৈনন্দিন কাজের ফ্রি টুল, সবকিছু এক জায়গায়। প্রাইভেট, ফ্রি এবং সাইন আপ ছাড়া। নতুন টুল তৈরি হওয়ামাত্র চালু হবে।</span></p>
   <div class="stats" id="stats" aria-live="polite"></div>
 </div>
 
@@ -583,12 +583,12 @@ write("apps/_template.html", tmpl)
 
 # ====================================================================== DOWNLOAD
 reg("download/", "0.9", "weekly")
-dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typing", "Download SHUNCHi, the free AI voice typing app for Windows 10 and 11 (64-bit). Type Bangla and English by voice in any app. | শুনছি ডাউনলোড।", "download/",
+dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typing", "Download SHUNCHi, the free AI voice typing app for Windows 10 and 11 (64-bit). Type Bangla and English by voice in any app. | SHUNCHi ডাউনলোড।", "download/",
           ld=[crumbs_ld([("Home", ""), ("Download", "download/")])]) + header("../") + '''
 <main id="main">
 <div class="wrap page-head dl">
   <ol class="crumbs"><li><a href="../index.html"><span class="en">Home</span><span class="bn">হোম</span></a></li><li aria-current="page"><span class="en">Download</span><span class="bn">ডাউনলোড</span></li></ol>
-  <h1><span class="en">Download SHUNCHi</span><span class="bn">শুনছি ডাউনলোড করুন</span></h1>
+  <h1><span class="en">Download SHUNCHi</span><span class="bn">SHUNCHi ডাউনলোড করুন</span></h1>
   <p><span class="en">Free AI voice typing for Windows 10 and 11 (64-bit).</span><span class="bn">উইন্ডোজ ১০ ও ১১ (৬৪-বিট)-এর জন্য ফ্রি এআই ভয়েস টাইপিং।</span></p>
   <div class="dl-card">
     <div class="dl-top"><h2>SHUNCHi <span id="v">4.4.0</span></h2><span class="dl-date" id="date"></span></div>
@@ -609,7 +609,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
     <h2 style="font-size:22px;margin-bottom:12px"><span class="en">After downloading</span><span class="bn">ডাউনলোডের পর</span></h2>
     <ol class="steps" style="margin-left:17px">
       <li><p><span class="en">Open the file. If Windows shows “Windows protected your PC”, choose <b>More info</b>, then <b>Run anyway</b>.</span><span class="bn">ফাইলটি খুলুন। উইন্ডোজ “Windows protected your PC” দেখালে <b>More info</b> চেপে <b>Run anyway</b> দিন।</span></p></li>
-      <li><p><span class="en">Keep the two recommended options ticked and install. SHUNCHi opens by itself.</span><span class="bn">সুপারিশ করা দুটি অপশন টিক দেওয়া রেখে ইনস্টল করুন। শুনছি নিজে থেকে খুলবে।</span></p></li>
+      <li><p><span class="en">Keep the two recommended options ticked and install. SHUNCHi opens by itself.</span><span class="bn">সুপারিশ করা দুটি অপশন টিক দেওয়া রেখে ইনস্টল করুন। SHUNCHi নিজে থেকে খুলবে।</span></p></li>
       <li><p><span class="en">Paste your free Gemini API key in Settings. <a href="../index.html#setup">See the full setup guide</a>.</span><span class="bn">Settings-এ আপনার ফ্রি Gemini API কী বসান। <a href="../index.html#setup">পুরো সেটআপ গাইড দেখুন</a>।</span></p></li>
     </ol>
   </div>
@@ -657,7 +657,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
 <div class="wrap page-head">
   <ol class="crumbs"><li><a href="index.html"><span class="en">Home</span><span class="bn">হোম</span></a></li><li aria-current="page"><span class="en">Privacy</span><span class="bn">গোপনীয়তা</span></li></ol>
   <h1><span class="en">Privacy</span><span class="bn">গোপনীয়তা</span></h1>
-  <p><span class="en">Short and plain. What SHUNCHi does with your voice, your text and your key.</span><span class="bn">সংক্ষেপে ও সহজ ভাষায়: আপনার কণ্ঠ, লেখা ও কী নিয়ে শুনছি কী করে।</span></p>
+  <p><span class="en">Short and plain. What SHUNCHi does with your voice, your text and your key.</span><span class="bn">সংক্ষেপে ও সহজ ভাষায়: আপনার কণ্ঠ, লেখা ও কী নিয়ে SHUNCHi কী করে।</span></p>
 </div>
 <section style="padding-top:20px"><div class="wrap prose">
   <div class="en">
@@ -669,7 +669,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
     <h2>Contact</h2><p>Questions: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
   </div>
   <div class="bn">
-    <h2>আপনার কণ্ঠ</h2><p>আপনি যখন ডিকটেট করেন, শুধু তখনই, শুরু থেকে শেষ পর্যন্ত, শুনছি আপনার মাইক্রোফোন থেকে রেকর্ড করে। রেকর্ডিংটি আপনার নিজের API কী দিয়ে লেখায় রূপান্তরের জন্য গুগলের Gemini সেবায় পাঠানো হয়। এটি আমরা পাই না এবং জমা রাখার মতো কোনো সার্ভারও আমাদের নেই।</p>
+    <h2>আপনার কণ্ঠ</h2><p>আপনি যখন ডিকটেট করেন, শুধু তখনই, শুরু থেকে শেষ পর্যন্ত, SHUNCHi আপনার মাইক্রোফোন থেকে রেকর্ড করে। রেকর্ডিংটি আপনার নিজের API কী দিয়ে লেখায় রূপান্তরের জন্য গুগলের Gemini সেবায় পাঠানো হয়। এটি আমরা পাই না এবং জমা রাখার মতো কোনো সার্ভারও আমাদের নেই।</p>
     <h2>গুগলের ফ্রি টিয়ার</h2><p>গুগলের ফ্রি টিয়ারে আপনার পাঠানো কনটেন্ট গুগল তাদের পণ্যের উন্নয়নে ব্যবহার করতে পারে। তাই পাসওয়ার্ড, ব্যাংকের তথ্য বা অন্য গোপন কিছু ডিকটেট করবেন না। পেইড Gemini প্ল্যানের শর্ত আলাদা।</p>
     <h2>আপনার API কী</h2><p>কী-টি আপনার কম্পিউটারের Windows Credential Manager-এ থাকে। ডিকটেশনের সময় বা “Save &amp; test” চাপলে এটি শুধু গুগলে যায়। এই ওয়েবসাইটে কখনও আসে না।</p>
     <h2>আপনার হিস্ট্রি</h2><p>আগের ডিকটেশনের তালিকা শুধু আপনার কম্পিউটারেই থাকে। Voice History পাতা থেকে আপনি তা মুছে ফেলতে পারেন।</p>
@@ -733,7 +733,7 @@ for p in POSTS:
   {cover}
   <div class="post-body">{p["html"]}</div>
   <div class="post-tags">{tags}</div>
-  <div class="post-cta"><div><h3><span class="en">Try SHUNCHi, free</span><span class="bn">শুনছি ফ্রিতে ব্যবহার করুন</span></h3>
+  <div class="post-cta"><div><h3><span class="en">Try SHUNCHi, free</span><span class="bn">SHUNCHi ফ্রিতে ব্যবহার করুন</span></h3>
     <p><span class="en">Voice typing in Bangla and English for Windows. Speak, and the text appears in any app.</span><span class="bn">উইন্ডোজে বাংলা ও ইংরেজি ভয়েস টাইপিং। বলুন, যেকোনো অ্যাপে লেখা বসে যাবে।</span></p></div>
     <a class="btn btn-primary" href="../download/index.html"><span class="en">Download for Windows</span><span class="bn">উইন্ডোজের জন্য ডাউনলোড</span></a></div>
 </article>
@@ -752,7 +752,7 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
 <div class="wrap page-head">
   {crumbs_html("../", [("Home","হোম","../index.html"),("Blog","ব্লগ",None)])}
   <h1><span class="en">Blog</span><span class="bn">ব্লগ</span></h1>
-  <p><span class="en">Guides and tips on Bangla and English voice typing, setting up SHUNCHi and working faster.</span><span class="bn">বাংলা ও ইংরেজি ভয়েস টাইপিং, শুনছি সেটআপ এবং দ্রুত কাজ করার গাইড ও টিপস।</span></p>
+  <p><span class="en">Guides and tips on Bangla and English voice typing, setting up SHUNCHi and working faster.</span><span class="bn">বাংলা ও ইংরেজি ভয়েস টাইপিং, SHUNCHi সেটআপ এবং দ্রুত কাজ করার গাইড ও টিপস।</span></p>
 </div>
 <section style="padding-top:28px"><div class="wrap">
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
@@ -771,12 +771,12 @@ if VIDEOS_JSON:
                 "thumbnailUrl": f"https://i.ytimg.com/vi/{v['id']}/hqdefault.jpg", "uploadDate": v.get("date") or TODAY, "embedUrl": f"https://www.youtube.com/embed/{v['id']}", "contentUrl": f"https://www.youtube.com/watch?v={v['id']}"}}
                for i, v in enumerate(VIDEOS_JSON)]}]
     vpage = head("../", "Video Guides: Set Up SHUNCHi Step by Step | SHUNCHi",
-                 "Watch short videos on how to install SHUNCHi, get a free Gemini key and type in Bangla with your voice. ভিডিও দেখে শুনছি সেটআপ করুন।", "videos/", ld=vld) + header("../") + f'''
+                 "Watch short videos on how to install SHUNCHi, get a free Gemini key and type in Bangla with your voice. ভিডিও দেখে SHUNCHi সেটআপ করুন।", "videos/", ld=vld) + header("../") + f'''
 <main id="main">
 <div class="wrap page-head">
   {crumbs_html("../", [("Home","হোম","../index.html"),("Videos","ভিডিও",None)])}
   <h1><span class="en">Video guides</span><span class="bn">ভিডিও গাইড</span></h1>
-  <p><span class="en">Short videos to help you set up and use SHUNCHi.</span><span class="bn">শুনছি সেটআপ ও ব্যবহারের ছোট ভিডিও।</span></p>
+  <p><span class="en">Short videos to help you set up and use SHUNCHi.</span><span class="bn">SHUNCHi সেটআপ ও ব্যবহারের ছোট ভিডিও।</span></p>
 </div>
 <section style="padding-top:28px"><div class="wrap"><div class="vids all">{"".join(video_card(v) for v in VIDEOS_JSON)}</div></div></section>
 </main>

@@ -9,5 +9,5 @@
   "released": "2026-11-25",
   "apps": [],
   "release_notes_en": "- First public release of SHUNCHi: free AI voice typing for Windows 10 and 11.\n- Speak in Bangla or English and it types in any app (browser, WhatsApp, Word and more).\n- Win + Left Ctrl for Bangla, Win + Left Shift for English.\n- Uses your own free Gemini API key.\n- Includes an automatic update notice and a small web installer.",
-  "release_notes_bn": "- শুনছি-র প্রথম পাবলিক রিলিজ: উইন্ডোজ ১০ ও ১১-এর জন্য ফ্রি এআই ভয়েস টাইপিং।\n- বাংলা বা ইংরেজিতে বলুন, ব্রাউজার, হোয়াটসঅ্যাপ, ওয়ার্ডসহ যেকোনো অ্যাপে লেখা হয়ে যাবে।\n- বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।\n- আপনার নিজের ফ্রি Gemini API কী ব্যবহার করে।\n- নতুন ভার্সনের নোটিশ আর ছোট ওয়েব ইনস্টলারও আছে।"
+  "release_notes_bn": "- SHUNCHi-র প্রথম পাবলিক রিলিজ: উইন্ডোজ ১০ ও ১১-এর জন্য ফ্রি এআই ভয়েস টাইপিং।\n- বাংলা বা ইংরেজিতে বলুন, ব্রাউজার, হোয়াটসঅ্যাপ, ওয়ার্ডসহ যেকোনো অ্যাপে লেখা হয়ে যাবে।\n- বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।\n- আপনার নিজের ফ্রি Gemini API কী ব্যবহার করে।\n- নতুন ভার্সনের নোটিশ আর ছোট ওয়েব ইনস্টলারও আছে।"
 }

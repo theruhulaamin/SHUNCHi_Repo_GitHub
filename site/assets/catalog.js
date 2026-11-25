@@ -29,7 +29,7 @@ var CATS = [
   { k: "media",    en: "Images & files",       bn: "ছবি ও ফাইল",
     de: "Quick fixes for photos and documents, in your browser.", db: "ছবি ও ডকুমেন্টের দ্রুত কাজ, ব্রাউজারেই।" },
   { k: "voice",    en: "Voice & AI",           bn: "ভয়েস ও এআই",
-    de: "More ways to use your voice, from the makers of SHUNCHi.", db: "শুনছির নির্মাতাদের কাছ থেকে কণ্ঠ ব্যবহারের আরও উপায়।" }
+    de: "More ways to use your voice, from the makers of SHUNCHi.", db: "SHUNCHi-র নির্মাতাদের কাছ থেকে কণ্ঠ ব্যবহারের আরও উপায়।" }
 ];
 
 var APPS = [
