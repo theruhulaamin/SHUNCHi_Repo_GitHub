@@ -1,4 +1,9 @@
 @echo off
+rem Re-launch inside a window that stays open, so nothing disappears if an error happens.
+if not "%~1"=="stay" (
+  cmd /k ""%~f0" stay"
+  exit /b
+)
 setlocal EnableExtensions
 cd /d "%~dp0"
 title SHUNCHi - Production Release Builder
@@ -69,6 +74,8 @@ python -m PyInstaller --noconfirm --clean --windowed --onedir --noupx --name SHU
  app.py
 if errorlevel 1 goto fail
 
+echo.
+echo PyInstaller finished OK. Looking for Inno Setup...
 if not exist "dist\SHUNCHi\SHUNCHi.exe" (
   echo Expected executable was not created: dist\SHUNCHi\SHUNCHi.exe
   goto fail
