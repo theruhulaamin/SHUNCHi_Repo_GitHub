@@ -1535,6 +1535,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   async function publishRelease() {
     var e = stepErr(); if (e) { toast(e[1], "er"); return; }
     R.running = true; PH = {}; $("#rel-prog").classList.remove("hidden"); drawProg(); renderReview();
+    var rm = $("#rel-manual"); if (rm) R.manualUrl = rm.href;
     $("#rel-actions").innerHTML = ""; var tag = tagOf(), fl = files().filter(function (x) { return x.file; });
     try {
       if (!R.draft) {
@@ -1545,7 +1546,13 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
         R.draft = { id: rel.id, url: rel.html_url }; R.done = {};
       }
       ph("draft", "ok", T("Draft created", "ড্রাফট তৈরি হয়েছে"));
-      for (var i = 0; i < fl.length; i++) {
+      if (R.manual) {
+        ph("pub", "run", T("Checking the files on GitHub…", "GitHub-এ ফাইল আছে কিনা দেখা হচ্ছে…"));
+        var cur0 = await gh("/releases/" + R.draft.id), have = (cur0.assets || []).map(function (a) { return a.name; });
+        var miss = fl.filter(function (f) { return have.indexOf(f.name) < 0; }).map(function (f) { return f.name; });
+        if (miss.length) throw Object.assign(new Error(T("Not attached yet: ", "এখনো attach হয়নি: ") + miss.join(", ")), { stop: true, manualWait: true });
+        fl.forEach(function (f) { ph("up:" + f.name, "ok", T("Attached on GitHub", "GitHub-এ attach করা আছে")); }); R.manual = false;
+      } else for (var i = 0; i < fl.length; i++) {
         var f = fl[i], pid = "up:" + f.name; if (R.done[f.name]) { ph(pid, "ok", T("Already uploaded", "আগেই আপলোড হয়েছে")); continue; }
         ph(pid, "run", fmtSize(f.file.size), 0);
         await uploadAsset(R.draft.id, f.name, f.file, function (p) { ph(pid, "run", fmtSize(f.file.size) + " · " + p + "%", p); });
@@ -1576,15 +1583,24 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       R.running = false; var cur = phases().filter(function (p) { return (PH[p.id] || {}).s === "run"; })[0] || phases()[0];
       ph(cur.id, "er", er.message);
       var cors = !er.status && !er.stop; var acts = '<button class="btn" data-next="3" type="button" id="rel-back">' + T("Back", "পেছনে") + '</button><span class="sp"></span>';
-      acts += '<a class="btn" target="_blank" rel="noopener" href="' + esc($("#rel-manual").href) + '">' + T("Do it on GitHub instead", "GitHub-এ নিজে করুন") + '</a>';
+      acts += '<a class="btn" target="_blank" rel="noopener" href="' + esc(R.manualUrl || "#") + '">' + T("Do it on GitHub instead", "GitHub-এ নিজে করুন") + '</a>';
+      var attach = (cors || er.manualWait) && R.draft;
+      if (attach) {
+        var names = files().filter(function (x) { return x.file; }).map(function (x) { return x.name; });
+        var editUrl = String(R.draft.url || "").replace("/releases/tag/", "/releases/edit/");
+        acts = '<button class="btn" data-next="3" type="button" id="rel-back">' + T("Back", "পেছনে") + '</button><span class="sp"></span><a class="btn p" id="rel-attach" target="_blank" rel="noopener" href="' + esc(editUrl) + '">' + T("Go to GitHub and attach the files", "GitHub-এ গিয়ে ফাইল attach করুন") + '</a><button class="btn" id="rel-done" type="button">' + T("I have attached them. Publish now", "ফাইল attach করেছি। এখন পাবলিশ করুন") + '</button><button class="btn d" id="rel-discard" type="button">' + T("Discard draft", "ড্রাফট বাতিল") + '</button>';
+        $("#rel-prog").querySelectorAll(".note.wn").forEach(function (n) { n.remove(); });
+        $("#rel-prog").insertAdjacentHTML("beforeend", '<div class="note wn"><div>' + T("Your browser cannot upload big files straight to GitHub. Do this: 1) press “Go to GitHub and attach the files”, 2) drag these files into the box: ", "ব্রাউজার থেকে বড় ফাইল সরাসরি GitHub-এ আপলোড হচ্ছে না। এটি করুন: ১) “GitHub-এ গিয়ে ফাইল attach করুন” চাপুন, ২) এই ফাইলগুলো বক্সে ড্র্যাগ করুন: ") + '<b>' + names.map(esc).join(", ") + '</b>. ' + T("3) Do not press Publish there. Come back here and press “I have attached them. Publish now”. The website updates by itself.", "৩) সেখানে Publish চাপবেন না। এখানে ফিরে “ফাইল attach করেছি। এখন পাবলিশ করুন” চাপুন। ওয়েবসাইট নিজে আপডেট হবে।") + '</div></div>');
+      }
       if (er.actions) acts += '<a class="btn" target="_blank" rel="noopener" href="https://github.com/' + esc(S.repo) + '/actions">GitHub Actions</a>';
-      else { if (R.draft) acts += '<button class="btn d" id="rel-discard" type="button">' + T("Discard draft", "ড্রাফট বাতিল") + '</button>'; acts += '<button class="btn p" id="rel-retry" type="button">' + T("Try again", "আবার চেষ্টা") + '</button>'; }
+      else if (!attach) { if (R.draft) acts += '<button class="btn d" id="rel-discard" type="button">' + T("Discard draft", "ড্রাফট বাতিল") + '</button>'; acts += '<button class="btn p" id="rel-retry" type="button">' + T("Try again", "আবার চেষ্টা") + '</button>'; }
       $("#rel-actions").innerHTML = acts;
       var bk = $("#rel-back"); if (bk) bk.onclick = function () { setStep(3); };
-      var rt = $("#rel-retry"); if (rt) rt.onclick = function () { $("#rel-actions").innerHTML = ""; publishRelease(); };
+      var dn = $("#rel-done"); if (dn) dn.onclick = function () { R.manual = true; relActionsReset(); publishRelease(); };
+      var rt = $("#rel-retry"); if (rt) rt.onclick = function () { relActionsReset(); publishRelease(); };
       var dc = $("#rel-discard"); if (dc) dc.onclick = function () { gh("/releases/" + R.draft.id, { method: "DELETE" }).then(function () { R.draft = null; R.done = {}; toast(T("Draft discarded.", "ড্রাফট বাতিল হয়েছে।"), "ok"); setStep(3); $("#rel-prog").classList.add("hidden"); relActionsReset(); }, function (x) { toast(errText(x), "er"); }); };
       toast(er.message, "er");
-      if (cors) $("#rel-prog").insertAdjacentHTML("beforeend", '<div class="note wn">' + T("Your browser may block big uploads to GitHub. Use “Do it on GitHub instead”: it opens the release page with the tag ready, attach both files there and press Publish. The website updates by itself after that.", "ব্রাউজার বড় আপলোড আটকে দিতে পারে। “GitHub-এ নিজে করুন” চাপুন: ট্যাগসহ রিলিজ পেজ খুলবে, সেখানে দুটি ফাইল দিয়ে Publish চাপুন। এরপর ওয়েবসাইট নিজেই আপডেট হবে।") + '</div>');
+      if (cors && !attach) $("#rel-prog").insertAdjacentHTML("beforeend", '<div class="note wn">' + T("Your browser may block big uploads to GitHub. Use “Do it on GitHub instead”: it opens the release page with the tag ready, attach both files there and press Publish. The website updates by itself after that.", "ব্রাউজার বড় আপলোড আটকে দিতে পারে। “GitHub-এ নিজে করুন” চাপুন: ট্যাগসহ রিলিজ পেজ খুলবে, সেখানে দুটি ফাইল দিয়ে Publish চাপুন। এরপর ওয়েবসাইট নিজেই আপডেট হবে।") + '</div>');
     }
   }
   function relActionsReset() {
