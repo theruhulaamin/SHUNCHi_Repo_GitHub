@@ -495,3 +495,6 @@ html[lang="bn"] .official-title{text-transform:none;letter-spacing:0;font-size:1
   .js-anim .rvx{opacity:1!important;transform:none!important}
   .hero h1 em{-webkit-text-fill-color:var(--accent);background:none}
 }
+/* official card: sits under the contact pills, same left edge, not stretched */
+.dev .official{width:fit-content;max-width:100%}
+@media (max-width:900px){.dev .official{width:100%}}
