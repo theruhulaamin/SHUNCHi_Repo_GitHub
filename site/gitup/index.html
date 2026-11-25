@@ -1698,14 +1698,16 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     try {
       ph("draft", "ok", T("Draft ready", "ড্রাফট তৈরি")); ph("attach", "ok", T("Files matched on GitHub", "GitHub-এর ফাইল মিলেছে"));
       ph("pub", "run", ""); var t0 = Date.now() - 5000;
-      await gh("/releases/" + R.draft.id, { method: "PATCH", body: { tag_name: tagOf(), target_commitish: S.branch, body: notes(), draft: false, make_latest: R.target === "shunchi" ? "true" : "false" } });
+      var pubRes = await gh("/releases/" + R.draft.id, { method: "PATCH", body: { tag_name: tagOf(), target_commitish: S.branch, body: notes(), draft: false, make_latest: R.target === "shunchi" ? "true" : "false" } });
       ph("pub", "ok", T("Release is public", "রিলিজ পাবলিক হয়েছে")); var url = R.draft.url; R.draft = null;
+      /* Use GitHub's clock, not this computer's (a wrong PC clock made the old check wait forever). */
+      var pubAt = pubRes && pubRes.published_at ? new Date(pubRes.published_at).getTime() : t0, myTag = tagOf();
       ph("act", "run", T("Waiting for GitHub to start…", "GitHub শুরু করার অপেক্ষা…"));
       var actOk = false, tries = 0;
       while (tries++ < 45) {
         await sleep(6000);
         var runs = await gh("/actions/runs?event=release&per_page=5").then(function (j) { return j.workflow_runs || []; }, function () { return []; });
-        var run = runs.filter(function (r) { return new Date(r.created_at).getTime() >= t0; })[0];
+        var run = runs.filter(function (r) { return r.head_branch === myTag || new Date(r.created_at).getTime() >= pubAt - 60000; })[0];
         if (run) { if (run.status === "completed") { if (run.conclusion !== "success") throw Object.assign(new Error(T("The GitHub Action failed. Open Actions on GitHub to see why (usually a missing file).", "GitHub Action ব্যর্থ হয়েছে। কারণ দেখতে GitHub Actions খুলুন (সাধারণত ফাইল কম)।")), { stop: true, actions: true }); actOk = true; break; } ph("act", "run", T("Running…", "চলছে…")); }
       }
       if (!actOk) { ph("act", "er", T("Still waiting. It may finish soon, check the Actions page.", "এখনো চলছে। Actions পেজে দেখুন।")); }
