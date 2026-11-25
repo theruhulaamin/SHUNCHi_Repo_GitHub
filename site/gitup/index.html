@@ -1179,9 +1179,10 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     $("#u-list").innerHTML = rows.length ? rows.map(function (u) {
       var i = USERS.indexOf(u);
       return '<div class="idea"><div class="row"><h3 style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(u.name || T("No name", "নাম নেই")) + '</h3>' + uPill(uEff(u)) + '</div><div class="mt"><span>' + esc(u.email || "-") + '</span><span>·</span><span>' + esc(u.phone || T("no phone", "ফোন নেই")) + '</span><span>·</span><span>' + T("Joined ", "জয়েন ") + dstr(u.createdAt) + '</span><span>·</span><span>' + T("Last seen ", "শেষ দেখা ") + dstr(u.lastActive) + '</span><span>·</span><span>' + cnt(UIDEAS, u.uid) + T(" ideas", " আইডিয়া") + '</span><span>·</span><span>' + cnt(UCOMM, u.uid) + T(" comments", " মন্তব্য") + '</span></div>' +
-        '<div class="row" style="flex-wrap:wrap"><button class="btn sm" data-uv="' + i + '" type="button">' + T("View data", "ডেটা দেখুন") + '</button><span class="sp"></span>' + ["active", "inactive", "blocked"].map(function (k) { return '<button class="btn sm' + (u.status === k || (!u.status && k === "active") ? " p" : "") + '" data-us="' + k + '" data-i="' + i + '" type="button">' + esc(uName(k)) + '</button>'; }).join("") + '</div></div>';
+        '<div class="row" style="flex-wrap:wrap"><button class="btn sm" data-uv="' + i + '" type="button">' + T("View data", "ডেটা দেখুন") + '</button><button class="btn sm" data-ud="' + i + '" type="button" style="color:#b91c1c">' + T("Delete", "ডিলিট") + '</button><span class="sp"></span>' + ["active", "inactive", "blocked"].map(function (k) { return '<button class="btn sm' + (u.status === k || (!u.status && k === "active") ? " p" : "") + '" data-us="' + k + '" data-i="' + i + '" type="button">' + esc(uName(k)) + '</button>'; }).join("") + '</div></div>';
     }).join("") : '<div class="empty"><b>' + (USERS.length ? T("Nothing matches", "কিছু মেলেনি") : T("No users yet", "এখনো কোনো ইউজার নেই")) + '</b></div>';
     $$("[data-us]", $("#u-list")).forEach(function (b) { b.onclick = function () { setUserStatus(USERS[+b.dataset.i], b.dataset.us, b); }; });
+    $$("[data-ud]", $("#u-list")).forEach(function (b) { b.onclick = function () { deleteUser(USERS[+b.dataset.ud]); }; });
     $$("[data-uv]", $("#u-list")).forEach(function (b) { b.onclick = function () { viewUser(USERS[+b.dataset.uv]); }; });
     $("#u-comments").innerHTML = UCOMM.length ? UCOMM.slice(0, 30).map(function (m) { return '<div class="row" style="padding:8px 0;border-top:1px solid var(--line)"><div style="flex:1;min-width:0"><b>' + esc(m.name) + '</b> <span class="muted">' + esc(m.slug) + ' · ' + dstr(m.createdAt) + '</span><div style="overflow-wrap:anywhere">' + esc(m.text) + '</div></div><button class="btn sm" data-cd="' + esc(m.id) + '" type="button">' + T("Delete", "ডিলিট") + '</button></div>'; }).join("") : '<p class="muted">' + T("No comments yet.", "এখনো কোনো মন্তব্য নেই।") + '</p>';
     $$("[data-cd]", $("#u-comments")).forEach(function (b) { b.onclick = function () { if (!confirm(T("Delete this comment?", "মন্তব্যটি ডিলিট করবেন?"))) return; FB.F.deleteDoc(FB.F.doc(FB.db, "comments", b.dataset.cd)).then(function () { UCOMM = UCOMM.filter(function (x) { return x.id !== b.dataset.cd; }); renderUsers(); }, function (e) { toast(e.code || e.message, "er"); }); }; });
@@ -1190,6 +1191,14 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     if (st === "blocked" && !confirm(T("Block this user? They will not be able to comment, send ideas to their profile or save data.", "ইউজারকে ব্লক করবেন? সে মন্তব্য করতে বা ডেটা সেভ করতে পারবে না।"))) return;
     if (btn) btn.disabled = true;
     FB.F.setDoc(FB.F.doc(FB.db, "users", u.uid), { status: st, statusAt: FB.F.serverTimestamp(), lastActive: u.lastActive || FB.F.serverTimestamp() }, { merge: true }).then(function () { u.status = st; if (st === "active") u.lastActive = { seconds: Date.now() / 1000 }; toast(T("Status saved: ", "স্ট্যাটাস সেভ হয়েছে: ") + uName(st), "ok"); renderUsers(); }, function (e) { if (btn) btn.disabled = false; toast(e.code || e.message, "er"); });
+  }
+  function deleteUser(u, done) {
+    var F = FB.F, cms = UCOMM.filter(function (x) { return x.uid === u.uid; });
+    if (!confirm(T("Delete this user (" + (u.email || u.uid) + ") and all their data? This cannot be undone.", "এই ইউজার (" + (u.email || u.uid) + ") ও তার সব ডেটা ডিলিট করবেন? ফেরানো যাবে না।"))) return;
+    Promise.all([F.getDocs(F.collection(FB.db, "users", u.uid, "ideas")), F.getDocs(F.collection(FB.db, "users", u.uid, "appdata"))]).then(function (r) {
+      var jobs = []; r[0].forEach(function (x) { jobs.push(F.deleteDoc(x.ref)); }); r[1].forEach(function (x) { jobs.push(F.deleteDoc(x.ref)); }); cms.forEach(function (c) { jobs.push(F.deleteDoc(F.doc(FB.db, "comments", c.id))); });
+      return Promise.all(jobs);
+    }).then(function () { return F.deleteDoc(F.doc(FB.db, "users", u.uid)); }).then(function () { if (done) done(); toast(T("User deleted.", "ইউজার ডিলিট হয়েছে।"), "ok"); loadUsers(); }, function (e) { toast(e.code || e.message, "er"); });
   }
   function viewUser(u) {
     var F = FB.F, root = $("#modal-root"), ideas = UIDEAS.filter(function (x) { return x.uid === u.uid; }), cms = UCOMM.filter(function (x) { return x.uid === u.uid; });
@@ -1202,13 +1211,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       '<p class="muted" style="font-size:12px;margin-top:8px">' + T("Deleting removes their profile, ideas, saved data and comments. Their login itself stays in Firebase Authentication; remove it in the Firebase console if needed. To stop someone, use Block instead.", "ডিলিট করলে প্রোফাইল, আইডিয়া, সেভ ডেটা ও মন্তব্য মুছে যায়। লগইন অ্যাকাউন্ট Firebase Authentication-এ থেকে যায়, দরকারে কনসোল থেকে মুছুন। কাউকে থামাতে Block ব্যবহার করুন।") + '</p></div></div>';
     $("#uv-x", root).onclick = function () { root.innerHTML = ""; };
     F.getDocs(F.collection(FB.db, "users", u.uid, "appdata")).then(function (sn) { var o = {}; sn.forEach(function (x) { o[x.id] = x.data().data; }); $("#uv-data", root).textContent = Object.keys(o).length ? JSON.stringify(o, null, 2) : "-"; }, function () { $("#uv-data", root).textContent = "-"; });
-    $("#uv-del", root).onclick = function () {
-      if (!confirm(T("Delete all data of this user? This cannot be undone.", "এই ইউজারের সব ডেটা ডিলিট করবেন? ফেরানো যাবে না।"))) return;
-      Promise.all([F.getDocs(F.collection(FB.db, "users", u.uid, "ideas")), F.getDocs(F.collection(FB.db, "users", u.uid, "appdata"))]).then(function (r) {
-        var jobs = []; r[0].forEach(function (x) { jobs.push(F.deleteDoc(x.ref)); }); r[1].forEach(function (x) { jobs.push(F.deleteDoc(x.ref)); }); cms.forEach(function (c) { jobs.push(F.deleteDoc(F.doc(FB.db, "comments", c.id))); });
-        return Promise.all(jobs);
-      }).then(function () { return F.deleteDoc(F.doc(FB.db, "users", u.uid)); }).then(function () { root.innerHTML = ""; toast(T("User data deleted.", "ইউজারের ডেটা ডিলিট হয়েছে।"), "ok"); loadUsers(); }, function (e) { toast(e.code || e.message, "er"); });
-    };
+    $("#uv-del", root).onclick = function () { deleteUser(u, function () { root.innerHTML = ""; }); };
   }
   S.onUsers = function () {
     usersConn();
