@@ -786,3 +786,12 @@ body.auth-open{overflow:hidden}
 .blocked-note{background:#fef2f2;border:1px solid #f0b9b9;color:#991b1b;border-radius:12px;padding:12px 14px;font-size:14px}
 
 [hidden]{display:none!important}.account>div[hidden],.ac-head [hidden]{display:none!important}
+
+.steps-tl{list-style:none;margin:12px 0 4px;padding:0;display:grid;gap:0}
+.steps-tl li{position:relative;display:flex;gap:12px;padding:0 0 14px}
+.steps-tl li:not(:last-child):before{content:"";position:absolute;left:7px;top:16px;bottom:0;width:2px;background:var(--line-strong)}
+.steps-tl li i{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid var(--line-strong);background:var(--surface);margin-top:2px;position:relative;z-index:1}
+.steps-tl li.done i{background:var(--accent);border-color:var(--accent)}.steps-tl li.done:not(:last-child):before{background:var(--accent)}
+.steps-tl li.ok i{background:#16a34a;border-color:#16a34a}.steps-tl li.no i{background:#dc2626;border-color:#dc2626}
+.steps-tl li.todo{color:var(--muted)}.steps-tl li b{font-size:15px}.steps-tl time{font-size:12px;color:var(--muted);margin-left:6px}
+.steps-tl .step-fb{margin:3px 0 0;font-size:14px;line-height:1.5;white-space:pre-wrap;color:var(--text)}

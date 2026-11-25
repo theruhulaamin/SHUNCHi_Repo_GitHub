@@ -226,6 +226,26 @@
     return (statusCache ? Promise.resolve(statusCache) : fetch("/data/ideas-status.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : {}; }, function () { return {}; }).then(function (j) { statusCache = j; return j; })).then(function (m) { return sha256(code).then(function (h) { return m[h] || null; }); });
   }
   var SLAB = { pending: ["Pending", "পেন্ডিং"], analysis: ["Under analysis", "বিশ্লেষণ চলছে"], approved: ["Approved", "অনুমোদিত"], rejected: ["Not taken forward", "এগোনো যাচ্ছে না"] };
+
+  var STAGES = [["Received", "গৃহীত"], ["Under review", "পর্যালোচনা"], ["Decision", "সিদ্ধান্ত"]];
+  function stepsHtml(rec, bn) {
+    var h = rec.h && rec.h.length ? rec.h : [{ s: "pending", t: "", f: "" }, { s: rec.s, t: rec.t, f: rec.f }];
+    var stage = function (s) { return s === "pending" ? 0 : s === "analysis" ? 1 : 2; }, by = {};
+    h.forEach(function (e) { by[stage(e.s)] = e; });
+    if (!by[0]) by[0] = { s: "pending", t: "", f: "" };
+    var cur = stage(rec.s), out = '<ol class="steps-tl">';
+    for (var i = 0; i < 3; i++) {
+      var e = by[i], done = i <= cur && e, cls = done ? "done" + (i === cur ? " now" : "") : "todo", name = STAGES[i][bn ? 1 : 0];
+      if (i === 2 && e) { name = e.s === "approved" ? (bn ? "অনুমোদিত" : "Approved") : (bn ? "এগোনো যাচ্ছে না" : "Not taken forward"); cls += e.s === "approved" ? " ok" : " no"; }
+      out += '<li class="' + cls + '"><i></i><div><b>' + name + '</b>' + (done && e.t ? ' <time>' + String(e.t).replace(/[<>&"]/g, "") + '</time>' : "") + (done && e.f ? '<p class="step-fb"></p>' : "") + '</div></li>';
+    }
+    return out + "</ol>";
+  }
+  function fillStepFeedback(root, rec) {
+    var h = rec.h && rec.h.length ? rec.h : [{ s: "pending", f: "" }, { s: rec.s, f: rec.f }], by = {};
+    h.forEach(function (e) { by[e.s === "pending" ? 0 : e.s === "analysis" ? 1 : 2] = e; });
+    root.querySelectorAll(".steps-tl li").forEach(function (li, i) { var p = li.querySelector(".step-fb"); if (p && by[i]) p.textContent = by[i].f; });
+  }
   function download(name, obj) { var a = d.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" })); a.download = name; d.body.appendChild(a); a.click(); a.remove(); }
   function account() {
     var root = $("#account"); if (!root) return;
@@ -256,7 +276,8 @@
         statusFor(x.track).then(function (r) {
           var st = r && SLAB[r.s] ? r.s : "pending", pill = el.querySelector(".status-pill");
           pill.className = "status-pill st-" + st; pill.textContent = L(SLAB[st][0], SLAB[st][1]);
-          el.querySelector(".ic-fb").textContent = r && r.f ? L("Feedback: ", "মতামত: ") + r.f : (r ? "" : L("We received it. A status will appear after review.", "আমরা পেয়েছি। পর্যালোচনার পর স্ট্যাটাস দেখা যাবে।"));
+          var fbEl = el.querySelector(".ic-fb");
+          if (r) { fbEl.innerHTML = stepsHtml(r, bn()); fillStepFeedback(fbEl, r); } else fbEl.textContent = L("We received it. A status will appear after review.", "আমরা পেয়েছি। পর্যালোচনার পর স্ট্যাটাস দেখা যাবে।");
         });
       });
     }, function () {});

@@ -156,6 +156,26 @@
   function sha(str) { return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function (b) { return [].map.call(new Uint8Array(b), function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); }); }
   var LABEL = { pending: ["Pending", "পেন্ডিং"], analysis: ["Under analysis", "বিশ্লেষণ চলছে"], approved: ["Approved", "অনুমোদিত"], rejected: ["Not taken forward", "এগোনো যাচ্ছে না"] };
   var DEF = { pending: ["We received your idea. It is waiting for review.", "আপনার আইডিয়া পেয়েছি। পর্যালোচনার অপেক্ষায় আছে।"], analysis: ["We are looking into your idea.", "আপনার আইডিয়াটি আমরা খতিয়ে দেখছি।"], approved: ["Great news: your idea is approved.", "সুখবর: আপনার আইডিয়া অনুমোদিত হয়েছে।"], rejected: ["Sorry, we cannot take this idea forward right now.", "দুঃখিত, এই মুহূর্তে আইডিয়াটি নিয়ে এগোতে পারছি না।"] };
+
+  var STAGES = [["Received", "গৃহীত"], ["Under review", "পর্যালোচনা"], ["Decision", "সিদ্ধান্ত"]];
+  function stepsHtml(rec, bn) {
+    var h = rec.h && rec.h.length ? rec.h : [{ s: "pending", t: "", f: "" }, { s: rec.s, t: rec.t, f: rec.f }];
+    var stage = function (s) { return s === "pending" ? 0 : s === "analysis" ? 1 : 2; }, by = {};
+    h.forEach(function (e) { by[stage(e.s)] = e; });
+    if (!by[0]) by[0] = { s: "pending", t: "", f: "" };
+    var cur = stage(rec.s), out = '<ol class="steps-tl">';
+    for (var i = 0; i < 3; i++) {
+      var e = by[i], done = i <= cur && e, cls = done ? "done" + (i === cur ? " now" : "") : "todo", name = STAGES[i][bn ? 1 : 0];
+      if (i === 2 && e) { name = e.s === "approved" ? (bn ? "অনুমোদিত" : "Approved") : (bn ? "এগোনো যাচ্ছে না" : "Not taken forward"); cls += e.s === "approved" ? " ok" : " no"; }
+      out += '<li class="' + cls + '"><i></i><div><b>' + name + '</b>' + (done && e.t ? ' <time>' + String(e.t).replace(/[<>&"]/g, "") + '</time>' : "") + (done && e.f ? '<p class="step-fb"></p>' : "") + '</div></li>';
+    }
+    return out + "</ol>";
+  }
+  function fillStepFeedback(root, rec) {
+    var h = rec.h && rec.h.length ? rec.h : [{ s: "pending", f: "" }, { s: rec.s, f: rec.f }], by = {};
+    h.forEach(function (e) { by[e.s === "pending" ? 0 : e.s === "analysis" ? 1 : 2] = e; });
+    root.querySelectorAll(".steps-tl li").forEach(function (li, i) { var p = li.querySelector(".step-fb"); if (p && by[i]) p.textContent = by[i].f; });
+  }
   function show(cls, html) { out.className = "status-out " + cls; out.innerHTML = html; }
   f.addEventListener("submit", function (e) {
     e.preventDefault();
@@ -167,8 +187,9 @@
       if (!rec) { show("wait", bn() ? "এই নম্বরে এখনো কোনো আপডেট নেই। নম্বরটি ঠিক আছে কিনা দেখুন। নতুন পাঠানো আইডিয়া হলে কয়েক ঘণ্টা পরে আবার দেখুন।" : "No update for this number yet. Check the number. If you just sent the idea, look again in a few hours."); return; }
       var st = LABEL[rec.s] ? rec.s : "pending", i = bn() ? 1 : 0;
       var fb = rec.f ? rec.f : DEF[st][i];
-      show(st, '<span class="status-pill st-' + st + '">' + LABEL[st][i] + '</span><p class="status-fb"></p><small>' + (rec.t ? (bn() ? "সর্বশেষ আপডেট: " : "Last update: ") + rec.t : "") + '</small>');
-      out.querySelector(".status-fb").textContent = fb;
+      show(st, '<span class="status-pill st-' + st + '">' + LABEL[st][i] + '</span>' + stepsHtml(rec, bn()) + '<p class="status-fb"></p><small>' + (rec.t ? (bn() ? "সর্বশেষ আপডেট: " : "Last update: ") + rec.t : "") + '</small>');
+      fillStepFeedback(out, rec);
+      var latest = rec.h && rec.h.length ? rec.h[rec.h.length - 1].f : rec.f; out.querySelector(".status-fb").textContent = latest ? "" : fb;
     });
   });
 })();

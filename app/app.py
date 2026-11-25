@@ -1223,6 +1223,7 @@ class AccountService:
             rec = status.get(hashlib.sha256(idea.get("track", "").encode("utf-8")).hexdigest())
             idea["status"] = (rec or {}).get("s", "pending")
             idea["feedback"] = (rec or {}).get("f", "")
+            idea["steps"] = [(e.get("s", ""), e.get("t", "")) for e in (rec or {}).get("h", [])]
         return ideas
 
 
@@ -3234,6 +3235,9 @@ class AccountPage(QWidget):
             label = QLabel(f"<b>{html_escape(idea.get('title', ''))}</b> &nbsp; <span style='color:{C_PRIMARY_DARK}'>"
                            f"{html_escape(T(STATUS_LABEL.get(idea.get('status'), 'Pending')))}</span><br>"
                            f"<span style='color:{C_MUTED}'>{html_escape(idea.get('track', ''))}</span>"
+                           + ("<br><span style='color:%s'>%s</span>" % (C_MUTED, " → ".join(
+                               html_escape(T(STATUS_LABEL.get(st, st))) + (f" ({html_escape(dt)})" if dt else "") for st, dt in idea.get("steps", [])))
+                              if idea.get("steps") else "")
                            + (f"<br>{html_escape(idea.get('feedback', ''))}" if idea.get("feedback") else ""))
             label.setWordWrap(True)
             label.setTextFormat(Qt.RichText)

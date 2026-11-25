@@ -955,12 +955,19 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     return sha256hex(x.track).then(function (h) {
       return getFile(STATUS_FILE).catch(function (e) { if (e.status === 404) return { text: "{}", sha: null }; throw e; }).then(function (f) {
         var m = {}; try { m = JSON.parse(f.text || "{}") || {}; } catch (e) {}
-        if (rec) m[h] = rec; else delete m[h];
+        if (rec) m[h] = typeof rec === "function" ? rec(m[h]) : rec; else delete m[h];
         return putText(STATUS_FILE, JSON.stringify(m), "Idea status update", f.sha).then(function () { published = m; return true; });
       }).catch(function (e) { if (!retry && (e.status === 409 || e.status === 422)) return publishIdea(x, rec, true); throw e; });
     });
   }
-  function pubRec(x, st) { return { s: st, f: x.fb || "", t: today() }; }
+  /* one record per idea: latest status + feedback, and h = every step so far (status, date, feedback of that step) */
+  function pubRec(x, st) {
+    return function (old) {
+      var h = old && old.h ? old.h.slice() : [{ s: "pending", t: String(x.at || "").slice(0, 10) || today(), f: "" }], last = h[h.length - 1];
+      if (!last || last.s !== st) h.push({ s: st, t: today(), f: x.fb || "" }); else { last.f = x.fb || ""; last.t = today(); }
+      return { s: st, f: x.fb || "", t: today(), h: h };
+    };
+  }
   function ensureKey() {
     var box = $("#ideas-key"); if (!box) return;
     var has = !!privKey();
@@ -1049,7 +1056,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   function setIdeaStatus(x, st, reply) {
     var body = { labels: ["status:" + st], state: (st === "approved" || st === "rejected") ? "closed" : "open" };
     return ghIdeas("/issues/" + x.n, { method: "PATCH", body: body }).then(function () {
-      x.status = st; x.closed = body.state === "closed";
+      x.status = st; x.closed = body.state === "closed"; x.fb = "";
       publishIdea(x, pubRec(x, st)).catch(function (e) { toast(T("Status saved, but the website status page was not updated: ", "স্ট্যাটাস সেভ হয়েছে, কিন্তু ওয়েবসাইটের স্ট্যাটাস পেজ আপডেট হয়নি: ") + errText(e), "er"); });
       if (reply && reply.text) return ghIdeas("/issues/" + x.n + "/comments", { method: "POST", body: { body: "**Reply (" + st + ") sent to " + (ideaTo(x) || "-") + ":**\n\n" + reply.text } }).catch(function () {});
     });
