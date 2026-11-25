@@ -2258,7 +2258,8 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       while (tries++ < 45) {
         await sleep(6000);
         var runs = await gh("/actions/runs?event=release&per_page=5").then(function (j) { return j.workflow_runs || []; }, function () { return []; });
-        var run = runs.filter(function (r) { return r.head_branch === myTag || new Date(r.created_at).getTime() >= pubAt - 60000; })[0];
+        /* Only the "Release update" workflow counts. Other workflows also start on a release (e.g. Download stats) and must not decide success or failure here. */
+        var run = runs.filter(function (r) { return ((r.path || "").indexOf("release.yml") >= 0 || r.name === "Release update") && (r.head_branch === myTag || new Date(r.created_at).getTime() >= pubAt - 60000); })[0];
         if (run) { if (run.status === "completed") { if (run.conclusion !== "success") throw Object.assign(new Error(T("The GitHub Action failed. Open Actions on GitHub to see why (usually a missing file).", "GitHub Action ব্যর্থ হয়েছে। কারণ দেখতে GitHub Actions খুলুন (সাধারণত ফাইল কম)।")), { stop: true, actions: true }); actOk = true; break; } ph("act", "run", T("Running…", "চলছে…")); }
       }
       if (!actOk) { ph("act", "er", T("Still waiting. It may finish soon, check the Actions page.", "এখনো চলছে। Actions পেজে দেখুন।")); }
