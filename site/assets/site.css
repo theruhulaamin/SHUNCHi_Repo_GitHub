@@ -664,3 +664,4 @@ html,body{max-width:100%}
 .dl-notes{margin-top:16px;border-top:1px solid var(--line,#e3e8f2);padding-top:14px}.dl-notes summary{cursor:pointer;font-weight:700}.dl-notes ul{margin:10px 0 0 18px;padding:0;display:grid;gap:6px;font-size:15px;line-height:1.55}
 html[lang="bn"] .dl-notes ul.en,html[lang="en"] .dl-notes ul.bn{display:none}
 @media(max-width:600px){.dl-card{padding:18px;border-radius:18px}.dl-main{font-size:17px}}
+.dl-main small{font-size:.8em;font-weight:500;opacity:.85;margin-left:6px}

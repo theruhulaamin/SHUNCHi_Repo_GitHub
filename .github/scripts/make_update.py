@@ -30,6 +30,13 @@ if full and not slug:
         for chunk in iter(lambda: r.read(1 << 20), b""):
             h.update(chunk); size += len(chunk)
     data["installer_sha256"] = h.hexdigest(); data["installer_size"] = size
+if web and not slug:
+    try:
+        n = 0
+        with urllib.request.urlopen(urllib.request.Request(web, headers={"User-Agent": "shunchi-release"}), timeout=120) as r:
+            for chunk in iter(lambda: r.read(1 << 20), b""): n += len(chunk)
+        data["web_installer_size"] = n
+    except Exception: pass
 if not slug and not (full and web):
     raise SystemExit("A SHUNCHi release needs BOTH SHUNCHi_Setup_<version>.exe and SHUNCHi_Setup.exe attached.")
 if slug:

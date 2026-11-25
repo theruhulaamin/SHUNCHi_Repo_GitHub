@@ -46,7 +46,7 @@
   <div class="dl-card">
     <div class="dl-top"><h2>SHUNCHi <span id="v">4.4.0</span></h2><span class="dl-date" id="date"></span></div>
     <div class="dl-actions">
-      <a class="btn btn-primary dl-main" id="get" href="#" hidden><span class="en">Download for Windows</span><span class="bn">উইন্ডোজের জন্য ডাউনলোড করুন</span></a>
+      <a class="btn btn-primary dl-main" id="get" href="#" hidden><span class="en">Download for Windows</span><span class="bn">উইন্ডোজের জন্য ডাউনলোড করুন</span> <small id="wsize"></small></a>
       <p class="dl-sub" id="full" hidden><span class="en">Prefer the full offline installer?</span><span class="bn">পুরো অফলাইন ইনস্টলার চান?</span> <a id="full-link" href="#"><span class="en">Download it here</span><span class="bn">এখান থেকে নামান</span></a> <span id="size"></span></p>
     </div>
     <p class="dl-sub" id="soon"><span class="en">The installer will appear here as soon as the first release is published.</span><span class="bn">প্রথম রিলিজ প্রকাশ হলেই ইনস্টলার এখানে পাওয়া যাবে।</span></p>
@@ -96,10 +96,11 @@
     var main = web || fullUrl;
     if (main) {
       var get = document.getElementById("get"); get.href = main; get.hidden = false;
+      if (web && m.web_installer_size) document.getElementById("wsize").textContent = "(" + (m.web_installer_size / 1048576).toFixed(1).replace(/\.0$/, "") + " MB)";
       document.getElementById("soon").hidden = true;
       if (web && fullUrl) {
         document.getElementById("full-link").href = fullUrl; document.getElementById("full").hidden = false;
-        if (m.installer_size) document.getElementById("size").textContent = "(" + Math.round(m.installer_size / 1048576) + " MB)";
+        if (m.installer_size) document.getElementById("size").textContent = "(" + (m.installer_size / 1048576).toFixed(1).replace(/\.0$/, "") + " MB)";
       }
       if (location.hash === "#start") {
         document.getElementById("started").hidden = false;
