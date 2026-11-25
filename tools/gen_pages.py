@@ -166,8 +166,8 @@ def tabbar(P):
       + t(f"{P}index.html#setup", "setup", "Setup", "সেটআপ", '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>')
       + t(f"{P}apps/index.html", "apps", "Apps", "অ্যাপ", '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>')
       + t(f"{P}blog/index.html", "blog", "Blog", "ব্লগ", '<path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h8M8 17h5"/>')
-      + t(f"{P}index.html#faq", "faq", "FAQ", "প্রশ্ন", '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.01"/>')
-      + t(f"{P}index.html#developer", "dev", "Dev. Info", "ডেভ ইনফো", '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/>')
+      + t(f"{P}index.html#developer", "dev", "Dev. Info", "ডেভ ইনফো", '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>')
+      + t(f"{P}account/index.html", "profile", "Profile", "প্রোফাইল", '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/>')
       + t(f"{P}download/index.html", "download", "Download", "ডাউনলোড", '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>')
       + '</nav>\n')
 
@@ -535,7 +535,7 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
 </div></section>
 </main>
 ''' + footer("") + '''<script src="assets/catalog.js?v=28" data-base=""></script>
-<script src="assets/site.js?v=30"></script>
+<script src="assets/site.js?v=31"></script>
 <script>
 (function () {
   function drawApps() { renderApps(document.getElementById("app-list"), 4); }
@@ -584,7 +584,7 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 <section><div class="wrap">''' + SUGGEST_FORM + '''</div></section>
 </main>
 ''' + footer("../") + '''<script src="../assets/catalog.js?v=28" data-base="../"></script>
-<script src="../assets/site.js?v=30"></script>
+<script src="../assets/site.js?v=31"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
@@ -624,7 +624,7 @@ tmpl = head("../", "Tool name | SHUNCHi", "One sentence about the tool.", "apps/
   <div class="dl-card" id="tool-area"><p><span class="en">Build the tool here.</span><span class="bn">টুলটি এখানে বানান।</span></p></div>
 </div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=30"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=31"></script>
 </body>
 </html>
 '''
@@ -667,7 +667,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   </div>
 </div>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=30"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=31"></script>
 <script>
 (function () {
   if (!window.fetch) return;
@@ -703,38 +703,100 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
 write("download/index.html", dl)
 
 # ====================================================================== ACCOUNT PAGE (not in sitemap)
+def _ic(d): return '<svg viewBox="0 0 24 24" aria-hidden="true">' + d + '</svg>'
+AC_NAV = [
+    ("profile", "Profile", "প্রোফাইল", '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/>'),
+    ("ideas", "My ideas", "আমার আইডিয়া", '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>'),
+    ("data", "Saved data", "সেভ ডেটা", '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>'),
+    ("comments", "Comments", "মন্তব্য", '<path d="M4 5h16v11H9l-5 4z"/>'),
+    ("security", "Security", "নিরাপত্তা", '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+]
+ac_nav = "".join(f'<button type="button" role="tab" data-pane="{k}">{_ic(d)}<span class="en">{en}</span><span class="bn">{bn}</span></button>' for k, en, bn, d in AC_NAV)
 acc = head("../", "My account | SHUNCHi", "Your SHUNCHi profile, ideas and saved data.", "account/", robots="noindex,nofollow") + header("../") + '''
-<main id="main">
-<div class="wrap page-head"><h1><span class="en">My account</span><span class="bn">আমার অ্যাকাউন্ট</span></h1></div>
+<main id="main" class="account-main">
 <section class="wrap account" id="account" data-needs-auth>
-  <div id="acct-guest"><div class="acct-card"><h3><span class="en">Log in to see your profile</span><span class="bn">প্রোফাইল দেখতে লগইন করুন</span></h3>
-    <p class="muted"><span class="en">An account is optional. It keeps your ideas with their status, your details for quick filling, and your data in the upcoming tools.</span><span class="bn">অ্যাকাউন্ট ঐচ্ছিক। এটি আপনার আইডিয়া ও স্ট্যাটাস, দ্রুত পূরণের তথ্য এবং আসন্ন টুলগুলোর ডেটা সংরক্ষণ করে।</span></p>
-    <div class="row"><button type="button" class="btn btn-primary" data-open-auth="login"><span class="en">Log in</span><span class="bn">লগইন</span></button><button type="button" class="btn btn-ghost" data-open-auth="signup"><span class="en">Sign up</span><span class="bn">সাইন আপ</span></button></div></div></div>
+  <div id="acct-guest" class="ac-guest"><div class="ag-card">
+    <div class="ag-ico">''' + _ic('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/>') + '''</div>
+    <h1><span class="en">Your SHUNCHi account</span><span class="bn">আপনার SHUNCHi অ্যাকাউন্ট</span></h1>
+    <p class="muted"><span class="en">Free and optional. Keep your ideas with their progress, fill forms faster and save data from the upcoming tools.</span><span class="bn">ফ্রি ও ঐচ্ছিক। আইডিয়ার অগ্রগতি দেখুন, ফর্ম দ্রুত পূরণ করুন এবং আসন্ন টুলের ডেটা সেভ রাখুন।</span></p>
+    <ul class="ag-list"><li><span class="en">Track every idea step by step</span><span class="bn">প্রতিটি আইডিয়া ধাপে ধাপে ট্র্যাক করুন</span></li><li><span class="en">Comment on blog posts</span><span class="bn">ব্লগে মন্তব্য করুন</span></li><li><span class="en">Autofill your details in forms</span><span class="bn">ফর্মে তথ্য অটো-ফিল করুন</span></li></ul>
+    <div class="ag-act"><button type="button" class="btn btn-primary" data-open-auth="login"><span class="en">Log in</span><span class="bn">লগইন</span></button><button type="button" class="btn btn-ghost" data-open-auth="signup"><span class="en">Create account</span><span class="bn">অ্যাকাউন্ট খুলুন</span></button></div>
+  </div></div>
+
   <div id="acct-body" hidden>
-    <div class="acct-card ac-head"><i class="ac-av" id="ac-av"></i><div><h2 id="ac-name"></h2><p class="muted" id="ac-mail"></p>
-      <p class="muted"><span class="en">Member since</span><span class="bn">সদস্য হয়েছেন</span> <span id="ac-since"></span> <span class="status-pill st-approved" id="ac-ver-ok" hidden><span class="en">Email verified</span><span class="bn">ইমেইল ভেরিফাইড</span></span> <button type="button" class="au-link" id="ac-ver" hidden><span class="en">Verify email</span><span class="bn">ইমেইল ভেরিফাই করুন</span></button></p></div>
-      <button type="button" class="btn btn-ghost btn-sm" id="ac-out"><span class="en">Log out</span><span class="bn">লগআউট</span></button></div>
-    <div class="acct-card"><h3><span class="en">My details</span><span class="bn">আমার তথ্য</span></h3>
-      <p class="muted"><span class="en">Used by the “fill my details” button in the idea form.</span><span class="bn">আইডিয়া ফর্মের “তথ্য বসান” বাটনে এগুলো ব্যবহার হয়।</span></p>
-      <form id="ac-form" class="ac-form" novalidate>
-        <label><span><span class="en">Name</span><span class="bn">নাম</span></span><input name="name" maxlength="60" autocomplete="name"></label>
-        <label><span><span class="en">Email</span><span class="bn">ইমেইল</span></span><input name="email" disabled></label>
-        <label><span><span class="en">Phone</span><span class="bn">ফোন</span></span><input name="phone" type="tel" maxlength="30" autocomplete="tel"></label>
-        <label><span><span class="en">Address</span><span class="bn">ঠিকানা</span></span><input name="address" maxlength="160" autocomplete="street-address"></label>
-        <div class="c-act"><button class="btn btn-primary btn-sm" type="submit"><span class="en">Save</span><span class="bn">সেভ</span></button><span class="auth-msg" id="ac-msg" role="status"></span></div></form></div>
-    <div class="acct-card"><h3><span class="en">My ideas</span><span class="bn">আমার আইডিয়া</span> <small id="ac-ideas-n"></small></h3><div id="ac-ideas"></div></div>
-    <div class="acct-card"><h3><span class="en">Saved data from tools</span><span class="bn">টুলের সেভ করা ডেটা</span></h3><div id="ac-data"></div></div>
-    <div class="acct-card"><h3><span class="en">My comments</span><span class="bn">আমার মন্তব্য</span></h3><div id="ac-comments"></div></div>
-    <div class="acct-card"><h3><span class="en">Security and privacy</span><span class="bn">নিরাপত্তা ও গোপনীয়তা</span></h3>
-      <div class="row"><button type="button" class="btn btn-ghost btn-sm" id="ac-reset"><span class="en">Email me a password reset link</span><span class="bn">পাসওয়ার্ড রিসেট লিংক ইমেইল করুন</span></button>
-      <button type="button" class="btn btn-ghost btn-sm" id="ac-export"><span class="en">Download my data</span><span class="bn">আমার ডেটা ডাউনলোড</span></button>
-      <button type="button" class="btn btn-ghost btn-sm danger" id="ac-del"><span class="en">Delete my account</span><span class="bn">অ্যাকাউন্ট ডিলিট</span></button></div><p class="auth-msg" id="ac-pw-msg"></p></div>
+    <div class="ac-verify" id="ac-verify" hidden><div><b><span class="en">Verify your email</span><span class="bn">ইমেইল ভেরিফাই করুন</span></b><span class="muted"><span class="en">We sent a link to your inbox. You need it to comment.</span><span class="bn">ইনবক্সে একটি লিংক পাঠানো হয়েছে। মন্তব্য করতে এটি লাগবে।</span></span></div>
+      <div class="row"><button type="button" class="btn btn-sm btn-primary" id="ac-ver"><span class="en">Resend link</span><span class="bn">আবার পাঠান</span></button><button type="button" class="btn btn-sm btn-ghost" id="ac-ver-chk"><span class="en">I have verified</span><span class="bn">ভেরিফাই করেছি</span></button></div></div>
+
+    <header class="ac-hero">
+      <div class="ac-cover" aria-hidden="true"></div>
+      <div class="ac-id">
+        <i class="ac-av" id="ac-av"></i>
+        <div class="ac-who"><h1 id="ac-name"></h1><p id="ac-mail"></p>
+          <div class="ac-badges"><span class="chip-v ok" id="ac-ver-ok" hidden>''' + _ic('<path d="M5 12l4 4 10-10"/>') + '''<span class="en">Email verified</span><span class="bn">ইমেইল ভেরিফাইড</span></span><span class="chip-v" id="ac-prov"></span></div></div>
+        <button type="button" class="btn btn-ghost btn-sm ac-out" id="ac-out"><span class="en">Log out</span><span class="bn">লগআউট</span></button>
+      </div>
+      <div class="ac-stats">
+        <div><b id="st-ideas">0</b><span><span class="en">Ideas</span><span class="bn">আইডিয়া</span></span></div>
+        <div><b id="st-comments">0</b><span><span class="en">Comments</span><span class="bn">মন্তব্য</span></span></div>
+        <div><b id="st-data">0</b><span><span class="en">Saved data</span><span class="bn">সেভ ডেটা</span></span></div>
+        <div><b id="ac-since">-</b><span><span class="en">Member since</span><span class="bn">সদস্য</span></span></div>
+      </div>
+    </header>
+
+    <div class="ac-layout">
+      <nav class="ac-nav" role="tablist" aria-label="Account">''' + ac_nav + '''</nav>
+      <div class="ac-panes">
+
+        <section class="ac-pane" data-pane="profile">
+          <div class="acct-card"><h2><span class="en">Personal details</span><span class="bn">ব্যক্তিগত তথ্য</span></h2>
+            <p class="muted"><span class="en">Used by “Fill my details” in the idea form. Only you and the site admin can see them.</span><span class="bn">আইডিয়া ফর্মের “তথ্য বসান” বাটনে ব্যবহার হয়। শুধু আপনি ও সাইটের অ্যাডমিন দেখতে পারেন।</span></p>
+            <form id="ac-form" class="ac-form" novalidate>
+              <label><span><span class="en">Full name</span><span class="bn">পুরো নাম</span></span><input name="name" maxlength="60" autocomplete="name"></label>
+              <label><span><span class="en">Email</span><span class="bn">ইমেইল</span></span><input name="email" disabled></label>
+              <label><span><span class="en">Phone</span><span class="bn">ফোন</span></span><input name="phone" type="tel" maxlength="30" autocomplete="tel" inputmode="tel"></label>
+              <label><span><span class="en">Address</span><span class="bn">ঠিকানা</span></span><input name="address" maxlength="160" autocomplete="street-address"></label>
+              <div class="c-act"><button class="btn btn-primary" type="submit"><span class="en">Save changes</span><span class="bn">সেভ করুন</span></button><span class="auth-msg" id="ac-msg" role="status"></span></div></form></div>
+        </section>
+
+        <section class="ac-pane" data-pane="ideas" hidden>
+          <div class="acct-card">
+            <div class="pane-h"><div><h2><span class="en">My ideas</span><span class="bn">আমার আইডিয়া</span> <small id="ac-ideas-n"></small></h2><p class="muted"><span class="en">Every idea you send, with its progress and our feedback.</span><span class="bn">আপনার পাঠানো প্রতিটি আইডিয়া, অগ্রগতি ও আমাদের মতামতসহ।</span></p></div>
+              <button type="button" class="btn btn-primary btn-sm" id="ai-new">''' + _ic('<path d="M12 5v14M5 12h14"/>') + '''<span class="en">New idea</span><span class="bn">নতুন আইডিয়া</span></button></div>
+            <form class="ai-form" id="ai-form" hidden novalidate>
+              <div class="ai-need" id="ai-need" hidden><span class="en">Add your phone and address in Profile first. They go with your idea so we can reach you.</span><span class="bn">আগে প্রোফাইলে ফোন ও ঠিকানা দিন। যোগাযোগের জন্য এগুলো আইডিয়ার সাথে যায়।</span> <button type="button" class="au-link" data-goto="profile"><span class="en">Open Profile</span><span class="bn">প্রোফাইল খুলুন</span></button></div>
+              <label><span><span class="en">I want a</span><span class="bn">আমি চাই</span></span><select name="type"><option value="Free tool">Free web tool · ফ্রি ওয়েব টুল</option><option value="Windows app">Windows app · উইন্ডোজ অ্যাপ</option><option value="SHUNCHi feature">SHUNCHi feature · SHUNCHi ফিচার</option><option value="Other">Other · অন্যান্য</option></select></label>
+              <label><span><span class="en">Idea name</span><span class="bn">আইডিয়ার নাম</span></span><input name="title" maxlength="80" required></label>
+              <label class="full"><span><span class="en">What should it do?</span><span class="bn">এটি কী কাজ করবে?</span></span><textarea name="details" rows="4" maxlength="1200" required></textarea></label>
+              <div class="c-act full"><button class="btn btn-primary" type="submit"><span class="en">Send idea</span><span class="bn">আইডিয়া পাঠান</span></button><button class="btn btn-ghost" type="button" id="ai-cancel"><span class="en">Cancel</span><span class="bn">বাতিল</span></button><span class="auth-msg" id="ai-msg" role="status"></span></div></form>
+            <div id="ac-ideas" class="ideas-list"></div></div>
+        </section>
+
+        <section class="ac-pane" data-pane="data" hidden>
+          <div class="acct-card"><h2><span class="en">Saved data from tools</span><span class="bn">টুলের সেভ করা ডেটা</span></h2><p class="muted"><span class="en">Data your future tools keep for you, so you can pick up where you left off.</span><span class="bn">আসন্ন টুলগুলো আপনার জন্য যা সেভ রাখবে, যাতে পরে আবার চালিয়ে নিতে পারেন।</span></p><div id="ac-data"></div></div>
+        </section>
+
+        <section class="ac-pane" data-pane="comments" hidden>
+          <div class="acct-card"><h2><span class="en">My comments</span><span class="bn">আমার মন্তব্য</span></h2><div id="ac-comments"></div></div>
+        </section>
+
+        <section class="ac-pane" data-pane="security" hidden>
+          <div class="acct-card"><h2><span class="en">Sign-in methods</span><span class="bn">সাইন-ইন পদ্ধতি</span></h2><div id="ac-methods" class="methods"></div></div>
+          <div class="acct-card"><h2 id="pw-title"></h2><p class="muted" id="pw-help"></p>
+            <form id="pw-form" class="ac-form" novalidate>
+              <label id="pw-cur-wrap" hidden><span><span class="en">Current password</span><span class="bn">বর্তমান পাসওয়ার্ড</span></span><input name="cur" type="password" autocomplete="current-password"></label>
+              <label><span><span class="en">New password</span><span class="bn">নতুন পাসওয়ার্ড</span></span><input name="pw" type="password" minlength="6" maxlength="100" autocomplete="new-password"></label>
+              <label><span><span class="en">Confirm password</span><span class="bn">পাসওয়ার্ড আবার দিন</span></span><input name="pw2" type="password" minlength="6" maxlength="100" autocomplete="new-password"></label>
+              <div class="c-act"><button class="btn btn-primary" type="submit" id="pw-go"></button><span class="auth-msg" id="pw-msg" role="status"></span></div></form></div>
+          <div class="acct-card"><h2><span class="en">Your data</span><span class="bn">আপনার ডেটা</span></h2><div class="row"><button type="button" class="btn btn-ghost btn-sm" id="ac-export"><span class="en">Download my data</span><span class="bn">আমার ডেটা ডাউনলোড</span></button></div></div>
+          <div class="acct-card danger-zone"><h2><span class="en">Delete account</span><span class="bn">অ্যাকাউন্ট ডিলিট</span></h2><p class="muted"><span class="en">Removes your profile, ideas, saved data and comments for good.</span><span class="bn">প্রোফাইল, আইডিয়া, সেভ ডেটা ও মন্তব্য চিরতরে মুছে যাবে।</span></p><div class="row"><button type="button" class="btn btn-ghost btn-sm danger" id="ac-del"><span class="en">Delete my account</span><span class="bn">অ্যাকাউন্ট ডিলিট করুন</span></button></div></div>
+        </section>
+      </div>
+    </div>
   </div>
 </section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=31"></script>\n</body>\n</html>\n'
 write("account/index.html", acc)
-
 
 # ====================================================================== PRIVACY
 reg("privacy.html", "0.3", "yearly")
@@ -767,7 +829,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/site.js?v=30"></script>
+''' + footer("") + '''<script src="assets/site.js?v=31"></script>
 </body>
 </html>
 '''
@@ -783,7 +845,7 @@ nf = head("/", "Page not found | SHUNCHi", "This page does not exist.", "404.htm
   <p><span class="en">The link may be old or mistyped.</span><span class="bn">লিংকটি পুরনো বা ভুল হতে পারে।</span></p>
   <p style="margin-top:22px"><a class="btn btn-primary" href="/index.html"><span class="en">Back to home</span><span class="bn">হোমে ফিরুন</span></a></p>
 </div></main>
-''' + footer("/") + '<script src="/assets/site.js?v=30"></script>\n</body>\n</html>\n'
+''' + footer("/") + '<script src="/assets/site.js?v=31"></script>\n</body>\n</html>\n'
 write("404.html", nf)
 print("pages written")
 
@@ -832,12 +894,15 @@ for p in POSTS:
   <div class="c-gate" id="c-gate"><p><span class="en">You need an account to comment. It takes a minute and it is free.</span><span class="bn">মন্তব্য করতে অ্যাকাউন্ট লাগবে। এক মিনিটে ফ্রিতে খোলা যায়।</span></p>
     <button type="button" class="btn btn-primary btn-sm" id="c-signup"><span class="en">Create account</span><span class="bn">অ্যাকাউন্ট খুলুন</span></button>
     <button type="button" class="btn btn-ghost btn-sm" id="c-login"><span class="en">Log in</span><span class="bn">লগইন</span></button></div>
+  <div class="c-gate" id="c-verify" hidden><p><span class="en">Verify your email to comment. We sent you a link.</span><span class="bn">মন্তব্য করতে ইমেইল ভেরিফাই করুন। আপনাকে একটি লিংক পাঠানো হয়েছে।</span></p>
+    <button type="button" class="btn btn-primary btn-sm" id="c-resend"><span class="en">Resend link</span><span class="bn">আবার পাঠান</span></button>
+    <button type="button" class="btn btn-ghost btn-sm" id="c-recheck"><span class="en">I have verified</span><span class="bn">ভেরিফাই করেছি</span></button></div>
   <form class="c-form" id="c-form" hidden><textarea name="text" rows="3" maxlength="1000" required aria-label="Comment"></textarea>
     <div class="c-act"><button class="btn btn-primary btn-sm" type="submit"><span class="en">Post comment</span><span class="bn">মন্তব্য করুন</span></button><span class="auth-msg err" id="c-msg"></span></div></form>
 </section>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=31"></script>\n</body>\n</html>\n'
     write(url, page)
 
 reg("blog/", "0.8", "weekly", POSTS[0]["date"] if POSTS else TODAY)
@@ -856,7 +921,7 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
 </div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=31"></script>\n</body>\n</html>\n'
 write("blog/index.html", blog_index)
 
 
@@ -878,7 +943,7 @@ if VIDEOS_JSON:
 </div>
 <section style="padding-top:28px"><div class="wrap"><div class="vids all">{"".join(video_card(v) for v in VIDEOS_JSON)}</div></div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=31"></script>\n</body>\n</html>\n'
     write("videos/index.html", vpage)
 
 # RSS feed
@@ -919,7 +984,7 @@ for a in APPS_JSON:
     {dlbtn}</div>
 </div>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=31"></script>\n</body>\n</html>\n'
     write(url, page)
 
 # ====================================================================== SITEMAP + ROBOTS

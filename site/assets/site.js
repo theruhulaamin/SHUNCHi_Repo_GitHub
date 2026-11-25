@@ -36,11 +36,12 @@
   var path = location.pathname.replace(/index\.html$/, "");
   function mark(key) { tabs.forEach(function (a) { a.classList.toggle("on", a.getAttribute("data-tab") === key); }); }
   if (/\/apps\/?/.test(path)) return mark("apps");
+  if (/\/account\/?/.test(path)) return mark("profile");
   if (/\/download\/?/.test(path)) return mark("download");
   if (/\/blog\//.test(path)) return mark("blog");
   var home = /\/(privacy\.html)?$/.test(path) && !/privacy/.test(path);
   if (!home || !("IntersectionObserver" in window)) return mark(home ? "home" : "");
-  var map = { setup: "setup", apps: "apps", faq: "faq", developer: "dev" }, current = "home";
+  var map = { setup: "setup", apps: "apps", faq: "home", developer: "dev" }, current = "home";
   mark("home");
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) { if (e.isIntersecting) { current = map[e.target.id]; mark(current); } });
@@ -68,15 +69,10 @@
   sync();
 })();
 
-/* Idea form. Order: 1) our own private GitHub inbox  2) FormSubmit  3) the visitor's mail app.
-   Personal details (name, email, phone, address) are encrypted in the browser with the developer's public key,
-   so nobody who can read the inbox without the private key sees them. Each idea gets a tracking number. */
+/* Idea sender, shared by the idea form and the profile page. Order: 1) our private GitHub inbox  2) FormSubmit.
+   Name, email, phone and address are encrypted in the browser with the developer's public key. Each idea gets a tracking number. */
 (function () {
-  var form = document.getElementById("suggest-form"); if (!form) return;
-  var msg = document.getElementById("suggest-msg"), btn = form.querySelector("button[type=submit]");
   var TO = "ruhulaaminn@gmail.com", ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  function bn() { return document.documentElement.lang === "bn"; }
-  function say(en, b, ok) { msg.textContent = bn() ? b : en; msg.className = "suggest-msg " + (ok ? "ok" : "err"); }
   function newCode() { var a = new Uint8Array(8); crypto.getRandomValues(a); var c = "SH-"; for (var i = 0; i < 8; i++) c += ALPHA[a[i] % 32]; return c; }
   function b64(buf) { var b = new Uint8Array(buf), s = ""; for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); }
   function encryptPII(jwk, obj) {
@@ -86,6 +82,49 @@
       return Promise.all(parts);
     });
   }
+  /* d = {type,title,details,name,email,phone,address}. Resolves {code}. Rejects if nothing could send it. */
+  function send(d) {
+    var code = newCode(), lang = document.documentElement.lang;
+    var payload = { _subject: "SHUNCHi idea " + code + ": " + d.title, _template: "table", _captcha: "false", Tracking: code, Type: d.type, Idea: d.title, Details: d.details, Name: d.name, Email: d.email, Phone: d.phone, Address: d.address, Contact: d.email + " · " + d.phone, Language: lang, Page: location.href };
+    var ctl = window.AbortController ? new AbortController() : null, timer = setTimeout(function () { if (ctl) ctl.abort(); }, 20000);
+    function viaFormSubmit() {
+      return fetch("https://formsubmit.co/ajax/" + TO, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload), signal: ctl ? ctl.signal : undefined })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) throw new Error((j && j.message) || ("HTTP " + r.status)); }); });
+    }
+    function viaGitHub() {
+      return Promise.all([
+        fetch("/data/ideas-config.json", { cache: "no-store" }).then(function (r) { return r.json(); }),
+        fetch("/data/ideas-key.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
+      ]).then(function (x) {
+        var cfg = x[0], jwk = x[1];
+        if (!cfg || !cfg.repo || !cfg.token) throw new Error("inbox not configured");
+        var meta = { Type: d.type, Idea: d.title, Details: d.details, Language: lang, Page: payload.Page, Source: "Website", Track: code };
+        var pii = { Name: d.name, Email: d.email, Phone: d.phone, Address: d.address };
+        var lock = jwk && jwk.n && jwk.e ? encryptPII(jwk, pii) : Promise.resolve(null);
+        return lock.then(function (enc) {
+          if (enc) meta.enc = enc; else for (var k in pii) meta[k] = pii[k];
+          var head = "**Tracking:** " + code + "\n**Type:** " + d.type + "\n**Language:** " + lang + "\n" + (enc ? "**Personal details:** encrypted\n" : "**Name:** " + d.name + "\n**Email:** " + d.email + "\n**Phone:** " + d.phone + "\n**Address:** " + d.address + "\n");
+          var text = head + "\n" + d.details + "\n\n<!--shunchi:" + JSON.stringify(meta).replace(/>/g, "\\u003e") + "-->";
+          return fetch("https://api.github.com/repos/" + cfg.repo + "/issues", {
+            method: "POST", headers: { "Authorization": "Bearer " + cfg.token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
+            body: JSON.stringify({ title: ("[" + code + "] " + d.title).slice(0, 120), body: text }), signal: ctl ? ctl.signal : undefined
+          });
+        }).then(function (r) { if (r.status !== 201) throw new Error("GitHub HTTP " + r.status); });
+      });
+    }
+    return viaGitHub().catch(function (er) { try { console.warn("Inbox:", er && er.message); } catch (x) {} return viaFormSubmit(); })
+      .then(function () { clearTimeout(timer); try { document.dispatchEvent(new CustomEvent("shunchi:idea", { detail: { track: code, title: d.title, details: d.details, type: d.type } })); } catch (x) {} return { code: code, payload: payload }; },
+            function (e) { clearTimeout(timer); e.code0 = code; e.payload = payload; throw e; });
+  }
+  window.SHIdea = { send: send };
+})();
+
+/* Idea form on the apps page. */
+(function () {
+  var form = document.getElementById("suggest-form"); if (!form) return;
+  var msg = document.getElementById("suggest-msg"), btn = form.querySelector("button[type=submit]"), TO = "ruhulaaminn@gmail.com";
+  function bn() { return document.documentElement.lang === "bn"; }
+  function say(en, b, ok) { msg.textContent = bn() ? b : en; msg.className = "suggest-msg " + (ok ? "ok" : "err"); }
   function showTrack(code) {
     var box = document.getElementById("suggest-track");
     if (!box) { box = document.createElement("div"); box.id = "suggest-track"; box.className = "suggest-track"; form.parentNode.insertBefore(box, form.nextSibling); }
@@ -104,47 +143,14 @@
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { say("Please enter a valid email.", "সঠিক ইমেইল দিন।", false); return; }
     if (!/^[0-9+()\-\s]{6,30}$/.test(phone)) { say("Please enter a valid phone number.", "সঠিক ফোন নম্বর দিন।", false); return; }
     btn.disabled = true; say("Sending…", "পাঠানো হচ্ছে…", true);
-    var code = newCode();
-    var payload = {
-      _subject: "SHUNCHi idea " + code + ": " + title, _template: "table", _captcha: "false", Tracking: code,
-      Type: d.get("type"), Idea: title, Details: details,
-      Name: uname, Email: email, Phone: phone, Address: address, Contact: email + " · " + phone, Language: document.documentElement.lang, Page: location.href
-    };
-    var ctl = window.AbortController ? new AbortController() : null, timer = setTimeout(function () { if (ctl) ctl.abort(); }, 20000);
-    function viaFormSubmit() {
-      return fetch("https://formsubmit.co/ajax/" + TO, {
-        method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload), signal: ctl ? ctl.signal : undefined
-      });
-    }
-    function viaGitHub() {
-      return Promise.all([
-        fetch("/data/ideas-config.json", { cache: "no-store" }).then(function (r) { return r.json(); }),
-        fetch("/data/ideas-key.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
-      ]).then(function (x) {
-        var cfg = x[0], jwk = x[1];
-        if (!cfg || !cfg.repo || !cfg.token) throw new Error("inbox not configured");
-        var meta = { Type: payload.Type, Idea: title, Details: details, Language: payload.Language, Page: payload.Page, Source: "Website", Track: code };
-        var pii = { Name: uname, Email: email, Phone: phone, Address: address };
-        var lock = jwk && jwk.n && jwk.e ? encryptPII(jwk, pii) : Promise.resolve(null);
-        return lock.then(function (enc) {
-          if (enc) meta.enc = enc; else for (var k in pii) meta[k] = pii[k];
-          var head = "**Tracking:** " + code + "\n**Type:** " + payload.Type + "\n**Language:** " + payload.Language + "\n" + (enc ? "**Personal details:** encrypted\n" : "**Name:** " + uname + "\n**Email:** " + email + "\n**Phone:** " + phone + "\n**Address:** " + address + "\n");
-          var text = head + "\n" + details + "\n\n<!--shunchi:" + JSON.stringify(meta).replace(/>/g, "\\u003e") + "-->";
-          return fetch("https://api.github.com/repos/" + cfg.repo + "/issues", {
-            method: "POST", headers: { "Authorization": "Bearer " + cfg.token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
-            body: JSON.stringify({ title: ("[" + code + "] " + title).slice(0, 120), body: text }), signal: ctl ? ctl.signal : undefined
-          });
-        }).then(function (r) { if (r.status !== 201) throw new Error("GitHub HTTP " + r.status); return { ok: true, json: function () { return Promise.resolve({ success: true }); } }; });
-      });
-    }
-    viaGitHub().catch(function (er) { try { console.warn("Inbox:", er && er.message); } catch (x) {} return viaFormSubmit(); }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) { try { console.warn("FormSubmit:", r.status, j && j.message); } catch (x) {} throw new Error((j && j.message) || ("HTTP " + r.status)); } }); })
-      .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); showTrack(code); try { document.dispatchEvent(new CustomEvent("shunchi:idea", { detail: { track: code, title: title, details: details, type: payload.Type } })); } catch (x) {} })
-      .catch(function (err) {
-        try { console.warn("Idea form failed:", err && err.message); } catch (x) {}
-        var body = "Tracking: " + code + "\nType: " + payload.Type + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + payload.Name + "\nEmail: " + email + "\nPhone: " + phone + "\nAddress: " + address;
-        location.href = "mailto:" + TO + "?subject=" + encodeURIComponent(payload._subject) + "&body=" + encodeURIComponent(body);
-        say("Could not send directly. Your mail app opened instead.", "সরাসরি পাঠানো যায়নি। তাই আপনার মেইল অ্যাপ খুলেছে।", false);
-      }).then(function () { clearTimeout(timer); btn.disabled = false; });
+    window.SHIdea.send({ type: d.get("type"), title: title, details: details, name: uname, email: email, phone: phone, address: address }).then(function (r) {
+      form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); showTrack(r.code);
+    }, function (err) {
+      try { console.warn("Idea form failed:", err && err.message); } catch (x) {}
+      var code = err.code0 || "", body = "Tracking: " + code + "\nType: " + d.get("type") + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + uname + "\nEmail: " + email + "\nPhone: " + phone + "\nAddress: " + address;
+      location.href = "mailto:" + TO + "?subject=" + encodeURIComponent("SHUNCHi idea " + code + ": " + title) + "&body=" + encodeURIComponent(body);
+      say("Could not send directly. Your mail app opened instead.", "সরাসরি পাঠানো যায়নি। তাই আপনার মেইল অ্যাপ খুলেছে।", false);
+    }).then(function () { btn.disabled = false; });
   });
 })();
 

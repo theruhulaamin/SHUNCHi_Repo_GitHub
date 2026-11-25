@@ -5,7 +5,7 @@ Account sob kaj kore **Firebase** diye. Config na dile website/app/admin-e accou
 ## 1. Project
 1. https://console.firebase.google.com -> **Add project** -> naam `shunchi` (Analytics off).
 2. **Build -> Authentication -> Get started**.
-   - **Sign-in method -> Email/Password -> Enable**.
+   - **Sign-in method -> Email/Password -> Enable**, ar ekhanei **"Email link (passwordless sign-in)"** toggle-ta-o on korun (OTP-r bodole email-e sign-in link jabe).
    - **Google -> Enable** (support email = apnar Gmail).
 3. **Build -> Firestore Database -> Create database** -> Production mode -> location `asia-south1` (ba nikoter).
 4. **Firestore -> Rules** tab-e `firebase/firestore.rules` file-er pura lekha paste kore **Publish**.
