@@ -424,3 +424,28 @@ html[lang="bn"] .official-title{text-transform:none;letter-spacing:0;font-size:1
 .tool::before{content:"";position:absolute;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),transparent);border-radius:var(--r) var(--r) 0 0;transition:width .45s ease}
 @media (hover:hover){.tool:hover::before{width:100%}}
 @media (prefers-reduced-motion:reduce){.tool-icon svg,.badge::after,.badge.next::before{animation:none!important}.tool,.tool.rv{opacity:1!important;transform:none!important}}
+
+/* ---------- idea form ---------- */
+.idea-box{margin-top:44px;border:1px solid var(--line-strong);border-radius:20px;background:var(--surface);padding:24px;box-shadow:var(--shadow)}
+.suggest-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.suggest-ico{width:44px;height:44px;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;flex:none}
+.suggest-ico svg{width:23px;height:23px;fill:none;stroke:var(--accent-ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.idea-box h3{font-size:21px;font-weight:800;line-height:1.3}
+.suggest-head p{color:var(--muted);font-size:15px;margin-top:2px}
+.suggest-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.suggest-form .full{grid-column:1 / -1}
+.suggest-form .f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.suggest-form .lab{font-size:13.5px;font-weight:700;color:var(--ink)}
+.suggest-form input,.suggest-form select,.suggest-form textarea{width:100%;min-height:46px;padding:10px 14px;border:1px solid var(--line-strong);border-radius:12px;background:var(--bg);color:var(--text);font:inherit;font-size:16px;line-height:1.5}
+.suggest-form textarea{resize:vertical;min-height:110px}
+.suggest-form input:focus,.suggest-form select:focus,.suggest-form textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.suggest-form .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.suggest-act{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.suggest-msg{margin:0;font-size:15px;font-weight:600}
+.suggest-msg.ok{color:var(--ok)}.suggest-msg.err{color:#d6453d}
+.idea-box button:disabled{opacity:.6;cursor:wait}
+@media (max-width:900px){
+  .idea-box{padding:18px;margin-top:32px;border-radius:18px}
+  .suggest-form{grid-template-columns:1fr}
+  .suggest-act .btn{width:100%}
+}

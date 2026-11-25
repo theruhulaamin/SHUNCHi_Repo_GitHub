@@ -16,7 +16,7 @@
 <link rel="icon" type="image/png" href="../assets/favicon.png"><link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="../manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SHUNCHi">
-<link rel="stylesheet" href="../assets/site.css?v=6">
+<link rel="stylesheet" href="../assets/site.css?v=8">
 </head>
 <body>
 <a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
@@ -59,6 +59,30 @@
     <p><span class="en">Tell us what would save you time. The most requested tools are built first.</span><span class="bn">কোন টুল আপনার সময় বাঁচাবে জানান। সবচেয়ে বেশি চাওয়া টুলগুলো আগে বানানো হবে।</span></p></div>
     <a class="btn btn-primary" href="https://www.facebook.com/voice.shunchi" rel="noopener"><span class="en">Suggest a tool</span><span class="bn">টুলের পরামর্শ দিন</span></a></div>
 </div></section>
+<section><div class="wrap"><div class="idea-box" id="suggest">
+  <div class="suggest-head">
+    <div class="suggest-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></div>
+    <div><h3><span class="en">Suggest an app or tool</span><span class="bn">অ্যাপ বা টুলের আইডিয়া দিন</span></h3>
+    <p><span class="en">Tell me what you need. The ideas people ask for most get built first.</span><span class="bn">কী দরকার জানান। সবচেয়ে বেশি চাওয়া আইডিয়াগুলো আগে বানানো হবে।</span></p></div>
+  </div>
+  <form class="suggest-form" id="suggest-form" novalidate>
+    <input type="text" name="_honey" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+    <label class="f"><span class="lab"><span class="en">I want a</span><span class="bn">আমি চাই</span></span>
+      <select name="type"><option value="Free tool">Free web tool · ফ্রি ওয়েব টুল</option><option value="Windows app">Windows app · উইন্ডোজ অ্যাপ</option><option value="SHUNCHi feature">SHUNCHi feature · শুনছির নতুন ফিচার</option><option value="Other">Other · অন্যকিছু</option></select></label>
+    <label class="f"><span class="lab"><span class="en">Idea name</span><span class="bn">আইডিয়ার নাম</span></span>
+      <input type="text" name="title" maxlength="80" required></label>
+    <label class="f full"><span class="lab"><span class="en">What should it do?</span><span class="bn">এটি কী কাজ করবে?</span></span>
+      <textarea name="details" rows="4" maxlength="1200" required></textarea></label>
+    <label class="f"><span class="lab"><span class="en">Your name (optional)</span><span class="bn">আপনার নাম (ঐচ্ছিক)</span></span>
+      <input type="text" name="name" maxlength="60" autocomplete="name"></label>
+    <label class="f"><span class="lab"><span class="en">Email or phone (optional)</span><span class="bn">ইমেইল বা ফোন (ঐচ্ছিক)</span></span>
+      <input type="text" name="contact" maxlength="80" autocomplete="email"></label>
+    <div class="full suggest-act">
+      <button class="btn btn-primary" type="submit"><span class="en">Send my idea</span><span class="bn">আইডিয়া পাঠান</span></button>
+      <p class="suggest-msg" id="suggest-msg" role="status" aria-live="polite"></p>
+    </div>
+  </form>
+</div></div></section>
 </main>
 <footer class="site-footer">
   <div class="wrap">
@@ -72,8 +96,8 @@
   </div>
 </footer>
 <nav class="tabbar" aria-label="App navigation"><a href="../index.html" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span class="en">Home</span><span class="bn">হোম</span></a><a href="../index.html#setup" data-tab="setup"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span class="en">Setup</span><span class="bn">সেটআপ</span></a><a href="../apps/index.html" data-tab="apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span class="en">Apps</span><span class="bn">অ্যাপ</span></a><a href="../index.html#faq" data-tab="faq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.01"/></svg><span class="en">FAQ</span><span class="bn">প্রশ্ন</span></a><a href="../index.html#developer" data-tab="dev"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg><span class="en">Dev. Info</span><span class="bn">ডেভ ইনফো</span></a><a href="../download/index.html" data-tab="download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg><span class="en">Download</span><span class="bn">ডাউনলোড</span></a></nav>
-<script src="../assets/catalog.js?v=6" data-base="../"></script>
-<script src="../assets/site.js?v=6"></script>
+<script src="../assets/catalog.js?v=8" data-base="../"></script>
+<script src="../assets/site.js?v=8"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
