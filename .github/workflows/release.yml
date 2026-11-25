@@ -11,6 +11,7 @@ jobs:
       - name: Write update manifest
         env:
           TAG: ${{ github.event.release.tag_name }}
+          GH_TOKEN: ${{ github.token }}
           BODY: ${{ github.event.release.body }}
           ASSETS: ${{ join(github.event.release.assets.*.browser_download_url, ' ') }}
         run: python3 .github/scripts/make_update.py

@@ -24,19 +24,23 @@ data = {"latest_version": ver, "download_url": "https://shunchiai.com/download/"
         "web_installer_url": f"https://github.com/{repo}/releases/latest/download/SHUNCHi_Setup.exe" if web else "",
         "release_notes": notes or f"Version {ver}", "release_notes_en": notes_en, "release_notes_bn": notes_bn, "released": datetime.date.today().isoformat()}
 if full and not slug:
-    h = hashlib.sha256(); size = 0
-    req = urllib.request.Request(full, headers={"User-Agent": "shunchi-release"})
-    with urllib.request.urlopen(req, timeout=300) as r:
-        for chunk in iter(lambda: r.read(1 << 20), b""):
-            h.update(chunk); size += len(chunk)
-    data["installer_sha256"] = h.hexdigest(); data["installer_size"] = size
-if web and not slug:
-    try:
-        n = 0
-        with urllib.request.urlopen(urllib.request.Request(web, headers={"User-Agent": "shunchi-release"}), timeout=120) as r:
-            for chunk in iter(lambda: r.read(1 << 20), b""): n += len(chunk)
-        data["web_installer_size"] = n
-    except Exception: pass
+    info = {}
+    try:  # GitHub already knows size and SHA-256 of each asset: no download needed (downloads would inflate the public counter)
+        rq = urllib.request.Request(f"https://api.github.com/repos/{repo}/releases/tags/{tag}", headers={"Accept": "application/vnd.github+json", "User-Agent": "shunchi-release", "Authorization": "Bearer " + os.environ.get("GH_TOKEN", "")})
+        for a in json.load(urllib.request.urlopen(rq, timeout=60)).get("assets", []): info[a["browser_download_url"]] = a
+    except Exception: info = {}
+    fa, wa = info.get(full, {}), info.get(web, {})
+    dg = str(fa.get("digest") or "")
+    if dg.startswith("sha256:") and fa.get("size"):
+        data["installer_sha256"] = dg[7:]; data["installer_size"] = fa["size"]
+    else:
+        h = hashlib.sha256(); size = 0
+        req = urllib.request.Request(full, headers={"User-Agent": "shunchi-release"})
+        with urllib.request.urlopen(req, timeout=300) as r:
+            for chunk in iter(lambda: r.read(1 << 20), b""):
+                h.update(chunk); size += len(chunk)
+        data["installer_sha256"] = h.hexdigest(); data["installer_size"] = size
+    if wa.get("size"): data["web_installer_size"] = wa["size"]
 if not slug and not (full and web):
     raise SystemExit("A SHUNCHi release needs BOTH SHUNCHi_Setup_<version>.exe and SHUNCHi_Setup.exe attached.")
 if slug:
