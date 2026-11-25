@@ -199,12 +199,29 @@
   });
 })();
 
-/* Public download count (site/stats.json is refreshed by a GitHub Action) */
+/* Public download count: live from GitHub when possible, otherwise the hourly site/stats.json */
 (function () {
   var els = document.querySelectorAll("[data-dlcount]"); if (!els.length || !window.fetch) return;
-  fetch(els[0].getAttribute("data-dlcount"), { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-    var n = j && Number(j.downloads); if (!n || n < 1) return;
+  var el0 = els[0], repo = el0.getAttribute("data-repo");
+  function show(n) {
+    if (!n || n < 1) return;
     var en = n.toLocaleString("en-US"), bn; try { bn = n.toLocaleString("bn-BD"); } catch (e) { bn = en; }
     els.forEach(function (el) { var s = el.querySelectorAll(".num"); if (s[0]) s[0].textContent = en; if (s[1]) s[1].textContent = bn; el.hidden = false; });
-  }).catch(function () {});
+  }
+  function calc(rels, base) {
+    var total = 0;
+    (rels || []).forEach(function (r) {
+      if (r.draft || !/^v\d/.test(r.tag_name || "")) return;
+      var web = 0, full = 0;
+      (r.assets || []).forEach(function (a) { var n = (a.name || "").toLowerCase(); if (n.slice(-4) !== ".exe") return; if (n === "shunchi_setup.exe") web += a.download_count || 0; else full += a.download_count || 0; });
+      total += Math.max(web, full);
+    });
+    return Math.max(0, total - (base || 0));
+  }
+  fetch(el0.getAttribute("data-dlcount"), { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (st) {
+    var base = st && Number(st.baseline) || 0; if (st && st.downloads) show(Number(st.downloads));
+    if (!repo) return;
+    return fetch("https://api.github.com/repos/" + repo + "/releases?per_page=100", { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (r) { return r.ok ? r.json() : null; }).then(function (rels) { if (rels) show(calc(rels, base)); }).catch(function () {});
+  });
 })();

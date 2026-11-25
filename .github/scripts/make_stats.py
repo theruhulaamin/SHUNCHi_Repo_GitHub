@@ -20,5 +20,5 @@ base = 0
 try: base = int(open(".github/stats_baseline.txt").read().strip() or 0)
 except Exception: pass
 total = max(0, total - base)
-json.dump({"downloads": total, "updated": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}, open("site/stats.json", "w"))
+json.dump({"downloads": total, "baseline": base, "updated": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}, open("site/stats.json", "w"))
 print("downloads", total)
