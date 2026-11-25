@@ -64,7 +64,7 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <link rel="icon" type="image/png" href="{P}assets/favicon.png"><link rel="apple-touch-icon" href="{P}assets/apple-touch-icon.png">
 {FONTS}
 <link rel="manifest" href="{P}manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SHUNCHi">
-<link rel="stylesheet" href="{P}assets/site.css?v=27">
+<link rel="stylesheet" href="{P}assets/site.css?v=28">
 {extra}{ldtxt}</head>
 <body>
 {GTM_BODY}<a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
@@ -267,20 +267,25 @@ def write(path, text):
 
 
 # ---------------------------------------------------------------- setup videos (YouTube links added in the admin panel)
+YT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.3 5 12 5 12 5s-6.3 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2C2 8.76 2 12 2 12s0 3.24.4 4.8a2.5 2.5 0 0 0 1.76 1.77C5.7 19 12 19 12 19s6.3 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77C22 15.24 22 12 22 12s0-3.24-.4-4.8zM10 15V9l5.2 3z"/></svg>'
 def video_card(v):
     vid = v["id"]; te = esc(v.get("title_en") or v.get("title_bn") or "Video"); tb = esc(v.get("title_bn") or v.get("title_en") or "")
     return (f'<figure class="vid"><a class="vid-thumb" href="https://www.youtube.com/watch?v={vid}" data-vid="{vid}" target="_blank" rel="noopener" aria-label="Play: {te}">'
             f'<img src="https://i.ytimg.com/vi/{vid}/hqdefault.jpg" alt="" loading="lazy" width="480" height="360">'
             '<span class="vid-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></a>'
-            f'<figcaption><span class="en">{te}</span><span class="bn">{tb}</span></figcaption></figure>')
+            f'<figcaption><span class="vid-tag">{YT_ICON}<span class="en">Setup video</span><span class="bn">সেটআপ ভিডিও</span></span>'
+            f'<b class="vid-title"><span class="en">{te}</span><span class="bn">{tb}</span></b></figcaption></figure>')
 
-def videos_block(P, limit=3):
+def videos_block(P, limit=3, compact=False):
     if not VIDEOS_JSON: return ""
     shown = VIDEOS_JSON[:limit]
-    return (f'<div class="wrap vids-wrap" id="videos"><div class="head"><div class="eyebrow"><span class="en">Video guide</span><span class="bn">ভিডিও গাইড</span></div>'
-            '<h2><span class="en">Watch how to set it up</span><span class="bn">দেখে দেখে সেটআপ করুন</span></h2></div>'
-            f'<div class="vids" data-n="{len(shown)}">' + "".join(video_card(v) for v in shown) + '</div>'
-            f'<p class="vids-more"><a class="btn btn-ghost" href="{P}videos/index.html"><span class="en">View all videos</span><span class="bn">সব ভিডিও দেখুন</span> <span aria-hidden="true">→</span></a></p></div>')
+    cls = "vids-wrap vids-compact" if compact else "wrap vids-wrap"
+    more = f'<p class="vids-more"><a class="btn btn-ghost" href="{P}videos/index.html"><span class="en">View all videos</span><span class="bn">সব ভিডিও দেখুন</span> <span aria-hidden="true">→</span></a></p>' if len(VIDEOS_JSON) > limit or not compact else ""
+    if compact and len(VIDEOS_JSON) <= limit: more = ""
+    head = ('<div class="head"><div class="eyebrow"><span class="en">Video guide</span><span class="bn">ভিডিও গাইড</span></div>'
+            '<h2><span class="en">Watch how to set it up</span><span class="bn">দেখে দেখে সেটআপ করুন</span></h2></div>')
+    return (f'<div class="{cls}" id="videos">{head}'
+            f'<div class="vids" data-n="{len(shown)}">' + "".join(video_card(v) for v in shown) + '</div>' + more + '</div>')
 
 # ====================================================================== HOME
 FAQ_ITEMS = []
@@ -489,8 +494,8 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/catalog.js?v=27" data-base=""></script>
-<script src="assets/site.js?v=27"></script>
+''' + footer("") + '''<script src="assets/catalog.js?v=28" data-base=""></script>
+<script src="assets/site.js?v=28"></script>
 <script>
 (function () {
   function drawApps() { renderApps(document.getElementById("app-list"), 4); }
@@ -538,8 +543,8 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 </div></section>
 <section><div class="wrap">''' + SUGGEST_FORM + '''</div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/catalog.js?v=27" data-base="../"></script>
-<script src="../assets/site.js?v=27"></script>
+''' + footer("../") + '''<script src="../assets/catalog.js?v=28" data-base="../"></script>
+<script src="../assets/site.js?v=28"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
@@ -579,7 +584,7 @@ tmpl = head("../", "Tool name | SHUNCHi", "One sentence about the tool.", "apps/
   <div class="dl-card" id="tool-area"><p><span class="en">Build the tool here.</span><span class="bn">টুলটি এখানে বানান।</span></p></div>
 </div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=27"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=28"></script>
 </body>
 </html>
 '''
@@ -611,6 +616,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
     <details class="dl-notes" id="notes-box" hidden open><summary><span class="en">What is new in this version</span><span class="bn">এই ভার্সনে নতুন কী</span></summary>
       <ul class="en" id="notes-en"></ul><ul class="bn" id="notes-bn"></ul></details>
   </div>
+''' + videos_block("../", 3, True) + '''
   <div class="dl-help">
     <h2 style="font-size:22px;margin-bottom:12px"><span class="en">After downloading</span><span class="bn">ডাউনলোডের পর</span></h2>
     <ol class="steps" style="margin-left:17px">
@@ -621,7 +627,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   </div>
 </div>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=27"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=28"></script>
 <script>
 (function () {
   if (!window.fetch) return;
@@ -685,7 +691,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/site.js?v=27"></script>
+''' + footer("") + '''<script src="assets/site.js?v=28"></script>
 </body>
 </html>
 '''
@@ -701,7 +707,7 @@ nf = head("/", "Page not found | SHUNCHi", "This page does not exist.", "404.htm
   <p><span class="en">The link may be old or mistyped.</span><span class="bn">লিংকটি পুরনো বা ভুল হতে পারে।</span></p>
   <p style="margin-top:22px"><a class="btn btn-primary" href="/index.html"><span class="en">Back to home</span><span class="bn">হোমে ফিরুন</span></a></p>
 </div></main>
-''' + footer("/") + '<script src="/assets/site.js?v=27"></script>\n</body>\n</html>\n'
+''' + footer("/") + '<script src="/assets/site.js?v=28"></script>\n</body>\n</html>\n'
 write("404.html", nf)
 print("pages written")
 
@@ -746,7 +752,7 @@ for p in POSTS:
 </article>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=27"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=28"></script>\n</body>\n</html>\n'
     write(url, page)
 
 reg("blog/", "0.8", "weekly", POSTS[0]["date"] if POSTS else TODAY)
@@ -765,7 +771,7 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
 </div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=27"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=28"></script>\n</body>\n</html>\n'
 write("blog/index.html", blog_index)
 
 
@@ -787,7 +793,7 @@ if VIDEOS_JSON:
 </div>
 <section style="padding-top:28px"><div class="wrap"><div class="vids all">{"".join(video_card(v) for v in VIDEOS_JSON)}</div></div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=27"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=28"></script>\n</body>\n</html>\n'
     write("videos/index.html", vpage)
 
 # RSS feed
@@ -828,7 +834,7 @@ for a in APPS_JSON:
     {dlbtn}</div>
 </div>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=27"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=28"></script>\n</body>\n</html>\n'
     write(url, page)
 
 # ====================================================================== SITEMAP + ROBOTS
