@@ -470,7 +470,6 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
       <a class="pill" href="https://www.facebook.com/iamruhulaamin" rel="noopener">{SOCIAL_ICONS["fb"]}Facebook</a>
       <a class="pill" href="https://www.instagram.com/iamruhulaamin/" rel="noopener">{SOCIAL_ICONS["ig"]}Instagram</a>
       <a class="pill" href="https://www.linkedin.com/search/results/people/?keywords=iamruhulaamin" rel="noopener">{SOCIAL_ICONS["in"]}LinkedIn</a>
-      <a class="pill" href="mailto:ruhulaminn@gmail.com">{SOCIAL_ICONS["mail"]}ruhulaminn@gmail.com</a>
     </div>
     <div class="official">
       <div class="official-title"><span class="en">Official SHUNCHi pages</span><span class="bn">অফিসিয়াল শুনছি পেজ</span></div>
