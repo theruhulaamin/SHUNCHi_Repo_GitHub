@@ -1,6 +1,6 @@
 #define MyAppName "SHUNCHi by RUHUL"
 #ifndef MyAppVersion
-  #define MyAppVersion "4.4.0"
+  #define MyAppVersion "4.5.0"
 #endif
 #define MyAppPublisher "Ruhul Amin"
 #define MyAppExeName "SHUNCHi.exe"

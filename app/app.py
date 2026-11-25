@@ -15,7 +15,7 @@ import logging
 import logging.handlers
 import threading
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
 import sounddevice as sd
@@ -35,11 +35,11 @@ from PySide6.QtWidgets import (
     QPushButton, QComboBox, QCheckBox, QLineEdit, QMessageBox, QSystemTrayIcon,
     QMenu, QFrame, QStackedWidget, QTableWidget, QTableWidgetItem, QHeaderView,
     QSpinBox, QDoubleSpinBox, QPlainTextEdit, QSizePolicy, QScrollArea,
-    QGraphicsDropShadowEffect, QAbstractItemView, QButtonGroup
+    QGraphicsDropShadowEffect, QAbstractItemView, QButtonGroup, QDialog
 )
 
 APP_NAME = "SHUNCHi"
-APP_VERSION = "4.4.0"
+APP_VERSION = "4.5.0"
 APP_VENDOR = "RUHUL"
 KEYRING_SERVICE = "SHUNCHi"
 KEYRING_USERNAME = "gemini_api_key"
@@ -52,6 +52,10 @@ WEBSITE_URL = "https://shunchiai.com"
 WEBSITE_LABEL = "shunchiai.com"
 UPDATE_URL = "https://shunchiai.com/update.json"
 DOWNLOAD_URL_DEFAULT = "https://shunchiai.com/download"
+NOTICES_URL = WEBSITE_URL + "/data/notices.json"      # pop-up messages written in the admin panel
+APPS_PAGE_URL = WEBSITE_URL + "/apps/index.html"
+IDEA_ENDPOINT = "https://formsubmit.co/ajax/ruhulaaminn@gmail.com"   # where the "app or tool idea" form is delivered
+READY_TEXT = "Ready · Win + Left Ctrl = Bangla · Win + Left Shift = English"
 UPDATE_CHECK_HOURS = 6
 TARGET_RATE = 16000
 RUN_KEY_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
@@ -393,6 +397,64 @@ def social_url(network):
     return urls[network]
 
 
+def parse_notices(data):
+    """Validate the pop-up messages published at NOTICES_URL. Unknown or unsafe values are dropped."""
+    clean = []
+    for raw in (data if isinstance(data, list) else [])[:20]:
+        if not isinstance(raw, dict) or raw.get("active") is False:
+            continue
+        nid = re.sub(r"[^a-z0-9_-]", "", str(raw.get("id") or "").lower())[:40]
+        if not nid:
+            continue
+
+        def text(key, limit):
+            return str(raw.get(key) or "").strip()[:limit]
+
+        item: dict = {"id": nid, "title_en": text("title_en", 90), "title_bn": text("title_bn", 90),
+                "body_en": text("body_en", 600), "body_bn": text("body_bn", 600),
+                "button_en": text("button_en", 40), "button_bn": text("button_bn", 40)}
+        if not (item["title_en"] or item["title_bn"] or item["body_en"] or item["body_bn"]):
+            continue
+        url = text("button_url", 300)
+        item["url"] = url if url.lower().startswith("https://") else ""
+        try:
+            item["start"] = datetime.strptime(text("start", 10), "%Y-%m-%d").date()
+        except ValueError:
+            item["start"] = datetime.now().date()
+        try:
+            item["days"] = max(1, min(365, int(raw.get("days") or 1)))
+        except (TypeError, ValueError):
+            item["days"] = 1
+        try:
+            item["times"] = max(1, min(50, int(raw.get("times") or 1)))
+        except (TypeError, ValueError):
+            item["times"] = 1
+        clean.append(item)
+    return clean
+
+
+def notice_due(notice, shown_count, last_shown, now=None):
+    """True while the message is inside its date window, has not used up its number of showings,
+    and was not shown in the last 3 hours (so one app start never nags more than once)."""
+    today = (now or datetime.now()).date()
+    if today < notice["start"] or today > notice["start"] + timedelta(days=notice["days"] - 1):
+        return False
+    if shown_count >= notice["times"]:
+        return False
+    if last_shown and time.time() - last_shown < 3 * 3600:
+        return False
+    return True
+
+
+def close_stream_quietly(stream):
+    """Closing a microphone stream can block for seconds on some devices (Bluetooth). Never do it on the UI thread."""
+    for action in (stream.stop, stream.close):
+        try:
+            action()
+        except Exception:
+            logging.exception("Closing microphone stream failed")
+
+
 # ----------------------------------------------------------------------------------------------
 # History (simple local log of dictations)
 # ----------------------------------------------------------------------------------------------
@@ -453,6 +515,8 @@ class AppSignals(QObject):
     pause_hint = Signal()
     spec_done = Signal(int, str, str, str)   # token, text, friendly message, error kind ("" = success)
     update_result = Signal(object)
+    notices_ready = Signal(object)
+    idea_result = Signal(bool, str)
 
 
 class MicrophoneScanner(threading.Thread):
@@ -690,6 +754,48 @@ class UpdateChecker(threading.Thread):
                                              "error": "The update information could not be read."})
 
 
+class NoticeChecker(threading.Thread):
+    """Reads the pop-up messages from the official website. Never raises into the UI."""
+    def __init__(self, signals):
+        super().__init__(daemon=True, name="SHUNCHi-Notices")
+        self.signals = signals
+
+    def run(self):
+        try:
+            request = urllib.request.Request(
+                NOTICES_URL, headers={"User-Agent": f"SHUNCHi/{APP_VERSION}", "Cache-Control": "no-cache"})
+            with urllib.request.urlopen(request, timeout=8) as response:
+                raw = response.read(65536)
+            self.signals.notices_ready.emit(parse_notices(json.loads(raw.decode("utf-8"))))
+        except Exception as exc:
+            logging.info("Notices not available: %s", exc)
+
+
+class IdeaSender(threading.Thread):
+    """Sends the 'app or tool idea' form to the developer. Never raises into the UI."""
+    def __init__(self, signals, fields):
+        super().__init__(daemon=True, name="SHUNCHi-Idea")
+        self.signals, self.fields = signals, fields
+
+    def run(self):
+        try:
+            payload = dict(self.fields)
+            payload.update({"_subject": "SHUNCHi idea: " + str(self.fields.get("Idea", ""))[:80],
+                            "_template": "table", "_captcha": "false", "Source": f"SHUNCHi app {APP_VERSION}"})
+            request = urllib.request.Request(
+                IDEA_ENDPOINT, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"), method="POST",
+                headers={"Content-Type": "application/json", "Accept": "application/json",
+                         "User-Agent": f"SHUNCHi/{APP_VERSION}"})
+            with urllib.request.urlopen(request, timeout=20) as response:
+                answer = json.loads(response.read(65536).decode("utf-8") or "{}")
+            if str(answer.get("success", "true")).lower() == "false":
+                raise ValueError("the form service did not accept the message")
+            self.signals.idea_result.emit(True, "Thank you! Your idea reached the developer.")
+        except Exception as exc:
+            logging.info("Idea form failed: %s", exc)
+            self.signals.idea_result.emit(False, "Could not send. Check your internet connection and try again.")
+
+
 class HotkeyManager(threading.Thread):
     """Global left-side modifier chords: Win+Left Ctrl (Bangla) and Win+Left Shift (English)."""
     def __init__(self, signals):
@@ -702,6 +808,24 @@ class HotkeyManager(threading.Thread):
             from pynput import keyboard as pk
             pressed, latched = set(), set()
 
+            def really_down(vk):
+                """Win+L, Alt+Tab and similar can swallow a key-release. Ask Windows what is truly held."""
+                if os.name != "nt":
+                    return True
+                try:
+                    return bool(ctypes.windll.user32.GetAsyncKeyState(vk) & 0x8000)
+                except Exception:
+                    return True
+
+            def drop_stale(current):
+                for held, vk in ((pk.Key.cmd_l, 0x5B), (pk.Key.ctrl_l, 0xA2), (pk.Key.shift_l, 0xA0)):
+                    if held in pressed and held != current and not really_down(vk):
+                        pressed.discard(held)
+                if pk.Key.cmd_l not in pressed or pk.Key.ctrl_l not in pressed:
+                    latched.discard("bangla")
+                if pk.Key.cmd_l not in pressed or pk.Key.shift_l not in pressed:
+                    latched.discard("english")
+
             def emit_once(name, language):
                 if name not in latched:
                     latched.add(name)
@@ -709,6 +833,7 @@ class HotkeyManager(threading.Thread):
 
             def on_press(key):
                 try:
+                    drop_stale(key)
                     pressed.add(key)
                     win = pk.Key.cmd_l in pressed
                     if win and pk.Key.ctrl_l in pressed:
@@ -1199,7 +1324,7 @@ class MicPopup(QWidget):
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowDoesNotAcceptFocus)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
-        self.setFixedSize(424, 122)
+        self.setFixedSize(404, 104)
         self._leaving = False
         self.elapsed = QElapsedTimer()
         self.timer = QTimer(self)
@@ -1213,31 +1338,33 @@ class MicPopup(QWidget):
         self.slide.setEasingCurve(QEasingCurve.OutCubic)
 
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(14, 8, 14, 20)
+        outer.setContentsMargins(12, 6, 12, 16)
         panel = QFrame()
         panel.setObjectName("panel")
         panel.setStyleSheet(
-            "QFrame#panel{background:rgba(255,255,255,0.98);border:1px solid #DCE4F0;border-radius:22px;}"
+            "QFrame#panel{background:rgba(255,255,255,0.99);border:1px solid #E1E8F3;border-radius:20px;}"
             "QLabel{background:transparent;border:0;}")
         shadow = QGraphicsDropShadowEffect(panel)
-        shadow.setBlurRadius(30)
+        shadow.setBlurRadius(32)
         shadow.setOffset(0, 8)
-        shadow.setColor(QColor(15, 23, 42, 64))
+        shadow.setColor(QColor(15, 23, 42, 58))
         panel.setGraphicsEffect(shadow)
         outer.addWidget(panel)
 
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(18, 14, 20, 10)
-        layout.setSpacing(6)
+        layout.setContentsMargins(16, 12, 16, 11)
+        layout.setSpacing(7)
 
         row = QHBoxLayout()
-        row.setSpacing(14)
+        row.setSpacing(12)
         self.orb = MicOrb()
         self.wave = WaveformWidget()
         self.time_label = QLabel("00:00")
-        self.time_label.setMinimumWidth(54)
-        self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.time_label.setStyleSheet(f"font-size:15px;font-weight:600;color:{C_TEXT};")
+        self.time_label.setMinimumWidth(52)
+        self.time_label.setAlignment(Qt.AlignCenter)
+        self.time_label.setStyleSheet(
+            f"font-size:13px;font-weight:700;color:{C_PRIMARY_DARK};background:{C_PRIMARY_SOFT};"
+            "border-radius:11px;padding:4px 9px;")
         row.addWidget(self.orb)
         row.addWidget(self.wave, 1)
         row.addWidget(self.time_label)
@@ -1246,15 +1373,21 @@ class MicPopup(QWidget):
         info = QHBoxLayout()
         info.setSpacing(8)
         self.title_label = QLabel("Listening")
-        self.title_label.setStyleSheet(f"font-size:13px;font-weight:600;color:{C_TEXT};")
+        self.lang_label = QLabel("")
+        self.lang_label.setStyleSheet(
+            f"font-size:11px;font-weight:700;color:{C_PRIMARY_DARK};background:{C_PRIMARY_SOFT};"
+            "border-radius:9px;padding:2px 9px;")
         self.detail_label = QLabel("")
-        self.detail_label.setStyleSheet(f"font-size:12px;color:{C_MUTED};")
-        self.credit = QLabel("Built by Ruhul Amin · @iamruhulaamin")
-        self.credit.setStyleSheet(f"font-size:9px;color:{C_FAINT};")
         info.addWidget(self.title_label)
+        info.addWidget(self.lang_label)
         info.addWidget(self.detail_label, 1)
-        info.addWidget(self.credit)
         layout.addLayout(info)
+        self._style_texts("listening")
+
+    def _style_texts(self, state, detail_color=None):
+        color = {"listening": C_PRIMARY_DARK, "processing": C_WARN, "done": C_OK, "error": C_ERR}.get(state, C_TEXT)
+        self.title_label.setStyleSheet(f"font-size:14px;font-weight:700;color:{color};")
+        self.detail_label.setStyleSheet(f"font-size:12px;color:{detail_color or C_MUTED};")
 
     # ---- helpers
     def _tick(self):
@@ -1325,10 +1458,12 @@ class MicPopup(QWidget):
         self.wave.reset()
         self.wave.set_mode("listening")
         self.orb.set_state("listening")
-        self.credit.setVisible(True)
+        self._style_texts("listening")
         self.title_label.setText("Listening")
-        self.detail_label.setStyleSheet(f"font-size:12px;color:{C_MUTED};")
-        self.detail_label.setText(("বাংলা" if language == "bn-BD" else "English") + "  ·  pause when you finish")
+        self.lang_label.setText("বাংলা" if language == "bn-BD" else "English")
+        self.lang_label.setVisible(True)
+        self.detail_label.setText("pause when you finish")
+        self.detail_label.setToolTip("")
         self.time_label.setText("00:00")
         self.elapsed.start()
         self.timer.start()
@@ -1345,14 +1480,18 @@ class MicPopup(QWidget):
         self.timer.stop()
         self.wave.set_mode("processing")
         self.orb.set_state("processing")
+        self._style_texts("processing")
         self.title_label.setText("Writing")
+        self.lang_label.setVisible(False)
         self.detail_label.setText("Typing your text…")
 
     def finish(self):
         self.timer.stop()
         self.wave.set_mode("idle")
         self.orb.set_state("done")
+        self._style_texts("done")
         self.title_label.setText("Done")
+        self.lang_label.setVisible(False)
         self.detail_label.setText("Inserted at your cursor")
         self.hide_timer.start(450)
 
@@ -1360,9 +1499,9 @@ class MicPopup(QWidget):
         self.timer.stop()
         self.wave.set_mode("idle")
         self.orb.set_state("error")
-        self.credit.setVisible(False)
+        self._style_texts("error", C_ERR)
         self.title_label.setText("Notice")
-        self.detail_label.setStyleSheet(f"font-size:12px;color:{C_ERR};")
+        self.lang_label.setVisible(False)
         self.detail_label.setText(str(message)[:80])
         self.detail_label.setToolTip(str(message))
         self._present()
@@ -1461,6 +1600,24 @@ class DashboardPage(QWidget):
         layout.addWidget(self.practice)
         root.addWidget(card)
 
+        notes, notes_layout = make_card((20, 16, 20, 16), 8)
+        notes_title = QLabel("Before you start")
+        notes_title.setObjectName("cardTitle")
+        notes_layout.addWidget(notes_title)
+        for text in (
+            "<b>A Gemini API key is required.</b> Without your own free key SHUNCHi cannot type for you. "
+            "Add it once in Settings.",
+            "Your writing runs on the <b>free limit of your own Gemini key</b>, so everyday messages and normal work "
+            "should go through on the free version.",
+            "If you need a much higher limit, a <b>Pro subscription with extended limits</b> is planned for the future.",
+        ):
+            line = QLabel("•  " + text)
+            line.setObjectName("cardText")
+            line.setWordWrap(True)
+            line.setTextFormat(Qt.RichText)
+            notes_layout.addWidget(line)
+        root.addWidget(notes)
+
         self.activity = QLabel("")
         self.activity.setObjectName("muted")
         self.activity.setWordWrap(True)
@@ -1532,14 +1689,16 @@ class HistoryPage(QWidget):
         controls.addWidget(self.clear_button)
         root.addLayout(controls)
 
-        self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Time", "Language", "Text"])
+        self.table = QTableWidget(0, 4)
+        self.table.setHorizontalHeaderLabels(["Time", "Language", "Text", ""])
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.Fixed)
+        self.table.setColumnWidth(3, 84)
         self.table.verticalHeader().setVisible(False)
-        self.table.verticalHeader().setDefaultSectionSize(42)
+        self.table.verticalHeader().setDefaultSectionSize(46)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -1564,10 +1723,33 @@ class HistoryPage(QWidget):
                 item = QTableWidgetItem(value)
                 item.setData(Qt.UserRole, transcript)
                 self.table.setItem(row, col, item)
+            button = QPushButton("Copy")
+            button.setObjectName("secondary")
+            button.setCursor(Qt.PointingHandCursor)
+            button.setToolTip("Copy this dictation")
+            button.setStyleSheet("padding:4px 10px;min-height:0;font-size:12px;")
+            button.clicked.connect(lambda _=False, b=button, t=transcript: self.copy_text(b, t))
+            holder = QWidget()
+            holder_layout = QHBoxLayout(holder)
+            holder_layout.setContentsMargins(6, 6, 6, 6)
+            holder_layout.addWidget(button)
+            self.table.setCellWidget(row, 3, holder)
         self.empty.setVisible(not rows)
         self.table.setVisible(bool(rows))
         self.copy_button.setEnabled(bool(rows))
         self.clear_button.setEnabled(bool(rows))
+
+    def copy_text(self, button, text):
+        QApplication.clipboard().setText(text)
+        button.setText("Copied ✓")
+        QTimer.singleShot(1400, lambda: self._reset_button(button))
+
+    @staticmethod
+    def _reset_button(button):
+        try:
+            button.setText("Copy")
+        except RuntimeError:      # the table was rebuilt meanwhile
+            pass
 
     def copy_selected(self):
         row = self.table.currentRow()
@@ -1839,16 +2021,94 @@ class MoreAppsPage(QWidget):
         root.setContentsMargins(30, 28, 30, 24)
         root.setSpacing(16)
         root.addLayout(page_header("More Apps", "Free tools from the developer of SHUNCHi."))
+
+        hub, hub_layout = make_card((22, 18, 22, 18), 8)
+        hub_title = QLabel("Free apps and everyday tools, in your language")
+        hub_title.setObjectName("cardTitle")
+        hub_text = QLabel(
+            "Voice typing is only the start. The SHUNCHi apps page lists every free app and online tool: "
+            "CV maker, invoice maker, PDF tools, image compressor, QR code, Bangla typing and more. "
+            "Nothing to install for the online tools.")
+        hub_text.setObjectName("cardText")
+        hub_text.setWordWrap(True)
+        self.hub_button = QPushButton("Open the apps page  ↗")
+        self.hub_button.setObjectName("primary")
+        self.hub_button.setCursor(Qt.PointingHandCursor)
+        self.hub_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(APPS_PAGE_URL)))
+        hub_layout.addWidget(hub_title)
+        hub_layout.addWidget(hub_text)
+        hub_layout.addWidget(self.hub_button, 0, Qt.AlignLeft)
+        root.addWidget(hub)
+
         self.list_layout = QVBoxLayout()
         self.list_layout.setSpacing(12)
         root.addLayout(self.list_layout)
+
+        idea, idea_layout = make_card((22, 18, 22, 18), 8)
+        idea_title = QLabel("অ্যাপ বা টুলের আইডিয়া দিন")
+        idea_title.setObjectName("cardTitle")
+        idea_text = QLabel("Which app or tool would make your daily work easier? Tell the developer. "
+                           "Your idea may become the next free tool.")
+        idea_text.setObjectName("cardText")
+        idea_text.setWordWrap(True)
+        self.idea_name = QLineEdit()
+        self.idea_name.setPlaceholderText("Your name (optional)")
+        self.idea_name.setMaxLength(80)
+        self.idea_contact = QLineEdit()
+        self.idea_contact.setPlaceholderText("Phone, Facebook or email, so we can reach you (optional)")
+        self.idea_contact.setMaxLength(120)
+        self.idea_text = QPlainTextEdit()
+        self.idea_text.setPlaceholderText("Describe the app or tool you need…")
+        self.idea_text.setFixedHeight(92)
+        self.idea_status = QLabel("")
+        self.idea_status.setWordWrap(True)
+        self.idea_status.setStyleSheet(f"color:{C_MUTED};font-size:12px;")
+        self.idea_button = QPushButton("Send idea")
+        self.idea_button.setObjectName("primary")
+        self.idea_button.setCursor(Qt.PointingHandCursor)
+        self.idea_button.clicked.connect(self._send_idea)
+        bottom = QHBoxLayout()
+        bottom.addWidget(self.idea_button)
+        bottom.addWidget(self.idea_status, 1)
+        for widget in (idea_title, idea_text, self.idea_name, self.idea_contact, self.idea_text):
+            idea_layout.addWidget(widget)
+        idea_layout.addLayout(bottom)
+        root.addWidget(idea)
+
         self.more_link = QPushButton(f"Browse everything at {WEBSITE_LABEL}  →")
         self.more_link.setObjectName("link")
         self.more_link.setCursor(Qt.PointingHandCursor)
         self.more_link.clicked.connect(lambda: open_website())
-        root.addWidget(self.more_link)
+        root.addWidget(self.more_link, 0, Qt.AlignLeft)
         root.addStretch()
+        self.signals = None
         self.set_apps([])
+
+    def bind_signals(self, signals):
+        self.signals = signals
+        signals.idea_result.connect(self._idea_done)
+
+    def _send_idea(self):
+        text = self.idea_text.toPlainText().strip()
+        if len(text) < 8:
+            self.idea_status.setStyleSheet(f"color:{C_ERR};font-size:12px;")
+            self.idea_status.setText("Please describe your idea in a few words.")
+            return
+        if self.signals is None:
+            return
+        self.idea_button.setEnabled(False)
+        self.idea_status.setStyleSheet(f"color:{C_MUTED};font-size:12px;")
+        self.idea_status.setText("Sending…")
+        IdeaSender(self.signals, {"Name": self.idea_name.text().strip() or "-",
+                                  "Contact": self.idea_contact.text().strip() or "-",
+                                  "Idea": text[:2000]}).start()
+
+    def _idea_done(self, ok, message):
+        self.idea_button.setEnabled(True)
+        self.idea_status.setStyleSheet(f"color:{C_OK if ok else C_ERR};font-size:12px;")
+        self.idea_status.setText(message)
+        if ok:
+            self.idea_text.clear()
 
     def _tile(self, name, logo):
         tile = QLabel()
@@ -2017,8 +2277,7 @@ class DeveloperPage(QWidget):
         links = QLabel(
             '<a href="https://www.facebook.com/iamruhulaamin" style="color:#2563EB;text-decoration:none;">Facebook</a>'
             ' &nbsp;·&nbsp; <a href="https://www.instagram.com/iamruhulaamin/" style="color:#2563EB;text-decoration:none;">Instagram</a>'
-            ' &nbsp;·&nbsp; <a href="https://www.linkedin.com/search/results/people/?keywords=iamruhulaamin" style="color:#2563EB;text-decoration:none;">LinkedIn</a>'
-            ' &nbsp;·&nbsp; <a href="mailto:ruhulaminn@gmail.com" style="color:#2563EB;text-decoration:none;">ruhulaminn@gmail.com</a>')
+            ' &nbsp;·&nbsp; <a href="https://www.linkedin.com/search/results/people/?keywords=iamruhulaamin" style="color:#2563EB;text-decoration:none;">LinkedIn</a>')
         links.setOpenExternalLinks(True)
         links.setTextInteractionFlags(Qt.TextBrowserInteraction)
         handle = QLabel("@iamruhulaamin")
@@ -2033,6 +2292,36 @@ class DeveloperPage(QWidget):
         top.addLayout(info, 1)
         layout.addLayout(top)
         root.addWidget(card)
+
+        story, story_layout = make_card((24, 20, 24, 22), 10)
+        story_title = QLabel("Why SHUNCHi was made")
+        story_title.setObjectName("cardTitle")
+        story_layout.addWidget(story_title)
+        paragraphs = (
+            "<b>SHUNCHi-র যাত্রা শুরু হয়েছিল একটি প্রশ্ন থেকে—বাংলায় ভয়েস টাইপিং কেন সহজ, দ্রুত এবং সবার জন্য বিনামূল্যে হবে না?</b>",
+            "আর কত টাইপিং শিখতে হবে? কেন নিজের ভাষায় কাজ করার জন্য টাকা খরচ করতে হবে? "
+            "কেন ছোট ছোট ডিজিটাল কাজ শেখার জন্য ট্রেনিং সেন্টারে দৌড়াতে হবে?",
+            "প্রযুক্তি তো আমাদের কাজ সহজ করার জন্য, কঠিন করার জন্য নয়!",
+            "সেই ভাবনা থেকেই SHUNCHi-র শুরু। আমাদের লক্ষ্য, এমন সব সহজ ও কার্যকর টুল তৈরি করা, যা সবাই নিজের ভাষায় "
+            "ব্যবহার করতে পারবেন—সহজে, স্বাচ্ছন্দ্যে এবং নামমাত্র খরচে।",
+            "ভয়েস টাইপিং থেকে শুরু করে ইমেইল, CV তৈরি, ফাইল কনভার্টসহ প্রতিদিনের প্রয়োজনীয় অনেক টুল একে একে যুক্ত হবে SHUNCHi-তে।",
+        )
+        for text in paragraphs:
+            para = QLabel(text)
+            para.setWordWrap(True)
+            para.setTextFormat(Qt.RichText)
+            para.setStyleSheet(f"font-size:14px;color:{C_TEXT};line-height:150%;")
+            story_layout.addWidget(para)
+        tag = QLabel("SHUNCHi—প্রযুক্তি হোক সহজ, সবার জন্য।")
+        tag.setStyleSheet(f"font-size:15px;font-weight:700;color:{C_PRIMARY_DARK};padding-top:4px;")
+        story_layout.addWidget(tag)
+        root.addWidget(story)
+
+        site_button = QPushButton(f"Visit the developer page at {WEBSITE_LABEL}  →")
+        site_button.setObjectName("link")
+        site_button.setCursor(Qt.PointingHandCursor)
+        site_button.clicked.connect(lambda: open_website("/#developer"))
+        root.addWidget(site_button, 0, Qt.AlignLeft)
 
         official, official_layout = make_card((22, 18, 22, 18), 8)
         ot = QLabel("Official SHUNCHi")
@@ -2060,6 +2349,54 @@ class DeveloperPage(QWidget):
         root.addStretch()
 
 
+class NoticeDialog(QDialog):
+    """Admin-written pop-up shown on top of the dashboard. Text is plain (never HTML) and links open only https pages."""
+
+    def __init__(self, parent, notice, bangla=True):
+        super().__init__(parent)
+        self.notice = notice
+        self.setWindowTitle("SHUNCHi")
+        self.setModal(True)
+        self.setMinimumWidth(440)
+        self.setMaximumWidth(520)
+        pick = (lambda bn, en: (bn or en) if bangla else (en or bn))
+        title = pick(notice["title_bn"], notice["title_en"])
+        body = pick(notice["body_bn"], notice["body_en"])
+        label = pick(notice["button_bn"], notice["button_en"])
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(26, 24, 26, 20)
+        layout.setSpacing(12)
+        if title:
+            head = QLabel(title)
+            head.setWordWrap(True)
+            head.setTextFormat(Qt.PlainText)
+            head.setStyleSheet(f"font-size:18px;font-weight:700;color:{C_TEXT};")
+            layout.addWidget(head)
+        if body:
+            text = QLabel(body)
+            text.setWordWrap(True)
+            text.setTextFormat(Qt.PlainText)
+            text.setStyleSheet(f"font-size:14px;color:{C_MUTED};")
+            layout.addWidget(text)
+        buttons = QHBoxLayout()
+        buttons.addStretch()
+        close = QPushButton("বন্ধ করুন" if bangla else "Close")
+        close.setObjectName("secondary")
+        close.clicked.connect(self.accept)
+        buttons.addWidget(close)
+        if notice["url"] and is_trusted_url(notice["url"]):
+            go = QPushButton(label or ("বিস্তারিত" if bangla else "Open"))
+            go.setObjectName("primary")
+            go.setDefault(True)
+            go.clicked.connect(self._open)
+            buttons.addWidget(go)
+        layout.addLayout(buttons)
+
+    def _open(self):
+        QDesktopServices.openUrl(QUrl(self.notice["url"]))
+        self.accept()
+
+
 # ----------------------------------------------------------------------------------------------
 # Main window
 # ----------------------------------------------------------------------------------------------
@@ -2084,6 +2421,7 @@ class MainWindow(QMainWindow):
         self.signals.pause_hint.connect(self.on_pause_hint)
         self.signals.spec_done.connect(self.on_spec_done)
         self.signals.update_result.connect(self.on_update_result)
+        self.signals.notices_ready.connect(self.on_notices)
 
         self.setWindowTitle("SHUNCHi by RUHUL")
         self.setWindowIcon(QIcon(resource_path("assets/shunchi.ico")))
@@ -2115,6 +2453,10 @@ class MainWindow(QMainWindow):
         self.chunks = []
         self.recording = False
         self.processing = False
+        self.status_token = 0
+        self.watchdog = QTimer(self)
+        self.watchdog.setSingleShot(True)
+        self.watchdog.timeout.connect(self._unstick)
         self.auto_stop_sent = False
         self.current_language = "bn-BD"
         self.recording_start = 0.0
@@ -2133,7 +2475,7 @@ class MainWindow(QMainWindow):
                                        startup_enabled() if os.name == "nt" else False, self.auto_update)
         self.more_apps_page.set_apps(self.load_remote_apps())
         self.dashboard_page.update_button.clicked.connect(self.open_download)
-        self.show_status("Ready · Win + Left Ctrl = Bangla · Win + Left Shift = English")
+        self.show_status(READY_TEXT)
         self.mic_scanner = MicrophoneScanner(self.signals)
         self.mic_scanner.start()
         self.hotkeys.start()
@@ -2146,6 +2488,7 @@ class MainWindow(QMainWindow):
         self.update_timer.timeout.connect(self.auto_update_check)
         self.update_timer.start()
         QTimer.singleShot(6000, self.auto_update_check)
+        QTimer.singleShot(9000, lambda: NoticeChecker(self.signals).start())
 
     # ------------------------------------------------------------------ UI
     def center_on_screen(self):
@@ -2213,6 +2556,7 @@ class MainWindow(QMainWindow):
         self.help_page = HelpPage()
         self.more_apps_page = MoreAppsPage()
         self.developer_page = DeveloperPage()
+        self.more_apps_page.bind_signals(self.signals)
         self.stack = QStackedWidget()
         for page in (self.dashboard_page, self.history_page, self.settings_page, self.help_page,
                      self.more_apps_page, self.developer_page):
@@ -2228,8 +2572,7 @@ class MainWindow(QMainWindow):
             'Built by <b>Ruhul Amin</b> &nbsp;·&nbsp; '
             f'<a href="{social_url("Facebook")}" style="color:{C_MUTED};">Facebook</a> &nbsp;'
             f'<a href="{social_url("Instagram")}" style="color:{C_MUTED};">Instagram</a> &nbsp;'
-            f'<a href="{social_url("LinkedIn")}" style="color:{C_MUTED};">LinkedIn</a> &nbsp;·&nbsp; '
-            f'<a href="mailto:ruhulaminn@gmail.com" style="color:{C_MUTED};">ruhulaminn@gmail.com</a>')
+            f'<a href="{social_url("LinkedIn")}" style="color:{C_MUTED};">LinkedIn</a>')
         credit.setOpenExternalLinks(True)
         credit.setStyleSheet(f"font-size:11px;color:{C_MUTED};")
         version = QLabel(f"SHUNCHi {APP_VERSION}")
@@ -2251,7 +2594,33 @@ class MainWindow(QMainWindow):
             self.history_page.refresh()
 
     def show_status(self, text):
-        self.dashboard_page.set_activity(str(text))
+        """Shows one line under the dashboard and returns to the ready text a few seconds later,
+        so an old message such as 'Microphone active' can never stay on screen."""
+        text = str(text)
+        self.dashboard_page.set_activity(text)
+        self.status_token += 1
+        if text != READY_TEXT:
+            token = self.status_token
+            QTimer.singleShot(9000, lambda: self._clear_status(token))
+
+    def _clear_status(self, token):
+        if token == self.status_token and not self.recording and not self.processing:
+            self.dashboard_page.set_activity(READY_TEXT)
+
+    def _arm_watchdog(self):
+        self.watchdog.start(60000)
+
+    def _unstick(self):
+        """Safety net: if writing never finishes (network hang, lost signal) release the app so the next
+        shortcut works again instead of the dashboard staying busy."""
+        if not self.processing:
+            return
+        logging.warning("Processing watchdog fired; resetting state")
+        self.processing = False
+        self.spec_token += 1
+        self.spec_state = "none"
+        self.popup.show_error("Took too long. Please try again.")
+        self.show_status("Took too long. Please try again.")
 
     def show_error(self, message):
         logging.error("Shown to user: %s", message)
@@ -2302,6 +2671,27 @@ class MainWindow(QMainWindow):
             self.settings_page.set_checking(True)
         self.update_thread = UpdateChecker(self.signals, manual)
         self.update_thread.start()
+
+    def on_notices(self, notices):
+        """Shows at most one due pop-up per start. Counts are kept per message id on this computer."""
+        if self.recording or self.processing or not self.isVisible():
+            QTimer.singleShot(120000, lambda: self.on_notices(notices))     # try again later; never pop up from the tray
+            return
+        try:
+            counts = json.loads(self.settings.value("notice_counts", "{}") or "{}")
+        except (TypeError, ValueError):
+            counts = {}
+        for notice in notices:
+            record = counts.get(notice["id"], {})
+            if not notice_due(notice, int(record.get("n", 0)), float(record.get("t", 0))):
+                continue
+            counts[notice["id"]] = {"n": int(record.get("n", 0)) + 1, "t": time.time()}
+            counts = {k: v for k, v in counts.items() if k in {n["id"] for n in notices}}
+            self.settings.setValue("notice_counts", json.dumps(counts))
+            self.settings.sync()
+            self.switch_page(0)
+            NoticeDialog(self, notice, self.settings.value("ui_bangla", True, type=bool)).exec()
+            break
 
     def on_update_result(self, result):
         manual = bool(result.get("manual"))
@@ -2604,11 +2994,7 @@ class MainWindow(QMainWindow):
         self.recording = False
         stream, self.audio_stream = self.audio_stream, None
         if stream is not None:
-            for action in (stream.stop, stream.close):
-                try:
-                    action()
-                except Exception:
-                    logging.exception("Closing microphone stream failed")
+            threading.Thread(target=close_stream_quietly, args=(stream,), daemon=True).start()
         pcm, voiced_frames = trim_recording(self.chunks)
         self.chunks = []
         seconds = len(pcm) / float(TARGET_RATE * 2)
@@ -2616,6 +3002,7 @@ class MainWindow(QMainWindow):
             self.popup.show_error("Didn't hear anything. Try again a little closer to the microphone.")
             return
         self.processing = True
+        self._arm_watchdog()
         self.pending_duration = seconds
         self.pending_pcm = pcm
         self.popup.set_processing()
@@ -2629,6 +3016,7 @@ class MainWindow(QMainWindow):
 
     def on_transcribed(self, text):
         self.processing = False
+        self.watchdog.stop()
         self.spec_token += 1
         self.spec_state = "none"
         text = (text or "").strip()
@@ -2646,6 +3034,7 @@ class MainWindow(QMainWindow):
 
     def on_transcribe_failed(self, message, kind):
         self.processing = False
+        self.watchdog.stop()
         self.spec_token += 1
         self.spec_state = "none"
         self.popup.show_error(message)

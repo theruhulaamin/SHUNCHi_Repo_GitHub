@@ -244,6 +244,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
   <symbol id="i-img" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9.5v5l4.5-2.5z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
 </svg>
@@ -286,6 +287,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       <button type="button" data-tab="dash" aria-current="page"><svg class="i"><use href="#i-home"/></svg><span class="tx" data-bn="ড্যাশবোর্ড">Dashboard</span></button>
       <button type="button" data-tab="ideas"><svg class="i"><use href="#i-inbox"/></svg><span class="tx" data-bn="আইডিয়া">Ideas</span><span class="bdg hidden" id="b-ideas">0</span></button>
       <button type="button" data-tab="software"><svg class="i"><use href="#i-box"/></svg><span class="tx" data-bn="সফটওয়্যার">Software</span></button>
+      <button type="button" data-tab="popups"><svg class="i"><use href="#i-bell"/></svg><span class="tx" data-bn="অ্যাপ পপ-আপ">App pop-ups</span></button>
       <button type="button" data-tab="videos"><svg class="i"><use href="#i-play"/></svg><span class="tx" data-bn="ভিডিও">Videos</span></button>
       <button type="button" data-tab="blog"><svg class="i"><use href="#i-pen"/></svg><span class="tx" data-bn="ব্লগ">Blog</span></button>
       <button type="button" data-tab="release"><svg class="i"><use href="#i-rocket"/></svg><span class="tx" data-bn="রিলিজ">Release</span></button>
@@ -430,6 +432,39 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       </section>
 
       <!-- ===== VIDEOS ===== -->
+      <section id="p-popups" class="sec hidden">
+        <div id="pop-listview">
+          <div class="page-h"><div><h1 data-bn="অ্যাপ পপ-আপ">App pop-ups</h1><p data-bn="এখানে লেখা বার্তা SHUNCHi অ্যাপের ড্যাশবোর্ডে পপ-আপ হিসেবে আসবে। কবে শুরু, কত দিন, দিনে-মোট কতবার দেখাবে ঠিক করে দিন।">Messages written here appear as a pop-up on the SHUNCHi app dashboard. Choose when it starts, for how many days and how many times in total it shows.</p></div>
+            <button class="btn p" id="pop-new" type="button"><svg class="i s"><use href="#i-plus"/></svg><span data-bn="নতুন পপ-আপ">New pop-up</span></button></div>
+          <div class="card"><div class="list" id="pop-list"></div>
+            <p class="muted" style="margin-top:12px" data-bn="অ্যাপ খোলার সময় পপ-আপ আসে, একবারে একটি। একই বার্তা ৩ ঘণ্টার মধ্যে আবার আসে না। বোতামের লিংক শুধু shunchiai.com-এর https পেজ হতে পারবে।">The pop-up appears when the app starts, one at a time. The same message is not repeated within 3 hours. A button link must be an https page on shunchiai.com.</p></div>
+        </div>
+        <div id="pop-formview" class="hidden">
+          <div class="page-h"><div><h1 id="pop-form-title">New pop-up</h1></div><button class="btn" id="pop-cancel" type="button"><svg class="i s"><use href="#i-back"/></svg><span data-bn="ফিরে যান">Back</span></button></div>
+          <form id="pop-form" autocomplete="off"><div class="card">
+            <div class="grid g2">
+              <label><span data-bn="শিরোনাম (বাংলা)">Title (Bangla)</span><input name="title_bn" maxlength="90"></label>
+              <label><span data-bn="শিরোনাম (English)">Title (English)</span><input name="title_en" maxlength="90"></label>
+            </div>
+            <div class="grid g2" style="margin-top:14px">
+              <label><span data-bn="বার্তা (বাংলা)">Message (Bangla)</span><textarea name="body_bn" rows="5" maxlength="600"></textarea></label>
+              <label><span data-bn="বার্তা (English)">Message (English)</span><textarea name="body_en" rows="5" maxlength="600"></textarea></label>
+            </div>
+            <div class="grid g2" style="margin-top:14px">
+              <label><span data-bn="বোতামের লেখা (বাংলা)">Button text (Bangla)</span><input name="button_bn" maxlength="40" placeholder="বিস্তারিত দেখুন"></label>
+              <label><span data-bn="বোতামের লেখা (English)">Button text (English)</span><input name="button_en" maxlength="40" placeholder="Learn more"></label>
+            </div>
+            <label style="margin-top:14px"><span data-bn="বোতামের লিংক (ঐচ্ছিক)">Button link (optional)</span> <small data-bn="https://shunchiai.com/... দিয়ে শুরু হতে হবে">must start with https://shunchiai.com/</small><input name="button_url" maxlength="300" placeholder="https://shunchiai.com/download/"></label>
+            <div class="grid g3" style="margin-top:14px">
+              <label><span data-bn="শুরুর তারিখ">Start date</span><input name="start" type="date" required></label>
+              <label><span data-bn="কত দিন চলবে">For how many days</span><input name="days" type="number" min="1" max="365" value="3" required></label>
+              <label><span data-bn="মোট কতবার দেখাবে">Show how many times</span><input name="times" type="number" min="1" max="50" value="1" required></label>
+            </div>
+            <label class="chk" style="margin-top:14px"><input name="active" type="checkbox" checked> <span data-bn="চালু আছে">Active</span></label>
+            <div class="row" style="margin-top:16px"><button class="btn p" type="submit" id="pop-save" data-bn="সেভ ও পাবলিশ">Save and publish</button><button class="btn d hidden" type="button" id="pop-del" data-bn="ডিলিট">Delete</button></div>
+          </div></form>
+        </div>
+      </section>
       <section id="p-videos" class="sec hidden">
         <div id="vid-listview">
           <div class="page-h"><div><h1 data-bn="সেটআপ ভিডিও">Setup videos</h1><p data-bn="YouTube লিংক দিলেই ওয়েবসাইটের সেটআপ অংশে ভিডিও আসবে। হোমে প্রথম ৩টি দেখায়, বাকিগুলো “সব ভিডিও দেখুন” পেজে।">Add a YouTube link and the video appears in the Setup section. The first 3 show on the home page, all of them on the “View all videos” page.</p></div>
@@ -723,7 +758,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       saveCfg($("#remember").checked); S.info = r;
       $("#who").textContent = r.full_name; $("#connect").classList.add("hidden"); $("#app").classList.remove("hidden");
       $("#actions-link").href = "https://github.com/" + S.repo + "/actions";
-      var h = (location.hash || "").slice(1); go(["dash", "ideas", "software", "videos", "blog", "release", "help"].indexOf(h) >= 0 ? h : "dash", true);
+      var h = (location.hash || "").slice(1); go(["dash", "ideas", "software", "popups", "videos", "blog", "release", "help"].indexOf(h) >= 0 ? h : "dash", true);
       refreshAll();
     }).catch(function (e) { toast(e.status === 404 ? T("Repository not found, or the token has no access to it.", "রিপোজিটরি পাওয়া যায়নি, বা টোকেনের অ্যাক্সেস নেই।") : errText(e), "er"); })
       .then(function () { busy(btn, false); });
@@ -734,7 +769,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   ["logout", "logout2", "logout3"].forEach(function (id) { $("#" + id).addEventListener("click", disconnect); });
 
   /* ---------- navigation ---------- */
-  var TABS = ["dash", "ideas", "software", "videos", "blog", "release", "help"];
+  var TABS = ["dash", "ideas", "software", "popups", "videos", "blog", "release", "help"];
   function go(tab, silent) {
     if (!silent && S.tab === "blog" && S.editing && tab !== "blog" && S.dirty) { if (!window.confirm(T("You have unsaved changes in the editor. Leave anyway?", "এডিটরে সেভ না করা পরিবর্তন আছে। তবুও ছাড়বেন?"))) return; S.dirty = false; }
     S.tab = tab; TABS.forEach(function (t) { $("#p-" + t).classList.toggle("hidden", t !== tab); });
@@ -750,7 +785,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 
   function refreshAll() {
     $("#refresh").disabled = true;
-    return Promise.all([loadApps(), loadVideos(), loadPosts(), loadReleases(), loadInfo(), loadRuns(), loadLive(), loadIdeas(false), loadTraffic()]).then(function () { $("#refresh").disabled = false; S.loaded = true; });
+    return Promise.all([loadApps(), loadVideos(), loadPopups(), loadPosts(), loadReleases(), loadInfo(), loadRuns(), loadLive(), loadIdeas(false), loadTraffic()]).then(function () { $("#refresh").disabled = false; S.loaded = true; });
   }
   $("#refresh").addEventListener("click", function () { refreshAll().then(function () { toast(T("Updated.", "আপডেট হয়েছে।"), "ok"); }); });
   $("#redeploy").addEventListener("click", function () {
@@ -1006,6 +1041,58 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     confirmBox(T("Remove this video?", "এই ভিডিও সরাবেন?"), T("It disappears from the website after the next build.", "পরের বিল্ডের পর ওয়েবসাইট থেকে সরে যাবে।"), T("Remove", "সরান")).then(function (ok) {
       if (!ok) return; S.videos.splice(S.curVid, 1);
       writeVideos("Admin: remove video").then(function () { toast(T("Removed.", "সরানো হয়েছে।"), "ok"); $("#vid-cancel").click(); renderVideos(); }).catch(function (err) { toast(errText(err), "er"); loadVideos(); });
+    });
+  });
+
+  /* ================= APP POP-UPS ================= */
+  S.pops = []; S.popsSha = null; S.curPop = null;
+  function loadPopups() {
+    return getFile("site/data/notices.json").then(function (f) { var d = JSON.parse(f.text || "[]"); S.pops = Array.isArray(d) ? d : []; S.popsSha = f.sha; }, function (e) { if (e.status === 404) { S.pops = []; S.popsSha = null; } else throw e; })
+      .then(renderPopups).catch(function (e) { toast(T("Could not load pop-ups: ", "পপ-আপ লোড হয়নি: ") + errText(e), "er"); });
+  }
+  function popEnd(p) { var d = new Date(p.start + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + (+p.days || 1) - 1); return d.toISOString().slice(0, 10); }
+  function popState(p) {
+    var t = today(); if (p.active === false) return ["", T("off", "বন্ধ")];
+    if (t < p.start) return ["", T("scheduled", "শিডিউল করা")]; if (t > popEnd(p)) return ["", T("finished", "শেষ")]; return ["ok", T("running", "চলছে")];
+  }
+  function renderPopups() {
+    var el = $("#pop-list"); if (!el) return;
+    el.innerHTML = S.pops.length ? S.pops.map(function (p, i) {
+      var st = popState(p), title = (LANG === "bn" ? (p.title_bn || p.title_en) : (p.title_en || p.title_bn)) || (p.body_bn || p.body_en || p.id);
+      return '<div class="item"><div class="meta"><b>' + esc(title) + '</b> <span class="pill ' + st[0] + '">' + st[1] + '</span><div class="muted">' + esc(p.start) + " → " + esc(popEnd(p)) + " · " + (+p.times || 1) + T(" time(s)", " বার") + '</div></div>' +
+        '<div class="acts"><button class="btn sm p" data-edit-pop="' + i + '" type="button">' + T("Edit", "এডিট") + '</button></div></div>';
+    }).join("") : '<div class="empty"><b>' + T("No pop-ups yet", "এখনো কোনো পপ-আপ নেই") + '</b>' + T("Add one to show a message on the app dashboard.", "অ্যাপের ড্যাশবোর্ডে বার্তা দেখাতে যোগ করুন।") + '</div>';
+    $$("[data-edit-pop]", el).forEach(function (b) { b.onclick = function () { openPop(+b.dataset.editPop); }; });
+  }
+  REND.push(renderPopups);
+  function writePops(msg) { return putText("site/data/notices.json", JSON.stringify(S.pops, null, 2) + "\n", msg, S.popsSha).then(function (r) { S.popsSha = r.content.sha; }); }
+  var popF = $("#pop-form"), POPF = popF.elements;
+  function openPop(i) {
+    S.curPop = i; var p = i == null ? { active: true, start: today(), days: 3, times: 1 } : S.pops[i];
+    $("#pop-listview").classList.add("hidden"); $("#pop-formview").classList.remove("hidden");
+    $("#pop-form-title").textContent = i == null ? T("New pop-up", "নতুন পপ-আপ") : T("Edit pop-up", "পপ-আপ এডিট");
+    ["title_bn", "title_en", "body_bn", "body_en", "button_bn", "button_en", "button_url"].forEach(function (k) { POPF[k].value = p[k] || ""; });
+    POPF.start.value = p.start || today(); POPF.days.value = p.days || 3; POPF.times.value = p.times || 1; POPF.active.checked = p.active !== false;
+    $("#pop-del").classList.toggle("hidden", i == null); window.scrollTo(0, 0);
+  }
+  $("#pop-new").addEventListener("click", function () { openPop(null); });
+  $("#pop-cancel").addEventListener("click", function () { $("#pop-formview").classList.add("hidden"); $("#pop-listview").classList.remove("hidden"); });
+  popF.addEventListener("submit", function (e) {
+    e.preventDefault(); var btn = $("#pop-save"), g = function (k) { return POPF[k].value.trim(); };
+    if (!g("title_bn") && !g("title_en") && !g("body_bn") && !g("body_en")) { toast(T("Write a title or a message.", "শিরোনাম বা বার্তা লিখুন।"), "er"); return; }
+    var url = g("button_url"); if (url && !/^https:\/\/(www\.)?shunchiai\.com(\/|$)/i.test(url)) { toast(T("The button link must start with https://shunchiai.com/", "লিংক https://shunchiai.com/ দিয়ে শুরু হতে হবে।"), "er"); return; }
+    var days = Math.max(1, Math.min(365, parseInt(POPF.days.value, 10) || 1)), times = Math.max(1, Math.min(50, parseInt(POPF.times.value, 10) || 1));
+    var id = S.curPop == null ? "n" + Date.now().toString(36) : S.pops[S.curPop].id;
+    var item = { id: id, active: POPF.active.checked, title_bn: g("title_bn"), title_en: g("title_en"), body_bn: g("body_bn"), body_en: g("body_en"), button_bn: g("button_bn"), button_en: g("button_en"), button_url: url, start: POPF.start.value || today(), days: days, times: times };
+    busy(btn, true); if (S.curPop == null) S.pops.unshift(item); else S.pops[S.curPop] = item;
+    writePops((S.curPop == null ? "Admin: add app pop-up " : "Admin: update app pop-up ") + id).then(function () { toast(T("Saved. The app picks it up from the website within a few minutes.", "সেভ হয়েছে। কয়েক মিনিটের মধ্যে অ্যাপ ওয়েবসাইট থেকে নেবে।"), "ok"); $("#pop-cancel").click(); renderPopups(); setTimeout(loadRuns, 5000); })
+      .catch(function (err) { toast(T("Could not save: ", "সেভ হয়নি: ") + errText(err), "er"); loadPopups(); }).then(function () { busy(btn, false); });
+  });
+  $("#pop-del").addEventListener("click", function () {
+    if (S.curPop == null) return;
+    confirmBox(T("Remove this pop-up?", "এই পপ-আপ সরাবেন?"), T("It stops showing in the app after the next build.", "পরের বিল্ডের পর অ্যাপে আর আসবে না।"), T("Remove", "সরান")).then(function (ok) {
+      if (!ok) return; S.pops.splice(S.curPop, 1);
+      writePops("Admin: remove app pop-up").then(function () { toast(T("Removed.", "সরানো হয়েছে।"), "ok"); $("#pop-cancel").click(); renderPopups(); }).catch(function (err) { toast(errText(err), "er"); loadPopups(); });
     });
   });
 

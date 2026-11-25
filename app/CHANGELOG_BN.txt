@@ -1,3 +1,17 @@
+SHUNCHi 4.5.0 — Pop-ups, Copy, Ideas and Stability
+==================================================
+
+1. Dashboard
+   - Clear note: a Gemini API key is required; writing runs on your own free limit; a Pro plan with higher limits is planned.
+   - Admin pop-up messages (start date, number of days, number of times) from shunchiai.com.
+   - Fixed: the dashboard could stay busy or keep an old message. A safety timer now releases it, the
+     microphone is closed in the background and stale hotkey states are cleaned.
+
+2. Voice History: a Copy button on every row.
+3. More Apps: opens the apps page on shunchiai.com, shows info and has the "অ্যাপ বা টুলের আইডিয়া দিন" form.
+4. Developer page: the founder story. Email removed.
+5. Mic pop-up: simpler, more polished; developer credit removed.
+
 SHUNCHi 4.4.0 — Polish, Updates and Speed
 ==========================================
 

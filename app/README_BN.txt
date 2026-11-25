@@ -1,4 +1,4 @@
-SHUNCHi by RUHUL — Version 4.4.0
+SHUNCHi by RUHUL — Version 4.5.0
 =================================
 
 Free AI voice typing for Windows. Press a shortcut, speak Bangla or English, pause, and the finished,
@@ -15,7 +15,7 @@ HOW IT WORKS
    (Smart mode: punctuation, filler-word removal, lists). Backup models are tried automatically.
 3. The text is pasted at your cursor with Ctrl + V (SendInput) and saved to the local history.
 
-WEBSITE, UPDATES AND MORE APPS (new in 4.4.0)
+WEBSITE, UPDATES AND MORE APPS (new in 4.5.0)
 - Official website: https://shunchiai.com
 - SHUNCHi reads https://shunchiai.com/update.json (a small file you upload, see website\README_UPDATE.txt).
   When its latest_version is higher than the installed version, every installed copy shows an update
