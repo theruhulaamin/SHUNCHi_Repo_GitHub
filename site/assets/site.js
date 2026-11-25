@@ -68,13 +68,31 @@
   sync();
 })();
 
-/* Idea form: sends the suggestion to the developer's inbox (FormSubmit). Falls back to the mail app if sending fails. */
+/* Idea form. Order: 1) our own private GitHub inbox  2) FormSubmit  3) the visitor's mail app.
+   Personal details (name, email, phone, address) are encrypted in the browser with the developer's public key,
+   so nobody who can read the inbox without the private key sees them. Each idea gets a tracking number. */
 (function () {
   var form = document.getElementById("suggest-form"); if (!form) return;
   var msg = document.getElementById("suggest-msg"), btn = form.querySelector("button[type=submit]");
-  var TO = "ruhulaaminn@gmail.com";
+  var TO = "ruhulaaminn@gmail.com", ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   function bn() { return document.documentElement.lang === "bn"; }
   function say(en, b, ok) { msg.textContent = bn() ? b : en; msg.className = "suggest-msg " + (ok ? "ok" : "err"); }
+  function newCode() { var a = new Uint8Array(8); crypto.getRandomValues(a); var c = "SH-"; for (var i = 0; i < 8; i++) c += ALPHA[a[i] % 32]; return c; }
+  function b64(buf) { var b = new Uint8Array(buf), s = ""; for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); }
+  function encryptPII(jwk, obj) {
+    var bytes = new TextEncoder().encode(JSON.stringify(obj));
+    return crypto.subtle.importKey("jwk", { kty: "RSA", n: jwk.n, e: jwk.e, alg: "RSA-OAEP-256", ext: true }, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]).then(function (key) {
+      var parts = []; for (var i = 0; i < bytes.length; i += 190) parts.push(crypto.subtle.encrypt({ name: "RSA-OAEP" }, key, bytes.slice(i, i + 190)).then(b64));
+      return Promise.all(parts);
+    });
+  }
+  function showTrack(code) {
+    var box = document.getElementById("suggest-track");
+    if (!box) { box = document.createElement("div"); box.id = "suggest-track"; box.className = "suggest-track"; form.parentNode.insertBefore(box, form.nextSibling); }
+    box.innerHTML = '<div><b>' + (bn() ? "আপনার ট্র্যাকিং নম্বর" : "Your tracking number") + '</b><code>' + code + '</code></div><p>' + (bn() ? "এটি সংরক্ষণ করুন। নিচের “আইডিয়ার স্ট্যাটাস” অংশে এই নম্বর দিয়ে আপনার আইডিয়ার অবস্থা ও মতামত দেখতে পারবেন।" : "Keep it safe. Use it in “Idea status” below to see where your idea stands and any feedback.") + '</p><button type="button" class="btn btn-ghost">' + (bn() ? "কপি" : "Copy") + '</button>';
+    box.querySelector("button").onclick = function () { try { navigator.clipboard.writeText(code); this.textContent = bn() ? "কপি হয়েছে" : "Copied"; } catch (e) {} };
+    var inp = document.getElementById("status-code"); if (inp) inp.value = code;
+  }
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var d = new FormData(form);
@@ -86,37 +104,72 @@
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { say("Please enter a valid email.", "সঠিক ইমেইল দিন।", false); return; }
     if (!/^[0-9+()\-\s]{6,30}$/.test(phone)) { say("Please enter a valid phone number.", "সঠিক ফোন নম্বর দিন।", false); return; }
     btn.disabled = true; say("Sending…", "পাঠানো হচ্ছে…", true);
+    var code = newCode();
     var payload = {
-      _subject: "SHUNCHi idea: " + title, _template: "table", _captcha: "false",
+      _subject: "SHUNCHi idea " + code + ": " + title, _template: "table", _captcha: "false", Tracking: code,
       Type: d.get("type"), Idea: title, Details: details,
       Name: uname, Email: email, Phone: phone, Address: address, Contact: email + " · " + phone, Language: document.documentElement.lang, Page: location.href
     };
-    var ctl = window.AbortController ? new AbortController() : null, timer = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
+    var ctl = window.AbortController ? new AbortController() : null, timer = setTimeout(function () { if (ctl) ctl.abort(); }, 20000);
     function viaFormSubmit() {
       return fetch("https://formsubmit.co/ajax/" + TO, {
         method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload), signal: ctl ? ctl.signal : undefined
       });
     }
-    /* 1) our own GitHub inbox (private repo, issue per idea)  2) FormSubmit  3) mail app */
     function viaGitHub() {
-      return fetch("/data/ideas-config.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (cfg) {
+      return Promise.all([
+        fetch("/data/ideas-config.json", { cache: "no-store" }).then(function (r) { return r.json(); }),
+        fetch("/data/ideas-key.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }, function () { return null; })
+      ]).then(function (x) {
+        var cfg = x[0], jwk = x[1];
         if (!cfg || !cfg.repo || !cfg.token) throw new Error("inbox not configured");
-        var meta = JSON.stringify({ Type: payload.Type, Idea: title, Details: details, Name: payload.Name, Email: email, Phone: phone, Address: address, Contact: payload.Contact, Language: payload.Language, Page: payload.Page, Source: "Website" }).replace(/>/g, "\\u003e");
-        var text = "**Type:** " + payload.Type + "\n**Name:** " + payload.Name + "\n**Email:** " + email + "\n**Phone:** " + phone + "\n**Address:** " + address + "\n**Language:** " + payload.Language + "\n\n" + details + "\n\n<!--shunchi:" + meta + "-->";
-        return fetch("https://api.github.com/repos/" + cfg.repo + "/issues", {
-          method: "POST", headers: { "Authorization": "Bearer " + cfg.token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
-          body: JSON.stringify({ title: ("[" + payload.Type + "] " + title).slice(0, 120), body: text }), signal: ctl ? ctl.signal : undefined
+        var meta = { Type: payload.Type, Idea: title, Details: details, Language: payload.Language, Page: payload.Page, Source: "Website", Track: code };
+        var pii = { Name: uname, Email: email, Phone: phone, Address: address };
+        var lock = jwk && jwk.n && jwk.e ? encryptPII(jwk, pii) : Promise.resolve(null);
+        return lock.then(function (enc) {
+          if (enc) meta.enc = enc; else for (var k in pii) meta[k] = pii[k];
+          var head = "**Tracking:** " + code + "\n**Type:** " + payload.Type + "\n**Language:** " + payload.Language + "\n" + (enc ? "**Personal details:** encrypted\n" : "**Name:** " + uname + "\n**Email:** " + email + "\n**Phone:** " + phone + "\n**Address:** " + address + "\n");
+          var text = head + "\n" + details + "\n\n<!--shunchi:" + JSON.stringify(meta).replace(/>/g, "\\u003e") + "-->";
+          return fetch("https://api.github.com/repos/" + cfg.repo + "/issues", {
+            method: "POST", headers: { "Authorization": "Bearer " + cfg.token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
+            body: JSON.stringify({ title: ("[" + code + "] " + title).slice(0, 120), body: text }), signal: ctl ? ctl.signal : undefined
+          });
         }).then(function (r) { if (r.status !== 201) throw new Error("GitHub HTTP " + r.status); return { ok: true, json: function () { return Promise.resolve({ success: true }); } }; });
       });
     }
-    viaGitHub().catch(function (e) { try { console.warn("Inbox:", e && e.message); } catch (x) {} return viaFormSubmit(); }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) { try { console.warn("FormSubmit:", r.status, j && j.message); } catch (x) {} throw new Error((j && j.message) || ("HTTP " + r.status)); } }); })
-      .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); })
+    viaGitHub().catch(function (er) { try { console.warn("Inbox:", er && er.message); } catch (x) {} return viaFormSubmit(); }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) { try { console.warn("FormSubmit:", r.status, j && j.message); } catch (x) {} throw new Error((j && j.message) || ("HTTP " + r.status)); } }); })
+      .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); showTrack(code); })
       .catch(function (err) {
         try { console.warn("Idea form failed:", err && err.message); } catch (x) {}
-        var body = "Type: " + payload.Type + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + payload.Name + "\nEmail: " + email + "\nPhone: " + phone + "\nAddress: " + address;
+        var body = "Tracking: " + code + "\nType: " + payload.Type + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + payload.Name + "\nEmail: " + email + "\nPhone: " + phone + "\nAddress: " + address;
         location.href = "mailto:" + TO + "?subject=" + encodeURIComponent(payload._subject) + "&body=" + encodeURIComponent(body);
         say("Could not send directly. Your mail app opened instead.", "সরাসরি পাঠানো যায়নি। তাই আপনার মেইল অ্যাপ খুলেছে।", false);
       }).then(function () { clearTimeout(timer); btn.disabled = false; });
+  });
+})();
+
+/* Idea status: the visitor types the tracking number. The public file only has a SHA-256 of each number, never the idea or the person. */
+(function () {
+  var f = document.getElementById("status-form"); if (!f) return;
+  var out = document.getElementById("status-out"), inp = document.getElementById("status-code");
+  function bn() { return document.documentElement.lang === "bn"; }
+  function sha(str) { return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function (b) { return [].map.call(new Uint8Array(b), function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); }); }
+  var LABEL = { pending: ["Pending", "পেন্ডিং"], analysis: ["Under analysis", "বিশ্লেষণ চলছে"], approved: ["Approved", "অনুমোদিত"], rejected: ["Not taken forward", "এগোনো যাচ্ছে না"] };
+  var DEF = { pending: ["We received your idea. It is waiting for review.", "আপনার আইডিয়া পেয়েছি। পর্যালোচনার অপেক্ষায় আছে।"], analysis: ["We are looking into your idea.", "আপনার আইডিয়াটি আমরা খতিয়ে দেখছি।"], approved: ["Great news: your idea is approved.", "সুখবর: আপনার আইডিয়া অনুমোদিত হয়েছে।"], rejected: ["Sorry, we cannot take this idea forward right now.", "দুঃখিত, এই মুহূর্তে আইডিয়াটি নিয়ে এগোতে পারছি না।"] };
+  function show(cls, html) { out.className = "status-out " + cls; out.innerHTML = html; }
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var code = (inp.value || "").trim().toUpperCase().replace(/\s+/g, "");
+    if (!/^SH-[A-Z2-9]{8}$/.test(code)) { show("err", bn() ? "সঠিক ট্র্যাকিং নম্বর দিন, যেমন SH-AB12CD34।" : "Enter a valid tracking number, like SH-AB12CD34."); return; }
+    show("", bn() ? "খোঁজা হচ্ছে…" : "Checking…");
+    Promise.all([sha(code), fetch("/data/ideas-status.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : {}; }, function () { return {}; })]).then(function (x) {
+      var rec = x[1][x[0]];
+      if (!rec) { show("wait", bn() ? "এই নম্বরে এখনো কোনো আপডেট নেই। নম্বরটি ঠিক আছে কিনা দেখুন। নতুন পাঠানো আইডিয়া হলে কয়েক ঘণ্টা পরে আবার দেখুন।" : "No update for this number yet. Check the number. If you just sent the idea, look again in a few hours."); return; }
+      var st = LABEL[rec.s] ? rec.s : "pending", i = bn() ? 1 : 0;
+      var fb = rec.f ? rec.f : DEF[st][i];
+      show(st, '<span class="status-pill st-' + st + '">' + LABEL[st][i] + '</span><p class="status-fb"></p><small>' + (rec.t ? (bn() ? "সর্বশেষ আপডেট: " : "Last update: ") + rec.t : "") + '</small>');
+      out.querySelector(".status-fb").textContent = fb;
+    });
   });
 })();
 

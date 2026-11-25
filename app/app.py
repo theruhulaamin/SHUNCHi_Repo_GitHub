@@ -922,30 +922,85 @@ class InstallerDownloader(threading.Thread):
             pass
 
 
+def _b64u_int(text):
+    text = str(text).replace("-", "+").replace("_", "/")
+    return int.from_bytes(base64.b64decode(text + "=" * (-len(text) % 4)), "big")
+
+
+def _mgf1(seed, length):
+    out, counter = b"", 0
+    while len(out) < length:
+        out += hashlib.sha256(seed + counter.to_bytes(4, "big")).digest()
+        counter += 1
+    return out[:length]
+
+
+def rsa_oaep_encrypt(jwk, data):
+    """RSA-OAEP (SHA-256) with the developer's PUBLIC key, in 190-byte pieces. Same format as the website's
+    browser code, so the admin panel can open both. Returns a list of base64 strings."""
+    n, e = _b64u_int(jwk["n"]), _b64u_int(jwk["e"])
+    k = (n.bit_length() + 7) // 8
+    h_len = 32
+    room = k - 2 * h_len - 2
+    pieces = []
+    for start in range(0, len(data), room):
+        m = data[start:start + room]
+        l_hash = hashlib.sha256(b"").digest()
+        db = l_hash + b"\x00" * (room - len(m)) + b"\x01" + m
+        seed = os.urandom(h_len)
+        masked_db = bytes(a ^ b for a, b in zip(db, _mgf1(seed, k - h_len - 1)))
+        masked_seed = bytes(a ^ b for a, b in zip(seed, _mgf1(masked_db, h_len)))
+        em = b"\x00" + masked_seed + masked_db
+        pieces.append(base64.b64encode(pow(int.from_bytes(em, "big"), e, n).to_bytes(k, "big")).decode("ascii"))
+    return pieces
+
+
+TRACK_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def new_tracking_code():
+    return "SH-" + "".join(TRACK_ALPHABET[b % 32] for b in os.urandom(8))
+
+
 class IdeaSender(threading.Thread):
     """Sends the 'app or tool idea' form to the developer. Never raises into the UI."""
     def __init__(self, signals, fields):
         super().__init__(daemon=True, name="SHUNCHi-Idea")
         self.signals, self.fields = signals, fields
+        self.code = new_tracking_code()
 
     def _send_github(self):
-        """Primary route: one issue in the developer's private idea inbox. The token lives only on the website."""
-        with urllib.request.urlopen(urllib.request.Request(
-                WEBSITE_URL + "/data/ideas-config.json", headers={"User-Agent": f"SHUNCHi/{APP_VERSION}"}), timeout=12) as r:
-            cfg = json.loads(r.read(8192).decode("utf-8") or "{}")
+        """Primary route: one issue in the developer's private idea inbox. The token lives only on the website.
+        Name, email, phone and address are encrypted with the developer's public key before they are sent."""
+        def get(path):
+            with urllib.request.urlopen(urllib.request.Request(
+                    WEBSITE_URL + path, headers={"User-Agent": f"SHUNCHi/{APP_VERSION}"}), timeout=12) as r:
+                return json.loads(r.read(16384).decode("utf-8") or "{}")
+        cfg = get("/data/ideas-config.json")
         repo, token = str(cfg.get("repo", "")), str(cfg.get("token", ""))
         if not repo or not token:
             raise ValueError("idea inbox is not configured")
+        try:
+            jwk = get("/data/ideas-key.json")
+            jwk = jwk if jwk.get("n") and jwk.get("e") else None
+        except Exception:
+            jwk = None
         f = self.fields
-        meta = dict(f, Type="App idea", Language="-", Page="-", Source=f"SHUNCHi app {APP_VERSION}", Details="")
-        meta_json = json.dumps(meta, ensure_ascii=False).replace(">", "\\u003e")
         idea = str(f.get("Idea", "")).strip()
-        body = (f"**Name:** {f.get('Name', '-')}\n**Email:** {f.get('Email', '-')}\n**Phone:** {f.get('Phone', '-')}\n"
-                f"**Address:** {f.get('Address', '-')}\n**Source:** SHUNCHi app {APP_VERSION}\n\n"
-                f"{idea}\n\n<!--shunchi:{meta_json}-->")
+        pii = {k: str(f.get(k, "")) for k in ("Name", "Email", "Phone", "Address")}
+        meta = {"Type": "App idea", "Idea": idea, "Details": "", "Language": "-", "Page": "-",
+                "Source": f"SHUNCHi app {APP_VERSION}", "Track": self.code}
+        if jwk:
+            meta["enc"] = rsa_oaep_encrypt(jwk, json.dumps(pii, ensure_ascii=False).encode("utf-8"))
+            who = "**Personal details:** encrypted\n"
+        else:
+            meta.update(pii)
+            who = "".join(f"**{k}:** {v}\n" for k, v in pii.items())
+        meta_json = json.dumps(meta, ensure_ascii=False).replace(">", "\\u003e")
+        body = f"**Tracking:** {self.code}\n**Source:** SHUNCHi app {APP_VERSION}\n{who}\n{idea}\n\n<!--shunchi:{meta_json}-->"
         req = urllib.request.Request(
             f"https://api.github.com/repos/{repo}/issues", method="POST",
-            data=json.dumps({"title": "[App idea] " + idea.replace("\n", " ")[:90], "body": body}, ensure_ascii=False).encode("utf-8"),
+            data=json.dumps({"title": f"[{self.code}] " + idea.replace("\n", " ")[:90], "body": body}, ensure_ascii=False).encode("utf-8"),
             headers={"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json",
                      "Content-Type": "application/json", "User-Agent": f"SHUNCHi/{APP_VERSION}"})
         with urllib.request.urlopen(req, timeout=20) as r:
@@ -955,13 +1010,13 @@ class IdeaSender(threading.Thread):
     def run(self):
         try:
             self._send_github()
-            self.signals.idea_result.emit(True, "Thank you! Your idea reached the developer.")
+            self.signals.idea_result.emit(True, f"Thank you! Your idea reached the developer. Tracking number: {self.code}")
             return
         except Exception as exc:
             logging.info("Idea inbox failed, trying the mail form: %s", exc)
         try:
             payload = dict(self.fields)
-            payload.update({"_subject": "SHUNCHi idea: " + str(self.fields.get("Idea", ""))[:80],
+            payload.update({"Tracking": self.code, "_subject": f"SHUNCHi idea {self.code}: " + str(self.fields.get("Idea", ""))[:80],
                             "_template": "table", "_captcha": "false", "Source": f"SHUNCHi app {APP_VERSION}"})
             request = urllib.request.Request(
                 IDEA_ENDPOINT, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"), method="POST",
@@ -972,7 +1027,7 @@ class IdeaSender(threading.Thread):
                 answer = json.loads(response.read(65536).decode("utf-8") or "{}")
             if str(answer.get("success", "true")).lower() == "false":
                 raise ValueError("the form service did not accept the message")
-            self.signals.idea_result.emit(True, "Thank you! Your idea reached the developer.")
+            self.signals.idea_result.emit(True, f"Thank you! Your idea reached the developer. Tracking number: {self.code}")
         except Exception as exc:
             logging.info("Idea form failed: %s", exc)
             self.signals.idea_result.emit(False, "fallback")
@@ -2470,6 +2525,13 @@ class MoreAppsPage(QWidget):
         self.idea_status.setText(message)
         if ok:
             self.idea_text.clear()
+            code = re.search(r"SH-[A-Z2-9]{8}", message)
+            if code:
+                try:
+                    QApplication.clipboard().setText(code.group(0))
+                except Exception:
+                    pass
+                self.idea_status.setText(f"{message}  (copied). Check its status at {WEBSITE_LABEL}/apps/#idea-status")
 
     def _tile(self, name, logo):
         tile = QLabel()

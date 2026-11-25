@@ -731,3 +731,18 @@ html[data-theme="dark"] .dl-chips .dl-count{color:#6ee7b7}
 .vh-body ul{margin:12px 0 0 18px;padding:0;display:grid;gap:6px;font-size:15px;line-height:1.55}
 html[lang="bn"] .vh-body ul.en,html[lang="en"] .vh-body ul.bn{display:none}
 .vh-link{margin-top:12px;font-size:14px}.vh-link a{font-weight:600}
+
+/* idea tracking + status */
+.suggest-track{margin-top:16px;padding:16px 18px;border-radius:14px;background:var(--accent-soft,#e8f1ff);display:grid;gap:8px;grid-template-columns:1fr auto;align-items:center}
+.suggest-track b{display:block;font-size:13px;color:var(--muted,#5b6578)}.suggest-track code{font-size:22px;font-weight:800;letter-spacing:.08em;color:var(--accent-ink,#1d4ed8)}
+.suggest-track p{grid-column:1/-1;font-size:14px;color:var(--muted,#5b6578);margin:0}
+.idea-status{margin-top:26px;padding-top:22px;border-top:1px solid var(--line,#e3e8f2)}
+.idea-status h4{font-size:18px;margin-bottom:4px}.idea-status>p{color:var(--muted,#5b6578);font-size:15px;margin-bottom:12px}
+.status-form{display:flex;gap:10px;flex-wrap:wrap}.status-form input{flex:1;min-width:200px;font-size:17px;letter-spacing:.06em;text-transform:uppercase}
+.status-out{margin-top:14px;display:none;padding:14px 16px;border-radius:12px;background:var(--surface,#fff);border:1px solid var(--line,#e3e8f2)}
+.status-out:not(:empty){display:block}.status-out.err{border-color:#f0b9b9;background:#fef2f2;color:#991b1b}.status-out.wait{background:#fff7e6;border-color:#fde2a8}
+.status-pill{display:inline-block;font-weight:800;font-size:13px;padding:3px 12px;border-radius:99px;background:#e8f1ff;color:#1d4ed8}
+.st-approved{background:#dcfce7;color:#166534}.st-rejected{background:#fee2e2;color:#991b1b}.st-analysis{background:#fef3c7;color:#92400e}
+.status-fb{margin:10px 0 6px;font-size:16px;line-height:1.55;white-space:pre-wrap}.status-out small{color:var(--muted,#5b6578)}
+.status-form input{padding:12px 14px;border:1px solid var(--line,#d5ddec);border-radius:12px;background:var(--surface,#fff);color:inherit;font-family:inherit;outline:none}
+.status-form input:focus{border-color:var(--accent,#2563eb);box-shadow:0 0 0 3px rgba(37,99,235,.15)}

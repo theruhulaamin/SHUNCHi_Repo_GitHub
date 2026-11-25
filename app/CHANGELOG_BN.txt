@@ -1,4 +1,7 @@
 SHUNCHi 4.6.1 — Dashboard in Bangla/English, smoother pop-up, update prompt, installer version
+
+- আইডিয়া পাঠালে এখন ট্র্যাকিং নম্বর (SH-XXXXXXXX) পাওয়া যায়, অ্যাপে কপিও হয়। ওয়েবসাইটের “আইডিয়ার স্ট্যাটাস” অংশে নম্বর দিয়ে স্ট্যাটাস ও মতামত দেখা যায়।
+- নাম, ইমেইল, ফোন, ঠিকানা এনক্রিপ্ট হয়ে যায়; শুধু ডেভেলপারের কী দিয়ে খোলা যায়।
 ==============================================================================================
 
 1. Dashboard: English | বাংলা switch (top right). Sidebar and dashboard follow it and it is remembered.

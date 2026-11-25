@@ -367,6 +367,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
           <div class="row"><button class="btn" id="ideas-reload" type="button"><svg class="i s"><use href="#i-refresh"/></svg><span data-bn="রিফ্রেশ">Refresh</span></button>
             <button class="btn" id="ideas-csv" type="button"><svg class="i s"><use href="#i-dl"/></svg>CSV</button></div></div>
         <div class="card" id="ideas-status" style="display:none;margin-bottom:12px"></div>
+        <div class="card" id="ideas-key" style="margin-bottom:12px"></div>
         <div class="card hidden" id="ideas-setup">
           <h2 data-bn="একবার সেটআপ: FormSubmit API key">One-time setup: FormSubmit API key</h2>
           <p class="muted" style="margin:6px 0 10px" data-bn="ফর্মের লেখা আপনার ইমেইলে আসে। এখানে দেখতে FormSubmit-এর API key লাগবে। key আপনার ইমেইলে আসবে।">Idea form messages arrive in your email. To see them here you need the FormSubmit API key. It is sent to your email.</p>
@@ -880,7 +881,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       if (!details && title.length > 90) { details = title; title = title.slice(0, 80).replace(/\s+\S*$/, "") + "…"; }   // app ideas are one long text
       var id = (at + "|" + g("Name") + "|" + title).slice(0, 140) || String(i);
       if (seen[id]) id += "#" + (++seen[id]); else seen[id] = 1;
-      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact") || [g("Email"), g("Phone")].filter(Boolean).join(" · "), email: g("Email"), phone: g("Phone"), address: g("Address"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at), n: s._n || 0, closed: !!s._closed, status: s._status || "pending" };
+      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact") || [g("Email"), g("Phone")].filter(Boolean).join(" · "), email: g("Email"), phone: g("Phone"), address: g("Address"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at), n: s._n || 0, closed: !!s._closed, status: s._status || "pending", track: g("Track"), locked: !!f._locked, fb: s._fb || "" };
     }).sort(function (a, b) { return (b.t - a.t) || String(b.at).localeCompare(String(a.at)); });
   }
   function setIdeas(subs, fromCache) {
@@ -904,11 +905,68 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     if (m) { try { f = JSON.parse(m[1]); } catch (e) {} }
     if (!f.Idea) f.Idea = String(it.title || "").replace(/^\[[^\]]*\]\s*/, "");
     if (!f.Source) f.Source = "Website";
-    var st = ""; (it.labels || []).forEach(function (l) { var m = /^status:(pending|analysis|approved|rejected)$/.exec(l && l.name || ""); if (m) st = m[1]; });
+    if (!f.Track) { var tm = /^\[(SH-[A-Z2-9]{8})\]/.exec(it.title || ""); if (tm) f.Track = tm[1]; }
+    var st = ""; (it.labels || []).forEach(function (l) { var m = /^status:(pending|analysis|approved|rejected|deleted)$/.exec(l && l.name || ""); if (m) st = m[1]; });
     if (!st) st = it.state === "closed" ? "approved" : "pending";
     return { form_data: f, submitted_at: it.created_at, _n: it.number, _closed: it.state === "closed", _status: st };
   }
+  /* ---- privacy key + public status ---- */
+  var PKEY = "shunchi_ideas_privkey", STATUS_FILE = "site/data/ideas-status.json", KEY_FILE = "site/data/ideas-key.json";
+  var published = {};
+  function privKey() { try { return JSON.parse(localStorage.getItem(PKEY) || "null"); } catch (e) { return null; } }
+  function unb64(b) { var t = atob(b), a = new Uint8Array(t.length); for (var i = 0; i < t.length; i++) a[i] = t.charCodeAt(i); return a; }
+  function lockSub(f, why) { f._locked = true; ["Name", "Email", "Phone", "Address"].forEach(function (k) { f[k] = "🔒"; }); f.Contact = "🔒 " + why; }
+  function decryptSub(sub) {
+    var f = sub.form_data; if (!f || !f.enc) return Promise.resolve();
+    var jwk = privKey(); if (!jwk) { lockSub(f, T("locked", "লক করা")); return Promise.resolve(); }
+    return crypto.subtle.importKey("jwk", jwk, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]).then(function (key) {
+      return Promise.all(f.enc.map(function (c) { return crypto.subtle.decrypt({ name: "RSA-OAEP" }, key, unb64(c)); }));
+    }).then(function (parts) {
+      var n = 0; parts.forEach(function (x) { n += x.byteLength; }); var all = new Uint8Array(n), o = 0; parts.forEach(function (x) { all.set(new Uint8Array(x), o); o += x.byteLength; });
+      var d = JSON.parse(new TextDecoder().decode(all)); for (var k in d) f[k] = d[k]; f.Contact = [d.Email, d.Phone].filter(Boolean).join(" · "); delete f.enc;
+    }).catch(function () { lockSub(f, T("wrong key", "ভুল কী")); });
+  }
+  function sha256hex(t) { return crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)).then(function (b) { return [].map.call(new Uint8Array(b), function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); }); }
+  function loadPublished(subs) {
+    return getFile(STATUS_FILE).then(function (f) { try { published = JSON.parse(f.text || "{}") || {}; } catch (e) { published = {}; } }, function () { published = {}; })
+      .then(function () { return Promise.all(subs.map(function (sub) { var t = sub.form_data && sub.form_data.Track; if (!t) return null; return sha256hex(t).then(function (h) { if (published[h]) sub._fb = published[h].f || ""; }); })); });
+  }
+  /* write one idea into the public status file (key = SHA-256 of the tracking number). rec=null removes it. */
+  function publishIdea(x, rec, retry) {
+    if (!x.track) return Promise.resolve(false);
+    return sha256hex(x.track).then(function (h) {
+      return getFile(STATUS_FILE).catch(function (e) { if (e.status === 404) return { text: "{}", sha: null }; throw e; }).then(function (f) {
+        var m = {}; try { m = JSON.parse(f.text || "{}") || {}; } catch (e) {}
+        if (rec) m[h] = rec; else delete m[h];
+        return putText(STATUS_FILE, JSON.stringify(m), "Idea status update", f.sha).then(function () { published = m; return true; });
+      }).catch(function (e) { if (!retry && (e.status === 409 || e.status === 422)) return publishIdea(x, rec, true); throw e; });
+    });
+  }
+  function pubRec(x, st) { return { s: st, f: x.fb || "", t: today() }; }
+  function ensureKey() {
+    var box = $("#ideas-key"); if (!box) return;
+    var has = !!privKey();
+    box.innerHTML = '<b>' + T("Privacy key", "প্রাইভেসি কী") + '</b> ' + (has ? '<span class="pill ok">' + T("on this device", "এই ডিভাইসে আছে") + '</span>' : '<span class="pill wn">' + T("not on this device", "এই ডিভাইসে নেই") + '</span>') +
+      '<p class="muted" style="margin:6px 0">' + T("Names, emails, phones and addresses are encrypted before they reach the idea inbox. Only this key opens them. Keep a backup. If you lose it, those details cannot be read again.", "নাম, ইমেইল, ফোন ও ঠিকানা ইনবক্সে পৌঁছানোর আগেই এনক্রিপ্ট হয়। শুধু এই কী দিয়ে খোলা যায়। ব্যাকআপ রাখুন। হারালে ওই তথ্য আর পড়া যাবে না।") + '</p>' +
+      '<div class="row" style="flex-wrap:wrap"><button class="btn sm p" id="k-make" type="button">' + (has ? T("Make a new key", "নতুন কী বানান") : T("Create key and turn on encryption", "কী বানিয়ে এনক্রিপশন চালু করুন")) + '</button>' +
+      '<button class="btn sm" id="k-save" type="button"' + (has ? "" : " disabled") + '>' + T("Download backup", "ব্যাকআপ ডাউনলোড") + '</button><button class="btn sm" id="k-imp" type="button">' + T("Import key", "কী ইমপোর্ট") + '</button></div>' +
+      '<textarea id="k-text" rows="3" class="hidden" style="width:100%;margin-top:8px" placeholder="' + T("Paste the key file text here", "কী ফাইলের লেখা এখানে বসান") + '"></textarea><div class="row"><button class="btn sm hidden" id="k-go" type="button">' + T("Use this key", "এই কী ব্যবহার করুন") + '</button></div>';
+    $("#k-make").onclick = function () {
+      if (has && !confirm(T("A new key cannot open ideas locked with the old one. Continue?", "নতুন কী দিয়ে পুরনো কী-তে লক করা আইডিয়া খোলা যাবে না। চালিয়ে যাবেন?"))) return;
+      var b = this; busy(b, true);
+      crypto.subtle.generateKey({ name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["encrypt", "decrypt"]).then(function (kp) {
+        return Promise.all([crypto.subtle.exportKey("jwk", kp.publicKey), crypto.subtle.exportKey("jwk", kp.privateKey)]);
+      }).then(function (k) {
+        try { localStorage.setItem(PKEY, JSON.stringify(k[1])); } catch (e) { throw new Error("Browser storage is blocked"); }
+        return exists(KEY_FILE).then(function (sha) { return putText(KEY_FILE, JSON.stringify({ n: k[0].n, e: k[0].e }), "Idea privacy public key", sha); });
+      }).then(function () { toast(T("Encryption is on. Download the backup now. The website updates in about a minute.", "এনক্রিপশন চালু। এখনই ব্যাকআপ ডাউনলোড করুন। ওয়েবসাইট ১ মিনিটে আপডেট হবে।"), "ok"); ensureKey(); }, function (e) { busy(b, false); toast(errText(e), "er"); });
+    };
+    $("#k-save").onclick = function () { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(privKey())], { type: "application/json" })); a.download = "shunchi-ideas-private-key.json"; document.body.appendChild(a); a.click(); a.remove(); };
+    $("#k-imp").onclick = function () { $("#k-text").classList.remove("hidden"); $("#k-go").classList.remove("hidden"); };
+    $("#k-go").onclick = function () { try { var j = JSON.parse($("#k-text").value.trim()); if (!j.d || !j.n) throw 0; localStorage.setItem(PKEY, JSON.stringify(j)); toast(T("Key imported.", "কী ইমপোর্ট হয়েছে।"), "ok"); ensureKey(); loadIdeas(true); } catch (e) { toast(T("That is not a valid key file.", "এটি সঠিক কী ফাইল নয়।"), "er"); } };
+  }
   function loadIdeas(manual) {
+    ensureKey();
     var box = $("#ideas-status"), say = function (h) { box.style.display = h ? "" : "none"; box.innerHTML = h || ""; };
     $("#ideas-setup").classList.add("hidden"); $("#ideas-paste").classList.add("hidden"); $("#ideas-card").classList.remove("hidden");
     var all = [];
@@ -919,7 +977,10 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       });
     }
     return page(1).then(function () {
-      setIdeas(all.map(issueToSub)); say("");
+      var subs = all.map(issueToSub);
+      return Promise.all(subs.map(decryptSub)).then(function () { return loadPublished(subs); }).then(function () {
+        setIdeas(subs); say(subs.some(function (x) { return x.form_data._locked; }) ? '<b>' + T("Some personal details are locked.", "কিছু ব্যক্তিগত তথ্য লক করা আছে।") + '</b> <span class="muted">' + T("Import your privacy key in the box below to read them.", "পড়তে নিচের বক্স থেকে আপনার প্রাইভেসি কী ইমপোর্ট করুন।") + '</span>' : "");
+      });
     }).catch(function (e) {
       var why = e.status === 404 ? T("The private repository “" + IDEAS_REPO + "” was not found, or your admin token cannot see it. Create it and add it to your admin token (Issues: read and write).", "প্রাইভেট রিপোজিটরি “" + IDEAS_REPO + "” পাওয়া যায়নি, অথবা আপনার অ্যাডমিন টোকেন এটি দেখতে পায় না। রিপো বানান এবং টোকেনে যোগ করুন (Issues: read and write)।") + ' <a class="btn sm" target="_blank" rel="noopener" href="https://github.com/settings/personal-access-tokens">' + T("Open my tokens", "আমার টোকেন খুলুন") + '</a><div class="muted" style="margin-top:6px">' + T("Click your admin token, then Repository access: add shunchi-ideas. Then Permissions: Issues = Read and write. Save, and press Refresh here.", "আপনার অ্যাডমিন টোকেনে ক্লিক করুন, Repository access-এ shunchi-ideas যোগ করুন, Permissions-এ Issues = Read and write দিন, Save করে এখানে Refresh চাপুন।") + '</div>' : e.status === 401 || e.status === 403 ? T("Your admin token has no access to the ideas repository. Add it to the token (Issues: read and write).", "অ্যাডমিন টোকেনের আইডিয়া রিপোজিটরিতে অনুমতি নেই। টোকেনে যোগ করুন (Issues: read and write)।") : esc(e.message || String(e));
       say('<b style="color:var(--bad,#b91c1c)">' + T("Could not load ideas.", "আইডিয়া লোড হয়নি।") + '</b><div class="muted" style="margin-top:4px">' + why + '</div>');
@@ -934,8 +995,8 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   }
   function markIdeasSeen() { if (S.ideas) { try { localStorage.setItem(SEEN, String(S.ideas.length)); } catch (e) {} } updateIdeaBadge(); }
   var STAT = ["pending", "analysis", "approved", "rejected"], ideaFilter = "";
-  function statName(k) { return { pending: T("Pending", "পেন্ডিং"), analysis: T("Analysis", "বিশ্লেষণ"), approved: T("Approved", "অনুমোদিত"), rejected: T("Rejected", "বাতিল") }[k] || k; }
-  function statPill(k) { return '<span class="pill ' + ({ pending: "wn", analysis: "", approved: "ok", rejected: "er" }[k] || "") + '">' + esc(statName(k)) + '</span>'; }
+  function statName(k) { return { deleted: T("Deleted", "ডিলিটেড"), pending: T("Pending", "পেন্ডিং"), analysis: T("Analysis", "বিশ্লেষণ"), approved: T("Approved", "অনুমোদিত"), rejected: T("Rejected", "বাতিল") }[k] || k; }
+  function statPill(k) { return '<span class="pill ' + ({ pending: "wn", analysis: "", approved: "ok", rejected: "er", deleted: "er" }[k] || "") + '">' + esc(statName(k)) + '</span>'; }
   function replyText(x, st) {
     var bn = x.lang === "bn" || (x.lang !== "en" && LANG === "bn"), nm = x.name && x.name !== "-" ? x.name : "", t = x.title || "";
     if (bn) return (nm ? "প্রিয় " + nm + ",\n\n" : "আসসালামু আলাইকুম,\n\n") + (st === "approved"
@@ -971,28 +1032,48 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     var body = { labels: ["status:" + st], state: (st === "approved" || st === "rejected") ? "closed" : "open" };
     return ghIdeas("/issues/" + x.n, { method: "PATCH", body: body }).then(function () {
       x.status = st; x.closed = body.state === "closed";
+      publishIdea(x, pubRec(x, st)).catch(function (e) { toast(T("Status saved, but the website status page was not updated: ", "স্ট্যাটাস সেভ হয়েছে, কিন্তু ওয়েবসাইটের স্ট্যাটাস পেজ আপডেট হয়নি: ") + errText(e), "er"); });
       if (reply && reply.text) return ghIdeas("/issues/" + x.n + "/comments", { method: "POST", body: { body: "**Reply (" + st + ") sent to " + (ideaTo(x) || "-") + ":**\n\n" + reply.text } }).catch(function () {});
     });
   }
-  function ideaCounts() { var c = { "": 0 }; STAT.forEach(function (k) { c[k] = 0; }); (S.ideas || []).forEach(function (x) { c[""]++; c[x.status] = (c[x.status] || 0) + 1; }); return c; }
+  function ideaCounts() { var c = { "": 0 }; STAT.forEach(function (k) { c[k] = 0; }); c.deleted = 0; (S.ideas || []).forEach(function (x) { if (x.status !== "deleted") c[""]++; c[x.status] = (c[x.status] || 0) + 1; }); return c; }
   function renderChips() {
     var c = ideaCounts(), box = $("#idea-chips"); if (!box) return;
-    box.innerHTML = [""].concat(STAT).map(function (k) { return '<button type="button" class="btn sm' + (ideaFilter === k ? " p" : "") + '" data-chip="' + k + '">' + (k ? esc(statName(k)) : T("All", "সব")) + ' <span style="opacity:.75">' + (c[k] || 0) + '</span></button>'; }).join("");
+    box.innerHTML = [""].concat(STAT, ["deleted"]).map(function (k) { return '<button type="button" class="btn sm' + (ideaFilter === k ? " p" : "") + '" data-chip="' + k + '">' + (k ? esc(statName(k)) : T("All", "সব")) + ' <span style="opacity:.75">' + (c[k] || 0) + '</span></button>'; }).join("");
     $$("[data-chip]", box).forEach(function (b) { b.onclick = function () { ideaFilter = b.dataset.chip; renderIdeas(); }; });
   }
   function renderIdeas() {
     var list = $("#idea-list"); if (!S.ideas) return; renderChips();
     var q = $("#idea-q").value.trim().toLowerCase(), ty = $("#idea-type").value, nn = newCount();
-    var rows = S.ideas.map(function (x, i) { x._i = i; return x; }).filter(function (x) { return (!ty || x.type === ty) && (!ideaFilter || x.status === ideaFilter) && (!q || (x.title + " " + x.details + " " + x.name + " " + x.contact + " " + x.address).toLowerCase().indexOf(q) >= 0); });
+    var rows = S.ideas.map(function (x, i) { x._i = i; return x; }).filter(function (x) { return (!ty || x.type === ty) && (ideaFilter ? x.status === ideaFilter : x.status !== "deleted") && (!q || (x.title + " " + x.track + " " + x.details + " " + x.name + " " + x.contact + " " + x.address).toLowerCase().indexOf(q) >= 0); });
     if (!rows.length) { list.innerHTML = '<div class="empty"><b>' + (S.ideas.length ? T("Nothing matches", "কিছু মেলেনি") : T("No ideas yet", "এখনো কোনো আইডিয়া আসেনি")) + '</b>' + T("New ideas from the website form and the app appear here.", "ওয়েবসাইট ও অ্যাপ থেকে আসা আইডিয়া এখানে দেখাবে।") + '</div>'; return; }
     list.innerHTML = rows.map(function (x) {
       var mail = ideaMail(x), fin = x.status === "approved" || x.status === "rejected";
-      return '<div class="idea' + (x._i < nn ? " new" : "") + '" style="' + (fin ? "opacity:.75" : "") + '"><div class="row"><h3 style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(x.title) + '</h3>' + (x._i < nn ? '<span class="pill">' + T("new", "নতুন") + '</span>' : "") + (x.type ? '<span class="pill wn">' + esc(x.type) + '</span>' : "") + statPill(x.status) + '</div>' +
+      return '<div class="idea' + (x._i < nn ? " new" : "") + '" style="' + (fin ? "opacity:.75" : "") + '"><div class="row"><h3 style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(x.title) + '</h3>' + (x.track ? '<span class="pill" title="' + T("Tracking number", "ট্র্যাকিং নম্বর") + '" style="font-family:monospace">' + esc(x.track) + '</span>' : "") + (x._i < nn ? '<span class="pill">' + T("new", "নতুন") + '</span>' : "") + (x.type ? '<span class="pill wn">' + esc(x.type) + '</span>' : "") + statPill(x.status) + '</div>' +
         '<div class="body">' + esc(x.details) + '</div><div class="mt"><span>' + esc(x.name && x.name !== "-" ? x.name : T("No name", "নাম নেই")) + '</span><span>·</span><span>' + esc(x.contact && x.contact !== "-" ? x.contact : T("No contact", "যোগাযোগ নেই")) + '</span>' + (x.phone && String(x.contact).indexOf(x.phone) < 0 ? '<span>·</span><span>' + esc(x.phone) + '</span>' : "") + (x.address ? '<span>·</span><span>' + esc(x.address) + '</span>' : "") + '<span>·</span><span>' + esc(x.at ? ago(x.at) : "") + '</span>' + (x.src ? '<span class="pill">' + esc(/app/i.test(x.src) ? "App" : "Website") + '</span>' : "") + (x.lang ? '<span class="pill">' + esc(x.lang) + '</span>' : "") + '</div>' +
         '<div class="row" style="flex-wrap:wrap"><span class="muted" style="font-size:13px">' + T("Status:", "স্ট্যাটাস:") + '</span>' + STAT.map(function (k) { return '<button class="btn sm' + (x.status === k ? " p" : "") + '" data-st="' + k + '" data-n="' + x._i + '" type="button">' + esc(statName(k)) + '</button>'; }).join("") +
-        '<span class="sp"></span><button class="btn sm" data-copy="' + x._i + '" type="button">' + T("Copy", "কপি") + '</button>' + (mail ? '<a class="btn sm" href="' + esc(mail) + '">' + T("Email", "ইমেইল") + '</a>' : "") + '</div></div>';
+        '<span class="sp"></span>' + (x.status === "deleted" ? '<button class="btn sm" data-restore="' + x._i + '" type="button">' + T("Restore", "ফিরিয়ে আনুন") + '</button>' : '<button class="btn sm" data-fb="' + x._i + '" type="button">' + (x.fb ? T("Edit feedback", "মতামত এডিট") : T("Feedback", "মতামত")) + '</button><button class="btn sm" data-del="' + x._i + '" type="button">' + T("Delete", "ডিলিট") + '</button>') + '<button class="btn sm" data-copy="' + x._i + '" type="button">' + T("Copy", "কপি") + '</button>' + (mail ? '<a class="btn sm" href="' + esc(mail) + '">' + T("Email", "ইমেইল") + '</a>' : "") + '</div></div>';
     }).join("");
     $$("[data-copy]", list).forEach(function (b) { b.onclick = function () { var x = S.ideas[+b.dataset.copy]; var t = x.title + "\n\n" + x.details + "\n\n" + x.name + " · " + x.contact + (x.phone ? " · " + x.phone : "") + (x.address ? "\n" + x.address : ""); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast(T("Copied.", "কপি হয়েছে।"), "ok"); }, function () { toast(T("Copy failed.", "কপি হয়নি।"), "er"); }); }; });
+    function guard(x) { if (!x || !x.n) { toast(T("Only ideas from the GitHub inbox can be changed.", "শুধু GitHub ইনবক্সের আইডিয়া বদলানো যায়।"), "er"); return false; } return true; }
+    $$("[data-del]", list).forEach(function (b) { b.onclick = function () {
+      var x = S.ideas[+b.dataset.del]; if (!guard(x)) return;
+      if (!confirm(T("Delete this idea? It is hidden and removed from the website status page. You can restore it from the Deleted tab. (GitHub does not allow removing an issue for good through the API; delete it on github.com if you need that.)", "এই আইডিয়া ডিলিট করবেন? এটি লুকিয়ে যাবে এবং ওয়েবসাইট স্ট্যাটাস পেজ থেকে মুছবে। ডিলিটেড ট্যাব থেকে ফেরানো যাবে। (GitHub API দিয়ে ইস্যু পুরোপুরি মোছা যায় না; দরকার হলে github.com এ মুছুন।)"))) return;
+      b.disabled = true;
+      ghIdeas("/issues/" + x.n, { method: "PATCH", body: { labels: ["status:deleted"], state: "closed" } }).then(function () { x.status = "deleted"; return publishIdea(x, null).catch(function () {}); }).then(function () { toast(T("Deleted.", "ডিলিট হয়েছে।"), "ok"); renderIdeas(); updateIdeaBadge(); }, function (e) { b.disabled = false; toast(errText(e), "er"); });
+    }; });
+    $$("[data-restore]", list).forEach(function (b) { b.onclick = function () {
+      var x = S.ideas[+b.dataset.restore]; if (!guard(x)) return; b.disabled = true;
+      ghIdeas("/issues/" + x.n, { method: "PATCH", body: { labels: ["status:pending"], state: "open" } }).then(function () { x.status = "pending"; return publishIdea(x, pubRec(x, "pending")).catch(function () {}); }).then(function () { toast(T("Restored as Pending.", "পেন্ডিং হিসেবে ফিরেছে।"), "ok"); renderIdeas(); updateIdeaBadge(); }, function (e) { b.disabled = false; toast(errText(e), "er"); });
+    }; });
+    $$("[data-fb]", list).forEach(function (b) { b.onclick = function () {
+      var x = S.ideas[+b.dataset.fb]; if (!guard(x)) return;
+      if (!x.track) { toast(T("This older idea has no tracking number, so it has no public status page.", "এই পুরনো আইডিয়ার ট্র্যাকিং নম্বর নেই, তাই পাবলিক স্ট্যাটাস নেই।"), "er"); return; }
+      var root = $("#modal-root");
+      root.innerHTML = '<div class="modal" role="dialog" aria-modal="true"><div class="box" style="max-width:560px"><h3>' + T("Public feedback", "পাবলিক মতামত") + ' · ' + esc(x.track) + '</h3><p class="muted">' + T("Anyone with this tracking number sees the status and this message on the website. Do not write private details here.", "এই ট্র্যাকিং নম্বর যার কাছে আছে সে ওয়েবসাইটে স্ট্যাটাস ও এই বার্তা দেখবে। ব্যক্তিগত তথ্য লিখবেন না।") + '</p><textarea id="m-fb" rows="6" maxlength="600" style="width:100%;margin-top:8px">' + esc(x.fb || "") + '</textarea><div class="row"><button class="btn" id="m-no" type="button">' + T("Cancel", "বাতিল") + '</button><span class="sp"></span><button class="btn p" id="m-ok" type="button">' + T("Save and publish", "সেভ ও পাবলিশ") + '</button></div></div></div>';
+      $("#m-no", root).onclick = function () { root.innerHTML = ""; };
+      $("#m-ok", root).onclick = function () { var v = $("#m-fb", root).value.trim(), ob = this; busy(ob, true); x.fb = v; publishIdea(x, pubRec(x, x.status)).then(function () { root.innerHTML = ""; toast(T("Published. The website updates in about a minute.", "পাবলিশ হয়েছে। ওয়েবসাইট ১ মিনিটে আপডেট হবে।"), "ok"); renderIdeas(); }, function (e) { busy(ob, false); toast(errText(e), "er"); }); };
+    }; });
     $$("[data-st]", list).forEach(function (b) {
       b.onclick = function () {
         var x = S.ideas[+b.dataset.n], st = b.dataset.st; if (!x || x.status === st) return;
@@ -1015,7 +1096,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   $("#ideas-csv").addEventListener("click", function () {
     if (!S.ideas || !S.ideas.length) { toast(T("No ideas to export.", "এক্সপোর্ট করার কিছু নেই।"), "er"); return; }
     var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
-    var csv = "﻿" + ["Date", "Status", "Type", "Idea", "Details", "Name", "Email", "Phone", "Address", "Contact", "Language"].join(",") + "\n" + S.ideas.map(function (x) { return [x.at, x.status, x.type, x.title, x.details, x.name, x.email, x.phone, x.address, x.contact, x.lang].map(q).join(","); }).join("\n");
+    var csv = "﻿" + ["Date", "Tracking", "Status", "Type", "Idea", "Details", "Name", "Email", "Phone", "Address", "Contact", "Language"].join(",") + "\n" + S.ideas.map(function (x) { return [x.at, x.track, x.status, x.type, x.title, x.details, x.name, x.email, x.phone, x.address, x.contact, x.lang].map(q).join(","); }).join("\n");
     var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "shunchi-ideas-" + today() + ".csv"; document.body.appendChild(a); a.click(); a.remove();
   });
 

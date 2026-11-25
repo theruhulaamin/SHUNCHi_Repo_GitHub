@@ -197,6 +197,15 @@ SUGGEST_FORM = '''<div class="idea-box" id="suggest">
       <p class="suggest-msg" id="suggest-msg" role="status" aria-live="polite"></p>
     </div>
   </form>
+  <div class="idea-status" id="idea-status">
+    <h4><span class="en">Idea status</span><span class="bn">আইডিয়ার স্ট্যাটাস</span></h4>
+    <p><span class="en">Sent an idea? Enter your tracking number to see its status and our feedback.</span><span class="bn">আইডিয়া পাঠিয়েছেন? ট্র্যাকিং নম্বর দিয়ে স্ট্যাটাস ও আমাদের মতামত দেখুন।</span></p>
+    <form id="status-form" class="status-form" novalidate>
+      <input type="text" id="status-code" maxlength="14" placeholder="SH-AB12CD34" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Tracking number">
+      <button class="btn btn-primary" type="submit"><span class="en">Check status</span><span class="bn">স্ট্যাটাস দেখুন</span></button>
+    </form>
+    <div class="status-out" id="status-out" role="status" aria-live="polite"></div>
+  </div>
 </div>'''
 
 def reg(path, prio="0.7", freq="monthly", lastmod=None):
@@ -523,7 +532,7 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
 </div></section>
 </main>
 ''' + footer("") + '''<script src="assets/catalog.js?v=28" data-base=""></script>
-<script src="assets/site.js?v=29"></script>
+<script src="assets/site.js?v=30"></script>
 <script>
 (function () {
   function drawApps() { renderApps(document.getElementById("app-list"), 4); }
@@ -572,7 +581,7 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 <section><div class="wrap">''' + SUGGEST_FORM + '''</div></section>
 </main>
 ''' + footer("../") + '''<script src="../assets/catalog.js?v=28" data-base="../"></script>
-<script src="../assets/site.js?v=29"></script>
+<script src="../assets/site.js?v=30"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
@@ -612,7 +621,7 @@ tmpl = head("../", "Tool name | SHUNCHi", "One sentence about the tool.", "apps/
   <div class="dl-card" id="tool-area"><p><span class="en">Build the tool here.</span><span class="bn">টুলটি এখানে বানান।</span></p></div>
 </div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=29"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=30"></script>
 </body>
 </html>
 '''
@@ -655,7 +664,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   </div>
 </div>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=29"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=30"></script>
 <script>
 (function () {
   if (!window.fetch) return;
@@ -719,7 +728,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/site.js?v=29"></script>
+''' + footer("") + '''<script src="assets/site.js?v=30"></script>
 </body>
 </html>
 '''
@@ -735,7 +744,7 @@ nf = head("/", "Page not found | SHUNCHi", "This page does not exist.", "404.htm
   <p><span class="en">The link may be old or mistyped.</span><span class="bn">লিংকটি পুরনো বা ভুল হতে পারে।</span></p>
   <p style="margin-top:22px"><a class="btn btn-primary" href="/index.html"><span class="en">Back to home</span><span class="bn">হোমে ফিরুন</span></a></p>
 </div></main>
-''' + footer("/") + '<script src="/assets/site.js?v=29"></script>\n</body>\n</html>\n'
+''' + footer("/") + '<script src="/assets/site.js?v=30"></script>\n</body>\n</html>\n'
 write("404.html", nf)
 print("pages written")
 
@@ -780,7 +789,7 @@ for p in POSTS:
 </article>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=29"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
     write(url, page)
 
 reg("blog/", "0.8", "weekly", POSTS[0]["date"] if POSTS else TODAY)
@@ -799,7 +808,7 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
 </div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=29"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
 write("blog/index.html", blog_index)
 
 
@@ -821,7 +830,7 @@ if VIDEOS_JSON:
 </div>
 <section style="padding-top:28px"><div class="wrap"><div class="vids all">{"".join(video_card(v) for v in VIDEOS_JSON)}</div></div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=29"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
     write("videos/index.html", vpage)
 
 # RSS feed
@@ -862,7 +871,7 @@ for a in APPS_JSON:
     {dlbtn}</div>
 </div>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=29"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
     write(url, page)
 
 # ====================================================================== SITEMAP + ROBOTS
