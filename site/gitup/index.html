@@ -382,7 +382,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
           <p class="muted" style="margin:6px 0 10px" data-bn="ব্রাউজার FormSubmit থেকে সরাসরি ডেটা আনতে দেয়নি। সমাধান: নিচের লিংক নতুন ট্যাবে খুলুন, যা দেখা যাবে সব কপি করে এখানে বসান।">Your browser blocked loading it directly. Fix: open the link below in a new tab, copy everything you see and paste it here.</p>
           <div class="row" style="margin-bottom:10px"><a class="btn" id="fs-open" target="_blank" rel="noopener" href="#" data-bn="ডেটা খুলুন (নতুন ট্যাব)">Open data (new tab)</a></div>
           <textarea id="fs-json" rows="4" placeholder='{"success":true,"submissions":[...]}'></textarea>
-          <div class="row" style="margin-top:10px"><button class="btn p" id="fs-load" type="button" data-bn="দেখান">Show</button></div>
+          <div class="row" style="margin-top:10px"><button class="btn p" id="fs-load" type="button" data-bn="দেখান">Show</button> <button class="btn" id="fs-clip" type="button" data-bn="ক্লিপবোর্ড থেকে দেখান">Paste from clipboard &amp; show</button></div>
         </div>
         <div class="card" id="ideas-card">
           <div class="row" style="margin-bottom:12px">
@@ -667,7 +667,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   "use strict";
   var $ = function (s, r) { return (r || document).querySelector(s); }, $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
   var S = { repo: "", branch: "main", token: "", apps: [], appsSha: null, posts: [], releases: [], ideas: null, curApp: null, curPost: null, tab: "dash", loaded: false };
-  var KEY = "shunchi_admin_v1", LKEY = "shunchi_admin_lang", TKEY = "shunchi_admin_theme", FKEY = "shunchi_admin_fskey", SEEN = "shunchi_admin_ideas_seen", DONE = "shunchi_admin_ideas_done";
+  var KEY = "shunchi_admin_v1", LKEY = "shunchi_admin_lang", TKEY = "shunchi_admin_theme", FKEY = "shunchi_admin_fskey", SEEN = "shunchi_admin_ideas_seen", DONE = "shunchi_admin_ideas_done", ICACHE = "shunchi_admin_ideas_cache";
   var LANG = "en", REND = [];
   try { LANG = localStorage.getItem(LKEY) === "bn" ? "bn" : "en"; } catch (e) {}
 
@@ -881,7 +881,8 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at) };
     }).sort(function (a, b) { return (b.t - a.t) || String(b.at).localeCompare(String(a.at)); });
   }
-  function setIdeas(subs) {
+  function setIdeas(subs, fromCache) {
+    if (!fromCache) { try { localStorage.setItem(ICACHE, JSON.stringify(subs)); } catch (e) {} }
     S.ideas = normIdeas(subs); $("#ideas-setup").classList.add("hidden"); $("#ideas-paste").classList.add("hidden"); $("#ideas-card").classList.remove("hidden");
     var types = {}; S.ideas.forEach(function (x) { if (x.type) types[x.type] = 1; });
     $("#idea-type").innerHTML = '<option value="">' + T("All types", "সব ধরন") + '</option>' + Object.keys(types).map(function (t) { return '<option>' + esc(t) + '</option>'; }).join("");
@@ -894,6 +895,8 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       var list = pickList(j); if (!list) throw new Error((j && (j.message || j.error)) || "bad response"); setIdeas(list);
     }).catch(function (e) {
       $("#fs-open").href = "https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key); $("#ideas-paste").classList.remove("hidden"); $("#ideas-card").classList.add("hidden"); $("#ideas-setup").classList.add("hidden");
+      var cached = null; try { cached = JSON.parse(localStorage.getItem(ICACHE) || "null"); } catch (x) {}
+      if (cached && cached.length) { setIdeas(cached, true); $("#ideas-paste").classList.remove("hidden"); }
       setStat("s-ideas", "-", T("Could not load", "লোড হয়নি")); if (manual) toast(T("Could not load ideas directly. Use the paste option.", "সরাসরি লোড হয়নি। paste অপশন ব্যবহার করুন।"), "er");
     });
   }
@@ -923,6 +926,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   $("#ideas-reload").addEventListener("click", function () { loadIdeas(true); });
   $("#fs-save").addEventListener("click", function () { var k = $("#fs-key").value.trim(); if (!k) { toast(T("Paste the API key first.", "আগে API key বসান।"), "er"); return; } try { localStorage.setItem(FKEY, k); } catch (e) {} $("#fs-key").value = ""; loadIdeas(true); });
   $("#ideas-key").addEventListener("click", function () { try { localStorage.removeItem(FKEY); } catch (e) {} S.ideas = null; loadIdeas(false); });
+  $("#fs-clip").addEventListener("click", function () { if (!navigator.clipboard || !navigator.clipboard.readText) { toast(T("Clipboard not available. Paste into the box.", "ক্লিপবোর্ড পাওয়া যায়নি। বক্সে paste করুন।"), "er"); return; } navigator.clipboard.readText().then(function (t) { $("#fs-json").value = t; $("#fs-load").click(); }, function () { toast(T("Allow clipboard access, or paste into the box.", "ক্লিপবোর্ড অনুমতি দিন, নয়তো বক্সে paste করুন।"), "er"); }); });
   $("#fs-load").addEventListener("click", function () { try { var j = JSON.parse($("#fs-json").value.trim()), list = pickList(j); if (!list) throw 0; setIdeas(list); } catch (e) { toast(T("That text is not the expected data.", "এই লেখা সঠিক ডেটা নয়।"), "er"); } });
   $("#ideas-csv").addEventListener("click", function () {
     if (!S.ideas || !S.ideas.length) { toast(T("No ideas to export.", "এক্সপোর্ট করার কিছু নেই।"), "er"); return; }
