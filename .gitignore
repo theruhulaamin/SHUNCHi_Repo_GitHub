@@ -5,3 +5,5 @@ installer_output/
 *.spec
 __pycache__/
 _optional_php_admin/
+release/
+version_info.txt

@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title SHUNCHi by RUHUL - Release Builder 4.4.0
+title SHUNCHi - Production Release Builder
 echo ==========================================================
-echo SHUNCHi by RUHUL - Windows 11 Release Build 4.4.0
-echo ONEDIR + WINDOWED GUI + Gemini 3.5 Transcribe
+echo SHUNCHi - Windows Production Release Build
+echo ONEDIR + WINDOWED GUI + full installer + web installer
 echo ==========================================================
 echo.
 
@@ -52,10 +52,14 @@ python -c "import app; print('Dependency check OK:', app.APP_VERSION)"
 if errorlevel 1 goto fail
 
 echo.
-echo [1/2] Building SHUNCHi as a WINDOWED ONEDIR application...
+for /f %%v in ('python make_version.py') do set "APPVER=%%v"
+if not defined APPVER goto fail
+echo Version: %APPVER%  (set in app.py, the only place to change)
+echo.
+echo [1/3] Building SHUNCHi as a WINDOWED ONEDIR application...
 if exist dist\SHUNCHi rmdir /s /q dist\SHUNCHi
 python -m PyInstaller --noconfirm --clean --windowed --onedir --noupx --name SHUNCHi ^
- --icon assets\shunchi.ico --add-data "assets;assets" ^
+ --icon assets\shunchi.ico --version-file version_info.txt --add-data "assets;assets" ^
  --collect-all sounddevice --collect-all keyring --collect-all pynput ^
  --hidden-import pynput.keyboard._win32 --hidden-import pynput.mouse._win32 ^
  --hidden-import keyring.backends.Windows ^
@@ -75,21 +79,35 @@ where ISCC >nul 2>nul && set "ISCC_EXE=ISCC"
 if not defined ISCC_EXE if exist "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" set "ISCC_EXE=%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
 if not defined ISCC_EXE if exist "%ProgramFiles%\Inno Setup 6\ISCC.exe" set "ISCC_EXE=%ProgramFiles%\Inno Setup 6\ISCC.exe"
 if not defined ISCC_EXE (
-  echo Inno Setup Compiler was not found. Install Inno Setup 6.
+  echo Inno Setup Compiler was not found. Install Inno Setup 6.4 or newer (jrsoftware.org).
   pause
   exit /b 1
 )
 
 echo.
-echo [2/2] Building standard Windows installer...
-"%ISCC_EXE%" SHUNCHi.iss
+echo [2/3] Building the FULL installer...
+if exist installer_output rmdir /s /q installer_output
+"%ISCC_EXE%" /DMyAppVersion=%APPVER% SHUNCHi.iss
 if errorlevel 1 goto fail
 
 echo.
+echo [3/3] Building the small WEB installer (downloads the latest version)...
+"%ISCC_EXE%" SHUNCHi_Web.iss
+if errorlevel 1 goto fail
+
+if exist release rmdir /s /q release
+mkdir release
+copy /y "installer_output\SHUNCHi_Setup_%APPVER%.exe" release\ >nul
+copy /y "installer_output\SHUNCHi_Setup.exe" release\ >nul
+certutil -hashfile "release\SHUNCHi_Setup_%APPVER%.exe" SHA256 > release\SHA256.txt
+
+echo.
 echo ==========================================================
-echo BUILD SUCCESS
-echo Installer: installer_output\SHUNCHi_by_RUHUL_Setup_4.4.0.exe
-echo App files: dist\SHUNCHi\
+echo BUILD SUCCESS  -  version %APPVER%
+echo Upload BOTH files from the "release" folder to the GitHub Release:
+echo   SHUNCHi_Setup_%APPVER%.exe   (full installer)
+echo   SHUNCHi_Setup.exe            (small web installer, same name every release)
+echo Release tag to use: v%APPVER%
 echo ==========================================================
 pause
 exit /b 0

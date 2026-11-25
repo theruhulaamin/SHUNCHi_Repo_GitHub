@@ -31,7 +31,7 @@ BUILD (developer)
 1. Install Python 3.13 x64 (3.12 / 3.11 also work) and Inno Setup 6.
 2. Double-click Build_Installer.bat. It checks the code, builds the app with PyInstaller
    (this also writes SHUNCHi.spec automatically) and compiles SHUNCHi.iss with Inno Setup.
-3. Installer: installer_output\SHUNCHi_by_RUHUL_Setup_4.4.0.exe  (per-user, no administrator needed).
+3. Installer: release\SHUNCHi_Setup_<version>.exe + release\SHUNCHi_Setup.exe  (per-user, no administrator needed).
    Run RUN_DIAGNOSTICS.bat if something fails.
 
 FILES

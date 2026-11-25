@@ -1,5 +1,7 @@
 #define MyAppName "SHUNCHi by RUHUL"
-#define MyAppVersion "4.4.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "4.4.0"
+#endif
 #define MyAppPublisher "Ruhul Amin"
 #define MyAppExeName "SHUNCHi.exe"
 
@@ -17,7 +19,7 @@ DefaultGroupName=SHUNCHi by RUHUL
 UninstallDisplayName=SHUNCHi by RUHUL
 UninstallDisplayIcon={app}\{#MyAppExeName}
 OutputDir=installer_output
-OutputBaseFilename=SHUNCHi_by_RUHUL_Setup_4.4.0
+OutputBaseFilename=SHUNCHi_Setup_{#MyAppVersion}
 SetupIconFile=assets\shunchi.ico
 WizardImageFile=assets\wizard.bmp,assets\wizard@2x.bmp
 WizardSmallImageFile=assets\wizard-small.bmp,assets\wizard-small@2x.bmp
@@ -38,7 +40,8 @@ SetupLogging=yes
 VersionInfoCompany=Ruhul Amin
 VersionInfoDescription=SHUNCHi AI Voice Typing for Windows
 VersionInfoProductName=SHUNCHi by RUHUL
-VersionInfoProductVersion=4.4.0
+VersionInfoProductVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppVersion}.0
 
 [Messages]
 WelcomeLabel1=Welcome to SHUNCHi
