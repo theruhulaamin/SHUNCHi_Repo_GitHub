@@ -47,7 +47,7 @@ def history_block():
         size = f' · {round(x["size"] / 1048576)} MB' if x.get("size") else ""
         latest = '<span class="vh-badge"><span class="en">Latest</span><span class="bn">সর্বশেষ</span></span>' if i == 0 else ""
         rows.append(f'<details class="vh-item"{" open" if i == 0 else ""}><summary><span class="vh-ver">SHUNCHi {ver}</span>{latest}<span class="vh-date">{date}{size}</span></summary>'
-                    f'<div class="vh-body">{en}{bn}<p class="vh-link"><a href="https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/tag/{tag}" rel="noopener"><span class="en">Release page on GitHub</span><span class="bn">GitHub-এ রিলিজ পেজ</span> →</a></p></div></details>')
+                    f'<div class="vh-body">{en}{bn}</div></details>')
     return ('<section class="vh" id="history"><h2><span class="en">Version history</span><span class="bn">ভার্সনের ইতিহাস</span></h2>'
             '<p class="vh-sub"><span class="en">Every SHUNCHi version and what changed in it.</span><span class="bn">শুনছি-র প্রতিটি ভার্সন আর তাতে কী বদলেছে।</span></p>' + "".join(rows) + '</section>')
 
