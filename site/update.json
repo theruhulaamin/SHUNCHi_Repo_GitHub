@@ -1,14 +1,14 @@
 {
-  "latest_version": "4.4.0",
+  "latest_version": "4.5.0",
   "download_url": "https://shunchiai.com/download/",
-  "installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/download/v4.4.0/SHUNCHi_Setup_4.4.0.exe",
-  "installer_sha256": "c19ad401a98c1ee17c7d613238fce4bef85c170da9895de0cf1a56dbb34f92e8",
-  "installer_size": 45099699,
+  "installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/download/v4.5.0/SHUNCHi_Setup_4.5.0.exe",
+  "installer_sha256": "5fe71c17e895acae0d04886a4dc0cb80ce7362477e5e2d68752c501b6a9c895b",
+  "installer_size": 45109061,
   "web_installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/latest/download/SHUNCHi_Setup.exe",
-  "release_notes": "- First public release of SHUNCHi: free AI voice typing for Windows 10 and 11.\n- Speak in Bangla or English and it types in any app (browser, WhatsApp, Word and more).\n- Win + Left Ctrl for Bangla, Win + Left Shift for English.\n- Uses your own free Gemini API key.\n- Includes an automatic update notice and a small web installer.",
+  "release_notes": "**What's New in SHUNCHi**\n- Added a clear note on the dashboard about the Gemini API key and free usage limits.\n- Added a Copy button next to each text entry in Voice History.\n- Added an Apps page and an idea submission form under More Apps.\n- Fixed an issue that caused the dashboard to get stuck.\n- Improved the microphone pop-up for a cleaner and more polished experience.",
+  "release_notes_en": "**What's New in SHUNCHi**\n- Added a clear note on the dashboard about the Gemini API key and free usage limits.\n- Added a Copy button next to each text entry in Voice History.\n- Added an Apps page and an idea submission form under More Apps.\n- Fixed an issue that caused the dashboard to get stuck.\n- Improved the microphone pop-up for a cleaner and more polished experience.",
+  "release_notes_bn": "## SHUNCHi-এর নতুন আপডেট\n- ড্যাশবোর্ডে Gemini API Key ও ফ্রি ব্যবহারের সীমা সম্পর্কে পরিষ্কার নোট যুক্ত করা হয়েছে।\n- Voice History-র প্রতিটি লেখার পাশে Copy বাটন যুক্ত করা হয়েছে।\n- More Apps সেকশনে অ্যাপস পেজ ও আইডিয়া জমা দেওয়ার ফর্ম যুক্ত করা হয়েছে।\n- ড্যাশবোর্ড আটকে যাওয়ার সমস্যা সমাধান করা হয়েছে।\n- মাইক্রোফোন পপ-আপ আরও পরিচ্ছন্ন ও সুন্দর করা হয়েছে।",
   "released": "2026-11-25",
-  "apps": [],
-  "release_notes_en": "- First public release of SHUNCHi: free AI voice typing for Windows 10 and 11.\n- Speak in Bangla or English and it types in any app (browser, WhatsApp, Word and more).\n- Win + Left Ctrl for Bangla, Win + Left Shift for English.\n- Uses your own free Gemini API key.\n- Includes an automatic update notice and a small web installer.",
-  "release_notes_bn": "- SHUNCHi-র প্রথম পাবলিক রিলিজ: উইন্ডোজ ১০ ও ১১-এর জন্য ফ্রি এআই ভয়েস টাইপিং।\n- বাংলা বা ইংরেজিতে বলুন, ব্রাউজার, হোয়াটসঅ্যাপ, ওয়ার্ডসহ যেকোনো অ্যাপে লেখা হয়ে যাবে।\n- বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।\n- আপনার নিজের ফ্রি Gemini API কী ব্যবহার করে।\n- নতুন ভার্সনের নোটিশ আর ছোট ওয়েব ইনস্টলারও আছে।",
-  "web_installer_size": 2130944
+  "web_installer_size": 2130689,
+  "apps": []
 }
