@@ -347,3 +347,20 @@ html[lang="bn"] .foot-grid h4{text-transform:none;letter-spacing:0;font-size:14p
 @media (max-width:360px){.hero h1{font-size:38px}.rules li{flex-basis:86%}.tabbar a{font-size:10px}}
 .hero-grid>*,.setup>*,.dev>*,.foot-grid>*,.rules li,.app-row>*{min-width:0}
 @media (max-width:900px){main,.wrap{max-width:100vw}.pills,.rules,#tool-grid .tools,.chips{max-width:100vw}}
+
+/* ---------- compact footer ---------- */
+.site-footer{padding:22px 0 16px;margin-top:16px}
+.foot-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.foot-top img{height:28px;width:auto;background:var(--logo-bg,transparent);padding:2px 6px;border-radius:8px;margin-left:-6px}
+.foot-top p{color:var(--muted);font-size:14px;margin:0}
+.foot-links{display:flex;flex-wrap:wrap;gap:2px 18px;margin:12px 0 10px}
+.foot-links a{color:var(--text);font-size:14px;padding:5px 0;min-height:32px;display:inline-flex;align-items:center}
+.foot-links a:hover{color:var(--accent)}
+.site-footer .legal{padding-top:10px;margin-top:0;font-size:13px}
+@media (max-width:900px){
+  .site-footer{padding:16px 0 12px;margin-top:4px}
+  .foot-top p{flex-basis:100%;font-size:13px}
+  .foot-links{gap:0 16px;margin:6px 0 4px}
+  .foot-links a{font-size:13.5px;min-height:34px}
+}
+@media (max-width:900px){.site-footer .legal{flex-direction:row;justify-content:space-between;gap:4px 12px}}
