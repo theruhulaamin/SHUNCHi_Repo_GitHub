@@ -16,6 +16,8 @@ _cat = json.loads(subprocess.run(["node", os.path.join(HERE, "dump_catalog.js"),
 CATS, APPS_BASE, TOOLS = _cat["CATS"], _cat["APPS"], _cat["TOOLS"]
 try: CONFIG = json.load(open(os.path.join(HERE, "site_config.json"), encoding="utf-8"))
 except Exception: CONFIG = {}
+FORM_ALIAS = os.environ.get("FORM_ALIAS") or CONFIG.get("form_alias", "")
+if FORM_ALIAS and not re.fullmatch(r"[A-Za-z0-9_-]{8,64}", FORM_ALIAS): raise SystemExit("form_alias must be the random ID from FormSubmit (letters, numbers, - _)")
 GTM_ID = os.environ.get("GTM_ID") or CONFIG.get("gtm_id", "")
 if GTM_ID and not re.fullmatch(r"GTM-[A-Z0-9]{4,10}", GTM_ID): raise SystemExit("gtm_id must look like GTM-XXXXXXX")
 GTM_HEAD = ("<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" + GTM_ID + "');</script>\n") if GTM_ID else ""
@@ -148,7 +150,7 @@ SUGGEST_FORM = '''<div class="idea-box" id="suggest">
     <div><h3><span class="en">Suggest an app or tool</span><span class="bn">অ্যাপ বা টুলের আইডিয়া দিন</span></h3>
     <p><span class="en">Tell me what you need. The ideas people ask for most get built first.</span><span class="bn">কী দরকার জানান। সবচেয়ে বেশি চাওয়া আইডিয়াগুলো আগে বানানো হবে।</span></p></div>
   </div>
-  <form class="suggest-form" id="suggest-form" novalidate>
+  <form class="suggest-form" id="suggest-form" data-endpoint="{FORM_ALIAS}" novalidate>
     <input type="text" name="_honey" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
     <label class="f"><span class="lab"><span class="en">I want a</span><span class="bn">আমি চাই</span></span>
       <select name="type"><option value="Free tool">Free web tool · ফ্রি ওয়েব টুল</option><option value="Windows app">Windows app · উইন্ডোজ অ্যাপ</option><option value="SHUNCHi feature">SHUNCHi feature · শুনছির নতুন ফিচার</option><option value="Other">Other · অন্যকিছু</option></select></label>

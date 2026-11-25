@@ -68,11 +68,11 @@
   sync();
 })();
 
-/* Idea form: sends the suggestion to the developer's inbox (FormSubmit). Falls back to the mail app if sending fails. */
+/* Idea form: sends the suggestion to the developer's inbox (FormSubmit). */
 (function () {
   var form = document.getElementById("suggest-form"); if (!form) return;
   var msg = document.getElementById("suggest-msg"), btn = form.querySelector("button[type=submit]");
-  var TO = "ruhulaaminn@gmail.com";
+  var TO = form.getAttribute("data-endpoint") || "";
   function bn() { return document.documentElement.lang === "bn"; }
   function say(en, b, ok) { msg.textContent = bn() ? b : en; msg.className = "suggest-msg " + (ok ? "ok" : "err"); }
   form.addEventListener("submit", function (e) {
@@ -81,6 +81,7 @@
     if (d.get("_honey")) return;
     var title = (d.get("title") || "").trim(), details = (d.get("details") || "").trim();
     if (!title || !details) { say("Please add the idea name and what it should do.", "আইডিয়ার নাম ও এটি কী কাজ করবে তা লিখুন।", false); return; }
+    if (!TO) { say("The form is not available right now. Please write to voice.shunchi@gmail.com.", "ফর্ম এখন চালু নেই। অনুগ্রহ করে voice.shunchi@gmail.com-এ লিখুন।", false); return; }
     btn.disabled = true; say("Sending…", "পাঠানো হচ্ছে…", true);
     var payload = {
       _subject: "SHUNCHi idea: " + title, _template: "table", _captcha: "false",
@@ -92,9 +93,7 @@
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) throw 0; }); })
       .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); })
       .catch(function () {
-        var body = "Type: " + payload.Type + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + payload.Name + "\nContact: " + payload.Contact;
-        location.href = "mailto:" + TO + "?subject=" + encodeURIComponent(payload._subject) + "&body=" + encodeURIComponent(body);
-        say("Could not send directly. Your mail app opened instead.", "সরাসরি পাঠানো যায়নি। তাই আপনার মেইল অ্যাপ খুলেছে।", false);
+        say("Could not send. Please try again, or write to voice.shunchi@gmail.com.", "পাঠানো যায়নি। আবার চেষ্টা করুন, অথবা voice.shunchi@gmail.com-এ লিখুন।", false);
       }).then(function () { btn.disabled = false; });
   });
 })();
