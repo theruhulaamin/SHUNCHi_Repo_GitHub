@@ -861,12 +861,25 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 
   /* ================= IDEAS ================= */
   function doneMap() { try { return JSON.parse(localStorage.getItem(DONE) || "{}"); } catch (e) { return {}; } }
+  function pickList(j) {
+    if (Array.isArray(j)) return j;
+    if (j && typeof j === "object") { var ks = ["submissions", "data", "results", "items"]; for (var i = 0; i < ks.length; i++) if (Array.isArray(j[ks[i]])) return j[ks[i]]; }
+    return null;
+  }
+  function timeOf(v) { var t = Date.parse(String(v).replace(" ", "T")); return isNaN(t) ? 0 : t; }
   function normIdeas(subs) {
+    var seen = {};
     return (subs || []).map(function (s, i) {
-      var f = s.form_data || s.data || s, g = function (k) { return f[k] != null ? f[k] : f[k.toLowerCase()]; };
-      var at = s.submitted_at || s.created_at || s.date || ""; var title = g("Idea") || g("title") || "";
-      return { id: (at + "|" + title).slice(0, 120) || String(i), type: g("Type") || "", title: String(title), details: String(g("Details") || g("message") || ""), name: g("Name") || "", contact: g("Contact") || "", lang: g("Language") || "", page: g("Page") || "", at: at };
-    }).sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+      var f = s.form_data || s.data || s || {}, low = {}; Object.keys(f).forEach(function (k) { low[k.toLowerCase()] = f[k]; });
+      var g = function (k) { var v = low[k.toLowerCase()]; return v == null ? "" : String(v); };
+      var at = s.submitted_at || s.created_at || s.date || g("date") || "";
+      var src = g("Source"), fromApp = /app/i.test(src);
+      var title = g("Idea") || g("title") || g("message") || "", details = g("Details");
+      if (!details && title.length > 90) { details = title; title = title.slice(0, 80).replace(/\s+\S*$/, "") + "…"; }   // app ideas are one long text
+      var id = (at + "|" + g("Name") + "|" + title).slice(0, 140) || String(i);
+      if (seen[id]) id += "#" + (++seen[id]); else seen[id] = 1;
+      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at) };
+    }).sort(function (a, b) { return (b.t - a.t) || String(b.at).localeCompare(String(a.at)); });
   }
   function setIdeas(subs) {
     S.ideas = normIdeas(subs); $("#ideas-setup").classList.add("hidden"); $("#ideas-paste").classList.add("hidden"); $("#ideas-card").classList.remove("hidden");
@@ -878,7 +891,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     var key = ""; try { key = localStorage.getItem(FKEY) || ""; } catch (e) {}
     if (!key) { $("#ideas-setup").classList.remove("hidden"); $("#ideas-card").classList.add("hidden"); $("#ideas-paste").classList.add("hidden"); setStat("s-ideas", "-", T("Set up in Ideas tab", "আইডিয়া ট্যাবে সেটআপ করুন")); return Promise.resolve(); }
     return fetch("https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key)).then(function (r) { return r.json(); }).then(function (j) {
-      if (!j || !j.submissions) throw new Error((j && j.message) || "bad response"); setIdeas(j.submissions);
+      var list = pickList(j); if (!list) throw new Error((j && (j.message || j.error)) || "bad response"); setIdeas(list);
     }).catch(function (e) {
       $("#fs-open").href = "https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key); $("#ideas-paste").classList.remove("hidden"); $("#ideas-card").classList.add("hidden"); $("#ideas-setup").classList.add("hidden");
       setStat("s-ideas", "-", T("Could not load", "লোড হয়নি")); if (manual) toast(T("Could not load ideas directly. Use the paste option.", "সরাসরি লোড হয়নি। paste অপশন ব্যবহার করুন।"), "er");
@@ -910,7 +923,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   $("#ideas-reload").addEventListener("click", function () { loadIdeas(true); });
   $("#fs-save").addEventListener("click", function () { var k = $("#fs-key").value.trim(); if (!k) { toast(T("Paste the API key first.", "আগে API key বসান।"), "er"); return; } try { localStorage.setItem(FKEY, k); } catch (e) {} $("#fs-key").value = ""; loadIdeas(true); });
   $("#ideas-key").addEventListener("click", function () { try { localStorage.removeItem(FKEY); } catch (e) {} S.ideas = null; loadIdeas(false); });
-  $("#fs-load").addEventListener("click", function () { try { var j = JSON.parse($("#fs-json").value); if (!j.submissions) throw 0; setIdeas(j.submissions); } catch (e) { toast(T("That text is not the expected data.", "এই লেখা সঠিক ডেটা নয়।"), "er"); } });
+  $("#fs-load").addEventListener("click", function () { try { var j = JSON.parse($("#fs-json").value.trim()), list = pickList(j); if (!list) throw 0; setIdeas(list); } catch (e) { toast(T("That text is not the expected data.", "এই লেখা সঠিক ডেটা নয়।"), "er"); } });
   $("#ideas-csv").addEventListener("click", function () {
     if (!S.ideas || !S.ideas.length) { toast(T("No ideas to export.", "এক্সপোর্ট করার কিছু নেই।"), "er"); return; }
     var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
