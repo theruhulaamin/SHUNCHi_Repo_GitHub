@@ -48,7 +48,7 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-{GTM_HEAD}<script>try{{var l=localStorage.getItem("shunchi-lang");document.documentElement.lang=l==="en"?"en":"bn"}}catch(e){{}}try{{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
+{GTM_HEAD}<script>try{{var l=localStorage.getItem("shunchi-lang2");document.documentElement.lang=l==="en"?"en":"bn"}}catch(e){{}}try{{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
 <meta name="theme-color" content="#F8FAFD" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0A1222" media="(prefers-color-scheme: dark)">
 <title>{t}</title>
@@ -64,7 +64,7 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <link rel="icon" type="image/png" href="{P}assets/favicon.png"><link rel="apple-touch-icon" href="{P}assets/apple-touch-icon.png">
 {FONTS}
 <link rel="manifest" href="{P}manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SHUNCHi">
-<link rel="stylesheet" href="{P}assets/site.css?v=20">
+<link rel="stylesheet" href="{P}assets/site.css?v=21">
 {extra}{ldtxt}</head>
 <body>
 {GTM_BODY}<a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
@@ -489,8 +489,8 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/catalog.js?v=20" data-base=""></script>
-<script src="assets/site.js?v=20"></script>
+''' + footer("") + '''<script src="assets/catalog.js?v=21" data-base=""></script>
+<script src="assets/site.js?v=21"></script>
 <script>
 (function () {
   function drawApps() { renderApps(document.getElementById("app-list"), 4); }
@@ -538,8 +538,8 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 </div></section>
 <section><div class="wrap">''' + SUGGEST_FORM + '''</div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/catalog.js?v=20" data-base="../"></script>
-<script src="../assets/site.js?v=20"></script>
+''' + footer("../") + '''<script src="../assets/catalog.js?v=21" data-base="../"></script>
+<script src="../assets/site.js?v=21"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
@@ -579,7 +579,7 @@ tmpl = head("../", "Tool name | SHUNCHi", "One sentence about the tool.", "apps/
   <div class="dl-card" id="tool-area"><p><span class="en">Build the tool here.</span><span class="bn">টুলটি এখানে বানান।</span></p></div>
 </div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=20"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=21"></script>
 </body>
 </html>
 '''
@@ -619,7 +619,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   </div>
 </div>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=20"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=21"></script>
 <script>
 (function () {
   if (!window.fetch) return;
@@ -683,7 +683,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/site.js?v=20"></script>
+''' + footer("") + '''<script src="assets/site.js?v=21"></script>
 </body>
 </html>
 '''
@@ -699,7 +699,7 @@ nf = head("/", "Page not found | SHUNCHi", "This page does not exist.", "404.htm
   <p><span class="en">The link may be old or mistyped.</span><span class="bn">লিংকটি পুরনো বা ভুল হতে পারে।</span></p>
   <p style="margin-top:22px"><a class="btn btn-primary" href="/index.html"><span class="en">Back to home</span><span class="bn">হোমে ফিরুন</span></a></p>
 </div></main>
-''' + footer("/") + '<script src="/assets/site.js?v=20"></script>\n</body>\n</html>\n'
+''' + footer("/") + '<script src="/assets/site.js?v=21"></script>\n</body>\n</html>\n'
 write("404.html", nf)
 print("pages written")
 
@@ -744,7 +744,7 @@ for p in POSTS:
 </article>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=20"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=21"></script>\n</body>\n</html>\n'
     write(url, page)
 
 reg("blog/", "0.8", "weekly", POSTS[0]["date"] if POSTS else TODAY)
@@ -763,7 +763,7 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
 </div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=20"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=21"></script>\n</body>\n</html>\n'
 write("blog/index.html", blog_index)
 
 
@@ -785,7 +785,7 @@ if VIDEOS_JSON:
 </div>
 <section style="padding-top:28px"><div class="wrap"><div class="vids all">{"".join(video_card(v) for v in VIDEOS_JSON)}</div></div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=20"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=21"></script>\n</body>\n</html>\n'
     write("videos/index.html", vpage)
 
 # RSS feed
@@ -826,7 +826,7 @@ for a in APPS_JSON:
     {dlbtn}</div>
 </div>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=20"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=21"></script>\n</body>\n</html>\n'
     write(url, page)
 
 # ====================================================================== SITEMAP + ROBOTS

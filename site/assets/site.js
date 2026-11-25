@@ -6,12 +6,12 @@
     root.lang = lang;
     enBtns.forEach(function (b) { b.setAttribute("aria-pressed", lang === "en"); });
     bnBtns.forEach(function (b) { b.setAttribute("aria-pressed", lang === "bn"); });
-    try { localStorage.setItem("shunchi-lang", lang); } catch (e) {}
+    try { localStorage.setItem("shunchi-lang2", lang); } catch (e) {}
   }
   enBtns.forEach(function (b) { b.addEventListener("click", function () { setLang("en"); }); });
   bnBtns.forEach(function (b) { b.addEventListener("click", function () { setLang("bn"); }); });
   var saved = null;
-  try { saved = localStorage.getItem("shunchi-lang"); } catch (e) {}
+  try { saved = localStorage.getItem("shunchi-lang2"); } catch (e) {}
   setLang(saved === "en" ? "en" : "bn");
 
   var btn = document.getElementById("menu-btn"), panel = document.getElementById("menu-panel");
