@@ -685,3 +685,9 @@ html[lang="bn"] .dl-notes ul.en,html[lang="en"] .dl-notes ul.bn{display:none}
   .dl-help{margin-top:26px}.dl-help h2{font-size:20px!important}
   .dl-help .steps>li{padding:14px 14px 14px 54px}.dl-help .steps>li::before{left:13px;top:14px}
 }
+
+.dl-count{display:inline-flex;align-items:center;gap:8px;margin:14px 0 0;padding:7px 14px;border-radius:99px;background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(16,185,129,.12));border:1px solid rgba(37,99,235,.22);font-size:14.5px;font-weight:600;color:var(--ink)}
+.dl-count[hidden]{display:none}
+.dl-count svg{width:18px;height:18px;fill:none;stroke:var(--accent,#2563eb);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.dl-count .num{font-size:17px;color:var(--accent-ink,#1d4ed8);margin-right:3px}
+.dl-card .dl-count{margin-top:12px}

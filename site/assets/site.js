@@ -198,3 +198,13 @@
     a.replaceWith ? (function () { var box = document.createElement("div"); box.className = "vid-thumb"; box.appendChild(f); a.replaceWith(box); })() : null;
   });
 })();
+
+/* Public download count (site/stats.json is refreshed by a GitHub Action) */
+(function () {
+  var els = document.querySelectorAll("[data-dlcount]"); if (!els.length || !window.fetch) return;
+  fetch(els[0].getAttribute("data-dlcount"), { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    var n = j && Number(j.downloads); if (!n || n < 1) return;
+    var en = n.toLocaleString("en-US"), bn; try { bn = n.toLocaleString("bn-BD"); } catch (e) { bn = en; }
+    els.forEach(function (el) { var s = el.querySelectorAll(".num"); if (s[0]) s[0].textContent = en; if (s[1]) s[1].textContent = bn; el.hidden = false; });
+  }).catch(function () {});
+})();

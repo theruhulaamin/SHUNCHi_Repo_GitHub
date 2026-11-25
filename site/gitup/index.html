@@ -325,7 +325,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
           <div class="stat"><div class="k"><svg class="i s"><use href="#i-star"/></svg><span data-bn="GitHub স্টার">GitHub stars</span></div><div class="v" id="s-stars">-</div><div class="s" id="s-stars-s"></div></div>
         </div>
         <div class="card">
-          <div class="card-h"><h2 data-bn="রিলিজ অনুযায়ী ডাউনলোড">Downloads by release</h2><span class="muted" data-bn="GitHub Releases থেকে সরাসরি">Live from GitHub Releases</span></div>
+          <div class="card-h"><h2 data-bn="রিলিজ অনুযায়ী ডাউনলোড">Downloads by release</h2><span class="muted" data-bn="GitHub-এর হিসাব। ছোট ইনস্টলার পুরো ফাইলও নামায়, তাই একবার করে গোনা হয়।">From GitHub. The small installer also fetches the full file, so each install is counted once.</span></div>
           <div class="tw" id="dl-table"><div class="empty"><span class="sk" style="width:200px"></span></div></div>
         </div>
         <div class="grid g2">
@@ -763,15 +763,24 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   function loadReleases() {
     return gh("/releases?per_page=50").then(function (r) { S.releases = (r || []).filter(function (x) { return !x.draft; }); }, function () { S.releases = null; }).then(renderDash);
   }
-  function relTotal(r) { return (r.assets || []).reduce(function (n, a) { return n + (a.download_count || 0); }, 0); }
+  /* GitHub counts every file download. The small web installer also downloads the full installer, so one install can be counted twice.
+     When a release has both, the real number is the larger of the two. Other releases: sum of all files. */
+  function relTotal(r) {
+    var web = 0, full = 0, hasWeb = false, other = 0;
+    (r.assets || []).forEach(function (a) {
+      var n = (a.name || "").toLowerCase(), c = a.download_count || 0;
+      if (n === "shunchi_setup.exe") { web += c; hasWeb = true; } else if (n.slice(-4) === ".exe" && /^shunchi_setup_/.test(n)) full += c; else other += c;
+    });
+    return hasWeb ? Math.max(web, full) + other : web + full + other;
+  }
   function appDownloads(id) { return (S.releases || []).reduce(function (n, r) { return n + (r.tag_name.indexOf(id + "-v") === 0 ? relTotal(r) : 0); }, 0); }
   function renderDash() {
     $("#s-apps").textContent = S.apps.length; $("#s-posts").textContent = S.posts.length;
     var pub = S.posts.filter(function (p) { return !isDraft(p); }).length; $("#s-posts-s").textContent = pub + T(" published, ", " পাবলিশ, ") + (S.posts.length - pub) + T(" drafts", " ড্রাফট");
     var el = $("#dl-table");
     if (S.releases === null) { setStat("s-dl", "-", T("Could not read releases", "রিলিজ পড়া যায়নি")); el.innerHTML = '<div class="empty"><b>' + T("Could not load releases", "রিলিজ লোড হয়নি") + '</b></div>'; return; }
-    var total = S.releases.reduce(function (n, r) { return n + relTotal(r); }, 0);
-    setStat("s-dl", nf(total), S.releases.length + T(" releases", "টি রিলিজ"));
+    var total = S.releases.reduce(function (n, r) { return n + (/^v\d/.test(r.tag_name) ? relTotal(r) : 0); }, 0);
+    setStat("s-dl", nf(total), T("SHUNCHi installs, counted once", "SHUNCHi ডাউনলোড, একবার করে গোনা"));
     if (!S.releases.length) { el.innerHTML = '<div class="empty"><b>' + T("No release published yet", "এখনো কোনো রিলিজ নেই") + '</b>' + T("The Download button stays empty until you publish your first release.", "প্রথম রিলিজ না দেওয়া পর্যন্ত ডাউনলোড বাটন ফাঁকা থাকবে।") + '<div style="margin-top:12px"><button class="btn p" data-go="release" type="button">' + T("Release a version", "নতুন ভার্সন রিলিজ") + '</button></div></div>';
       var gb = $("[data-go=release]", el); if (gb) gb.onclick = function () { go("release"); }; return; }
     var max = Math.max.apply(null, S.releases.map(relTotal).concat([1]));
