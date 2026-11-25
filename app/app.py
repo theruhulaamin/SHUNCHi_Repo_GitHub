@@ -40,7 +40,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "SHUNCHi"
-APP_VERSION = "4.6.1"
+APP_VERSION = "4.7.0"
 APP_VENDOR = "RUHUL"
 KEYRING_SERVICE = "SHUNCHi"
 KEYRING_USERNAME = "gemini_api_key"
@@ -611,6 +611,7 @@ class AppSignals(QObject):
     update_result = Signal(object)
     notices_ready = Signal(object)
     idea_result = Signal(bool, str)
+    account_done = Signal(str, bool, object)
     update_progress = Signal(int)
     update_downloaded = Signal(bool, str)
 
@@ -920,6 +921,327 @@ class InstallerDownloader(threading.Thread):
                 os.remove(part)
         except OSError:
             pass
+
+
+# ---------------------------------------------------------------------------------------------- account (optional)
+FB_CONFIG_URL = WEBSITE_URL + "/data/firebase-config.json"
+IDT_URL = "https://identitytoolkit.googleapis.com/v1"
+STS_URL = "https://securetoken.googleapis.com/v1/token"
+FS_URL = "https://firestore.googleapis.com/v1"
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+ACCOUNT_PAGE_URL = WEBSITE_URL + "/account/index.html"
+
+ACCOUNT_ERRORS = {
+    "EMAIL_EXISTS": "This email already has an account. Log in instead.",
+    "INVALID_LOGIN_CREDENTIALS": "Wrong email or password.", "INVALID_PASSWORD": "Wrong email or password.",
+    "EMAIL_NOT_FOUND": "No account with this email. Create one.", "INVALID_EMAIL": "Enter a valid email.",
+    "WEAK_PASSWORD": "Password must be at least 6 characters.", "MISSING_PASSWORD": "Enter your password.",
+    "TOO_MANY_ATTEMPTS_TRY_LATER": "Too many tries. Wait a little and try again.",
+    "USER_DISABLED": "This account is disabled.", "OPERATION_NOT_ALLOWED": "This sign-in method is not turned on yet.",
+}
+
+
+class AccountError(Exception):
+    pass
+
+
+def _b64url(raw):
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def fs_value(value):
+    if isinstance(value, datetime):
+        return {"timestampValue": value.strftime("%Y-%m-%dT%H:%M:%SZ")}
+    return {"stringValue": str(value)}
+
+
+def fs_fields(doc):
+    out = {}
+    for key, value in (doc or {}).get("fields", {}).items():
+        out[key] = value.get("stringValue", value.get("timestampValue", ""))
+    return out
+
+
+class AccountService:
+    """Optional account (Firebase). Nothing in the app needs it. Uses the public REST endpoints, so no extra package."""
+
+    def __init__(self, settings):
+        self.settings = settings
+        self._cfg = None
+        self._id_token = ""
+        self._exp = 0.0
+        self._lock = threading.RLock()
+        self.profile_cache = {}
+
+    # --- state
+    @property
+    def logged_in(self):
+        return bool(self.settings.value("acct/refresh", "", type=str))
+
+    @property
+    def name(self):
+        return self.settings.value("acct/name", "", type=str)
+
+    @property
+    def email(self):
+        return self.settings.value("acct/email", "", type=str)
+
+    @property
+    def uid(self):
+        return self.settings.value("acct/uid", "", type=str)
+
+    # --- http
+    def _http(self, url, data=None, method=None, headers=None, form=False, timeout=20):
+        body = None
+        hdrs = {"User-Agent": f"SHUNCHi/{APP_VERSION}"}
+        if data is not None:
+            if form:
+                body = urllib.parse.urlencode(data).encode("utf-8")
+                hdrs["Content-Type"] = "application/x-www-form-urlencoded"
+            else:
+                body = json.dumps(data).encode("utf-8")
+                hdrs["Content-Type"] = "application/json"
+        hdrs.update(headers or {})
+        req = urllib.request.Request(url, data=body, method=method or ("POST" if body is not None else "GET"), headers=hdrs)
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                raw = resp.read(2_000_000).decode("utf-8") or "{}"
+                return json.loads(raw)
+        except urllib.error.HTTPError as exc:
+            try:
+                info = json.loads(exc.read(20000).decode("utf-8"))
+            except Exception:
+                info = {}
+            err = info.get("error", {})
+            msg = (err.get("message") if isinstance(err, dict) else str(err)) or ""
+            code = msg.split(" ")[0].split(":")[0]
+            if exc.code == 403 and "PERMISSION" in str(err):
+                raise AccountError("Your account cannot do this (it may be blocked).")
+            raise AccountError(ACCOUNT_ERRORS.get(code, "Could not reach the account service. Check your internet and try again."))
+        except (urllib.error.URLError, TimeoutError, OSError):
+            raise AccountError("No internet connection.")
+
+    def config(self):
+        if self._cfg:
+            return self._cfg
+        try:
+            cfg = self._http(FB_CONFIG_URL + "?t=" + str(int(time.time() // 600)))
+        except AccountError:
+            cfg = {}
+        if not cfg.get("apiKey") or not cfg.get("projectId"):
+            raise AccountError("Accounts are not turned on yet.")
+        self._cfg = cfg
+        return cfg
+
+    def _key(self):
+        return "?key=" + urllib.parse.quote(self.config()["apiKey"])
+
+    # --- session
+    def _store(self, info):
+        with self._lock:
+            self._id_token = info.get("idToken") or info.get("id_token") or ""
+            self._exp = time.time() + int(info.get("expiresIn") or info.get("expires_in") or 3600) - 60
+            refresh = info.get("refreshToken") or info.get("refresh_token") or ""
+            uid = info.get("localId") or info.get("user_id") or ""
+            if refresh:
+                self.settings.setValue("acct/refresh", refresh)
+            if uid:
+                self.settings.setValue("acct/uid", uid)
+            if info.get("email"):
+                self.settings.setValue("acct/email", info["email"])
+            if info.get("displayName") is not None and "displayName" in info:
+                self.settings.setValue("acct/name", info.get("displayName") or "")
+
+    def token(self):
+        with self._lock:
+            if self._id_token and time.time() < self._exp:
+                return self._id_token
+            refresh = self.settings.value("acct/refresh", "", type=str)
+            if not refresh:
+                raise AccountError("Please log in.")
+            try:
+                info = self._http(STS_URL + self._key(), {"grant_type": "refresh_token", "refresh_token": refresh}, form=True)
+            except AccountError as exc:
+                raise AccountError("Please log in again.") if "reach" in str(exc) else exc
+            self._store(info)
+            return self._id_token
+
+    def logout(self):
+        with self._lock:
+            self._id_token = ""
+            self._exp = 0.0
+            self.profile_cache = {}
+            for key in ("acct/refresh", "acct/uid", "acct/email", "acct/name"):
+                self.settings.remove(key)
+
+    # --- sign in / up
+    def signup(self, name, email, password):
+        info = self._http(f"{IDT_URL}/accounts:signUp" + self._key(), {"email": email, "password": password, "returnSecureToken": True})
+        self._store(info)
+        self._http(f"{IDT_URL}/accounts:update" + self._key(), {"idToken": self._id_token, "displayName": name, "returnSecureToken": False})
+        self.settings.setValue("acct/name", name)
+        self._write_user({"name": name, "email": email, "phone": "", "address": "", "createdAt": datetime.utcnow()})
+        try:
+            self._http(f"{IDT_URL}/accounts:sendOobCode" + self._key(), {"requestType": "VERIFY_EMAIL", "idToken": self._id_token})
+        except AccountError:
+            pass
+        return {"name": name, "email": email}
+
+    def login(self, email, password):
+        info = self._http(f"{IDT_URL}/accounts:signInWithPassword" + self._key(), {"email": email, "password": password, "returnSecureToken": True})
+        self._store(info)
+        self._touch()
+        return {"name": self.name, "email": self.email}
+
+    def reset_password(self, email):
+        self._http(f"{IDT_URL}/accounts:sendOobCode" + self._key(), {"requestType": "PASSWORD_RESET", "email": email})
+        return True
+
+    def google_login(self, open_browser=None, timeout=180):
+        """Google sign-in for a desktop app: browser + a one-shot local page (loopback), then Firebase signInWithIdp."""
+        import http.server
+        import webbrowser
+        cfg = self.config()
+        client_id = cfg.get("googleClientId", "")
+        if not client_id:
+            raise AccountError("Google sign-in is not set up for the app yet. Use email, or sign in with Google on the website.")
+        verifier = _b64url(os.urandom(32))
+        challenge = _b64url(hashlib.sha256(verifier.encode("ascii")).digest())
+        state = _b64url(os.urandom(12))
+        got = {}
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                if "code" in query or "error" in query:
+                    got.update({k: v[0] for k, v in query.items()})
+                    page = ("<html><body style='font-family:sans-serif;text-align:center;margin-top:15vh'>"
+                            "<h2>SHUNCHi</h2><p>You are signed in. You can close this tab and go back to the app.</p></body></html>")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.end_headers()
+                    self.wfile.write(page.encode("utf-8"))
+                else:
+                    self.send_response(204)
+                    self.end_headers()
+
+            def log_message(self, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        server.timeout = 1
+        redirect = f"http://127.0.0.1:{server.server_address[1]}"
+        url = GOOGLE_AUTH_URL + "?" + urllib.parse.urlencode({
+            "client_id": client_id, "redirect_uri": redirect, "response_type": "code", "scope": "openid email profile",
+            "code_challenge": challenge, "code_challenge_method": "S256", "state": state, "prompt": "select_account"})
+        try:
+            (open_browser or webbrowser.open)(url)
+            end = time.time() + timeout
+            while not got and time.time() < end:
+                server.handle_request()
+        finally:
+            server.server_close()
+        if not got:
+            raise AccountError("Google sign-in timed out. Try again.")
+        if got.get("error") or got.get("state") != state or not got.get("code"):
+            raise AccountError("Google sign-in was cancelled.")
+        form = {"code": got["code"], "client_id": client_id, "redirect_uri": redirect, "grant_type": "authorization_code", "code_verifier": verifier}
+        if cfg.get("googleClientSecret"):
+            form["client_secret"] = cfg["googleClientSecret"]
+        tok = self._http(GOOGLE_TOKEN_URL, form, form=True)
+        id_token = tok.get("id_token")
+        if not id_token:
+            raise AccountError("Google sign-in failed. Try again.")
+        info = self._http(f"{IDT_URL}/accounts:signInWithIdp" + self._key(), {
+            "postBody": "id_token=" + urllib.parse.quote(id_token) + "&providerId=google.com", "requestUri": "http://localhost",
+            "returnSecureToken": True, "returnIdpSignInToken": True})
+        self._store(info)
+        if not self.name and info.get("fullName"):
+            self.settings.setValue("acct/name", info["fullName"])
+        if not self._read_user():
+            self._write_user({"name": self.name, "email": self.email, "phone": "", "address": "", "createdAt": datetime.utcnow()})
+        self._touch()
+        return {"name": self.name, "email": self.email}
+
+    # --- firestore
+    def _doc_url(self, path):
+        return f"{FS_URL}/projects/{urllib.parse.quote(self.config()['projectId'])}/databases/(default)/documents/{path}"
+
+    def _auth(self):
+        return {"Authorization": "Bearer " + self.token()}
+
+    def _write_user(self, fields):
+        mask = "&".join("updateMask.fieldPaths=" + urllib.parse.quote(k) for k in fields)
+        body = {"fields": {k: fs_value(v) for k, v in fields.items()}}
+        return self._http(self._doc_url(f"users/{self.uid}") + "?" + mask, body, method="PATCH", headers=self._auth())
+
+    def _read_user(self):
+        try:
+            return fs_fields(self._http(self._doc_url(f"users/{self.uid}"), headers=self._auth()))
+        except AccountError:
+            return {}
+
+    def _touch(self):
+        try:
+            self._write_user({"lastActive": datetime.utcnow(), "email": self.email})
+        except AccountError:
+            pass
+
+    def profile(self):
+        if not getattr(self, "_touched", False):
+            self._touched = True
+            self._touch()
+        data = self._read_user()
+        data.setdefault("name", self.name)
+        data.setdefault("email", self.email)
+        self.profile_cache = data
+        return data
+
+    def save_profile(self, name, phone, address):
+        self._write_user({"name": name[:60], "phone": phone[:30], "address": address[:160]})
+        if name != self.name:
+            self._http(f"{IDT_URL}/accounts:update" + self._key(), {"idToken": self.token(), "displayName": name, "returnSecureToken": False})
+            self.settings.setValue("acct/name", name)
+        return self.profile()
+
+    def add_idea(self, code, title, details):
+        fields = {"track": code, "title": title[:120], "details": details[:1200], "type": "App idea", "createdAt": datetime.utcnow()}
+        body = {"fields": {k: fs_value(v) for k, v in fields.items()}}
+        self._http(self._doc_url(f"users/{self.uid}/ideas/{code}"), body, method="PATCH", headers=self._auth())
+        return True
+
+    def list_ideas(self):
+        data = self._http(self._doc_url(f"users/{self.uid}/ideas") + "?pageSize=100", headers=self._auth())
+        ideas = [fs_fields(d) for d in data.get("documents", [])]
+        ideas.sort(key=lambda i: i.get("createdAt", ""), reverse=True)
+        try:
+            status = self._http(WEBSITE_URL + "/data/ideas-status.json?t=" + str(int(time.time())))
+        except AccountError:
+            status = {}
+        for idea in ideas:
+            rec = status.get(hashlib.sha256(idea.get("track", "").encode("utf-8")).hexdigest())
+            idea["status"] = (rec or {}).get("s", "pending")
+            idea["feedback"] = (rec or {}).get("f", "")
+        return ideas
+
+
+class AccountTask(threading.Thread):
+    """Runs one account call off the UI thread and reports back through a signal."""
+
+    def __init__(self, signals, action, func, *args):
+        super().__init__(daemon=True)
+        self.signals, self.action, self.func, self.args = signals, action, func, args
+
+    def run(self):
+        try:
+            result = self.func(*self.args)
+            self.signals.account_done.emit(self.action, True, result)
+        except AccountError as exc:
+            self.signals.account_done.emit(self.action, False, str(exc))
+        except Exception as exc:
+            logging.info("Account task %s failed: %s", self.action, exc)
+            self.signals.account_done.emit(self.action, False, "Something went wrong. Try again.")
 
 
 def _b64u_int(text):
@@ -2438,6 +2760,11 @@ class MoreAppsPage(QWidget):
                            "Your idea may become the next free tool.")
         idea_text.setObjectName("cardText")
         idea_text.setWordWrap(True)
+        self.account = None
+        self.autofill_button = QPushButton("Fill from my account")
+        self.autofill_button.setCursor(Qt.PointingHandCursor)
+        self.autofill_button.setVisible(False)
+        self.autofill_button.clicked.connect(self._autofill)
         self.idea_name = QLineEdit()
         self.idea_name.setPlaceholderText("Your name *")
         self.idea_name.setMaxLength(60)
@@ -2463,7 +2790,7 @@ class MoreAppsPage(QWidget):
         bottom = QHBoxLayout()
         bottom.addWidget(self.idea_button)
         bottom.addWidget(self.idea_status, 1)
-        for widget in (idea_title, idea_text, self.idea_text, self.idea_name, self.idea_email, self.idea_phone, self.idea_address):
+        for widget in (idea_title, idea_text, self.idea_text, self.autofill_button, self.idea_name, self.idea_email, self.idea_phone, self.idea_address):
             idea_layout.addWidget(widget)
         idea_layout.addLayout(bottom)
         root.addWidget(idea)
@@ -2480,6 +2807,25 @@ class MoreAppsPage(QWidget):
     def bind_signals(self, signals):
         self.signals = signals
         signals.idea_result.connect(self._idea_done)
+
+    def bind_account(self, account):
+        self.account = account
+        self.refresh_account()
+
+    def retranslate_account(self):
+        self.autofill_button.setText(T("Fill from my account"))
+
+    def refresh_account(self):
+        self.autofill_button.setVisible(bool(self.account and self.account.logged_in))
+
+    def _autofill(self):
+        p = self.account.profile_cache or {}
+        self.idea_name.setText(p.get("name") or self.account.name)
+        self.idea_email.setText(p.get("email") or self.account.email)
+        if p.get("phone"):
+            self.idea_phone.setText(p["phone"])
+        if p.get("address"):
+            self.idea_address.setText(p["address"])
 
     def _send_idea(self):
         text = self.idea_text.toPlainText().strip()
@@ -2505,6 +2851,7 @@ class MoreAppsPage(QWidget):
         self.idea_button.setEnabled(False)
         self.idea_status.setStyleSheet(f"color:{C_MUTED};font-size:12px;")
         self.idea_status.setText("Sending…")
+        self._pending_idea = text
         IdeaSender(self.signals, {"Name": name, "Email": email, "Phone": phone, "Address": address,
                                   "Contact": f"{email} · {phone}", "Idea": text[:2000]}).start()
 
@@ -2526,6 +2873,9 @@ class MoreAppsPage(QWidget):
         if ok:
             self.idea_text.clear()
             code = re.search(r"SH-[A-Z2-9]{8}", message)
+            if code and self.account is not None and self.account.logged_in:
+                text = getattr(self, "_pending_idea", "")
+                AccountTask(self.signals, "idea_saved", self.account.add_idea, code.group(0), text[:80], text).start()
             if code:
                 try:
                     QApplication.clipboard().setText(code.group(0))
@@ -2605,6 +2955,305 @@ class MoreAppsPage(QWidget):
             self.list_layout.addWidget(self._app_card(
                 "More apps are on the way", f"New free tools from the developer will appear here. Follow {WEBSITE_LABEL}.",
                 "Coming soon"))
+
+
+BN.update({
+    "Account": "অ্যাকাউন্ট", "Optional account": "ঐচ্ছিক অ্যাকাউন্ট",
+    "Your account": "আপনার অ্যাকাউন্ট", "Log in": "লগইন", "Sign up": "সাইন আপ", "Log out": "লগআউট",
+    "Continue with Google": "Google দিয়ে চালিয়ে যান", "Forgot password?": "পাসওয়ার্ড ভুলে গেছেন?",
+    "Name": "নাম", "Email": "ইমেইল", "Password": "পাসওয়ার্ড", "Phone": "ফোন", "Address": "ঠিকানা",
+    "Create account": "অ্যাকাউন্ট খুলুন", "Save": "সেভ", "Saved.": "সেভ হয়েছে।", "My details": "আমার তথ্য",
+    "My ideas": "আমার আইডিয়া", "Open my profile on the website": "ওয়েবসাইটে আমার প্রোফাইল খুলুন",
+    "Fill from my account": "আমার অ্যাকাউন্ট থেকে বসান",
+    "An account is optional. SHUNCHi works fully without it. An account keeps your ideas with their status, your details for quick filling, and your data in the upcoming tools.":
+        "অ্যাকাউন্ট ঐচ্ছিক। এটি ছাড়াই SHUNCHi পুরোপুরি কাজ করে। অ্যাকাউন্টে আপনার আইডিয়া ও স্ট্যাটাস, দ্রুত পূরণের তথ্য এবং আসন্ন টুলগুলোর ডেটা সংরক্ষিত থাকে।",
+    "Please wait…": "অপেক্ষা করুন…", "Enter your name.": "নাম লিখুন।", "Enter a valid email.": "সঠিক ইমেইল দিন।",
+    "Password must be at least 6 characters.": "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।",
+    "Password reset email sent. Check your inbox.": "পাসওয়ার্ড রিসেটের ইমেইল পাঠানো হয়েছে। ইনবক্স দেখুন।",
+    "Type your email first.": "আগে ইমেইল লিখুন।", "No ideas yet.": "এখনো কোনো আইডিয়া নেই।",
+    "Your account is blocked, so ideas are not saved to your profile.": "আপনার অ্যাকাউন্ট ব্লক করা, তাই আইডিয়া প্রোফাইলে সেভ হবে না।",
+    "Pending": "পেন্ডিং", "Under analysis": "বিশ্লেষণ চলছে", "Approved": "অনুমোদিত", "Not taken forward": "এগোনো যাচ্ছে না",
+    "Wrong email or password.": "ইমেইল বা পাসওয়ার্ড ভুল।", "No internet connection.": "ইন্টারনেট সংযোগ নেই।",
+    "This email already has an account. Log in instead.": "এই ইমেইলে অ্যাকাউন্ট আছে। লগইন করুন।",
+    "No account with this email. Create one.": "এই ইমেইলে অ্যাকাউন্ট নেই। নতুন খুলুন।",
+    "Accounts are not turned on yet.": "অ্যাকাউন্ট সুবিধা এখনো চালু হয়নি।",
+})
+
+STATUS_LABEL = {"pending": "Pending", "analysis": "Under analysis", "approved": "Approved", "rejected": "Not taken forward"}
+
+
+class AccountPage(QWidget):
+    """Optional login / sign up and the profile. The app never asks for it."""
+
+    def __init__(self, account, signals, on_change):
+        super().__init__()
+        self.account, self.signals, self.on_change = account, signals, on_change
+        self.mode = "login"
+        signals.account_done.connect(self._done)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(30, 28, 30, 24)
+        root.setSpacing(16)
+        self.header = page_header("Your account", "Optional. SHUNCHi works fully without it.")
+        root.addLayout(self.header)
+        self.stack = QStackedWidget()
+        root.addWidget(self.stack)
+        root.addStretch()
+
+        # --- logged out
+        out_card, out = make_card((22, 18, 22, 18), 10)
+        self.intro = QLabel()
+        self.intro.setObjectName("cardText")
+        self.intro.setWordWrap(True)
+        self.tabs = SegmentedControl([(T("Log in"), "login"), (T("Sign up"), "signup")])
+        self.tabs.valueChanged.connect(self._set_mode)
+        self.f_name = QLineEdit()
+        self.f_name.setMaxLength(60)
+        self.f_email = QLineEdit()
+        self.f_email.setMaxLength(80)
+        self.f_pass = QLineEdit()
+        self.f_pass.setEchoMode(QLineEdit.Password)
+        self.f_pass.setMaxLength(100)
+        self.go_button = QPushButton()
+        self.go_button.setObjectName("primary")
+        self.go_button.setCursor(Qt.PointingHandCursor)
+        self.go_button.clicked.connect(self._submit)
+        self.f_pass.returnPressed.connect(self._submit)
+        self.google_button = QPushButton()
+        self.google_button.setCursor(Qt.PointingHandCursor)
+        self.google_button.clicked.connect(self._google)
+        self.forgot = QPushButton()
+        self.forgot.setObjectName("link")
+        self.forgot.setCursor(Qt.PointingHandCursor)
+        self.forgot.clicked.connect(self._forgot)
+        self.out_status = QLabel("")
+        self.out_status.setWordWrap(True)
+        for w in (self.intro, self.tabs, self.f_name, self.f_email, self.f_pass):
+            out.addWidget(w)
+        row = QHBoxLayout()
+        row.addWidget(self.go_button)
+        row.addWidget(self.google_button)
+        row.addStretch()
+        out.addLayout(row)
+        out.addWidget(self.forgot, 0, Qt.AlignLeft)
+        out.addWidget(self.out_status)
+        self.stack.addWidget(out_card)
+
+        # --- logged in
+        in_wrap = QWidget()
+        in_l = QVBoxLayout(in_wrap)
+        in_l.setContentsMargins(0, 0, 0, 0)
+        in_l.setSpacing(14)
+        head_card, head = make_card((22, 18, 22, 18), 6)
+        top = QHBoxLayout()
+        self.avatar = QLabel("?")
+        self.avatar.setFixedSize(52, 52)
+        self.avatar.setAlignment(Qt.AlignCenter)
+        self.avatar.setStyleSheet(f"background:{C_PRIMARY};color:white;border-radius:26px;font-size:18px;font-weight:700;")
+        who = QVBoxLayout()
+        self.who_name = QLabel("")
+        self.who_name.setObjectName("cardTitle")
+        self.who_mail = QLabel("")
+        self.who_mail.setObjectName("cardText")
+        who.addWidget(self.who_name)
+        who.addWidget(self.who_mail)
+        self.logout_button = QPushButton()
+        self.logout_button.setCursor(Qt.PointingHandCursor)
+        self.logout_button.clicked.connect(self._logout)
+        top.addWidget(self.avatar)
+        top.addSpacing(12)
+        top.addLayout(who, 1)
+        top.addWidget(self.logout_button)
+        head.addLayout(top)
+        self.blocked = QLabel("")
+        self.blocked.setWordWrap(True)
+        self.blocked.setStyleSheet(f"color:{C_ERR};font-size:12px;")
+        head.addWidget(self.blocked)
+        in_l.addWidget(head_card)
+
+        det_card, det = make_card((22, 18, 22, 18), 8)
+        self.det_title = QLabel()
+        self.det_title.setObjectName("cardTitle")
+        self.p_name = QLineEdit()
+        self.p_name.setMaxLength(60)
+        self.p_phone = QLineEdit()
+        self.p_phone.setMaxLength(30)
+        self.p_address = QLineEdit()
+        self.p_address.setMaxLength(160)
+        self.save_button = QPushButton()
+        self.save_button.setObjectName("primary")
+        self.save_button.setCursor(Qt.PointingHandCursor)
+        self.save_button.clicked.connect(self._save)
+        self.in_status = QLabel("")
+        self.in_status.setWordWrap(True)
+        for w in (self.det_title, self.p_name, self.p_phone, self.p_address):
+            det.addWidget(w)
+        r2 = QHBoxLayout()
+        r2.addWidget(self.save_button)
+        r2.addWidget(self.in_status, 1)
+        det.addLayout(r2)
+        in_l.addWidget(det_card)
+
+        ideas_card, ideas = make_card((22, 18, 22, 18), 8)
+        self.ideas_title = QLabel()
+        self.ideas_title.setObjectName("cardTitle")
+        self.ideas_box = QVBoxLayout()
+        self.ideas_box.setSpacing(8)
+        ideas.addWidget(self.ideas_title)
+        ideas.addLayout(self.ideas_box)
+        self.web_button = QPushButton()
+        self.web_button.setCursor(Qt.PointingHandCursor)
+        self.web_button.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(ACCOUNT_PAGE_URL)))
+        ideas.addWidget(self.web_button, 0, Qt.AlignLeft)
+        in_l.addWidget(ideas_card)
+        self.stack.addWidget(in_wrap)
+        self.retranslate()
+        self.refresh()
+
+    # --- text
+    def retranslate(self):
+        self.intro.setText(T("An account is optional. SHUNCHi works fully without it. An account keeps your ideas with their status, your details for quick filling, and your data in the upcoming tools."))
+        self.tabs.buttons[0].setText(T("Log in"))
+        self.tabs.buttons[1].setText(T("Sign up"))
+        self.f_name.setPlaceholderText(T("Name") + " *")
+        self.f_email.setPlaceholderText(T("Email") + " *")
+        self.f_pass.setPlaceholderText(T("Password") + " *")
+        self.google_button.setText(T("Continue with Google"))
+        self.forgot.setText(T("Forgot password?"))
+        self.logout_button.setText(T("Log out"))
+        self.det_title.setText(T("My details"))
+        self.p_name.setPlaceholderText(T("Name"))
+        self.p_phone.setPlaceholderText(T("Phone"))
+        self.p_address.setPlaceholderText(T("Address"))
+        self.save_button.setText(T("Save"))
+        self.ideas_title.setText(T("My ideas"))
+        self.web_button.setText(T("Open my profile on the website") + "  ↗")
+        self._set_mode(self.mode)
+
+    def _set_mode(self, mode):
+        self.mode = mode
+        signup = mode == "signup"
+        self.f_name.setVisible(signup)
+        self.forgot.setVisible(not signup)
+        self.go_button.setText(T("Create account") if signup else T("Log in"))
+        self.out_status.setText("")
+
+    def _say(self, label, text, ok=None):
+        color = C_MUTED if ok is None else (C_OK if ok else C_ERR)
+        label.setStyleSheet(f"color:{color};font-size:12px;")
+        label.setText(T(text))
+
+    # --- actions
+    def _busy(self, on):
+        for w in (self.go_button, self.google_button, self.forgot, self.save_button):
+            w.setEnabled(not on)
+
+    def _submit(self):
+        name, email, pw = self.f_name.text().strip(), self.f_email.text().strip(), self.f_pass.text()
+        if self.mode == "signup" and not name:
+            return self._say(self.out_status, "Enter your name.", False)
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+            return self._say(self.out_status, "Enter a valid email.", False)
+        if len(pw) < 6:
+            return self._say(self.out_status, "Password must be at least 6 characters.", False)
+        self._busy(True)
+        self._say(self.out_status, "Please wait…")
+        if self.mode == "signup":
+            AccountTask(self.signals, "login", self.account.signup, name, email, pw).start()
+        else:
+            AccountTask(self.signals, "login", self.account.login, email, pw).start()
+
+    def _google(self):
+        self._busy(True)
+        self._say(self.out_status, "A browser window opened. Choose your Google account there.")
+        AccountTask(self.signals, "login", self.account.google_login).start()
+
+    def _forgot(self):
+        email = self.f_email.text().strip()
+        if not email:
+            return self._say(self.out_status, "Type your email first.", False)
+        AccountTask(self.signals, "reset", self.account.reset_password, email).start()
+
+    def _logout(self):
+        self.account.logout()
+        self.f_pass.clear()
+        self.refresh()
+        self.on_change()
+
+    def _save(self):
+        if not self.p_name.text().strip():
+            return self._say(self.in_status, "Enter your name.", False)
+        self._busy(True)
+        AccountTask(self.signals, "save", self.account.save_profile, self.p_name.text().strip(),
+                    self.p_phone.text().strip(), self.p_address.text().strip()).start()
+
+    def _done(self, action, ok, data):
+        if action == "login":
+            self._busy(False)
+            if not ok:
+                return self._say(self.out_status, str(data), False)
+            self.f_pass.clear()
+            self.refresh()
+            self.on_change()
+        elif action == "reset":
+            self._say(self.out_status, "Password reset email sent. Check your inbox." if ok else str(data), ok)
+        elif action == "save":
+            self._busy(False)
+            self._say(self.in_status, "Saved." if ok else str(data), ok)
+            if ok:
+                self.on_change()
+        elif action == "profile" and ok:
+            p = data or {}
+            self.p_name.setText(p.get("name", ""))
+            self.p_phone.setText(p.get("phone", ""))
+            self.p_address.setText(p.get("address", ""))
+            self.blocked.setText(T("Your account is blocked, so ideas are not saved to your profile.") if p.get("status") == "blocked" else "")
+            self.who_name.setText(p.get("name") or self.account.email)
+            self.avatar.setText(self._initials(p.get("name") or self.account.email))
+            self.on_change()
+        elif action == "ideas" and ok:
+            self._show_ideas(data or [])
+        elif action == "idea_saved" and ok:
+            self.refresh()
+
+    @staticmethod
+    def _initials(text):
+        parts = [w[0] for w in str(text).split()[:2] if w]
+        return ("".join(parts) or "?").upper()
+
+    def _show_ideas(self, ideas):
+        while self.ideas_box.count():
+            item = self.ideas_box.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        if not ideas:
+            label = QLabel(T("No ideas yet."))
+            label.setObjectName("cardText")
+            self.ideas_box.addWidget(label)
+            return
+        for idea in ideas:
+            label = QLabel(f"<b>{html_escape(idea.get('title', ''))}</b> &nbsp; <span style='color:{C_PRIMARY_DARK}'>"
+                           f"{html_escape(T(STATUS_LABEL.get(idea.get('status'), 'Pending')))}</span><br>"
+                           f"<span style='color:{C_MUTED}'>{html_escape(idea.get('track', ''))}</span>"
+                           + (f"<br>{html_escape(idea.get('feedback', ''))}" if idea.get("feedback") else ""))
+            label.setWordWrap(True)
+            label.setTextFormat(Qt.RichText)
+            self.ideas_box.addWidget(label)
+
+    def refresh(self):
+        if self.account.logged_in:
+            self.stack.setCurrentIndex(1)
+            self.who_name.setText(self.account.name or self.account.email)
+            self.who_mail.setText(self.account.email)
+            self.avatar.setText(self._initials(self.account.name or self.account.email))
+            AccountTask(self.signals, "profile", self.account.profile).start()
+            AccountTask(self.signals, "ideas", self.account.list_ideas).start()
+        else:
+            self.stack.setCurrentIndex(0)
+            self._set_mode(self.mode)
+
+
+def html_escape(text):
+    return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 class HelpPage(QWidget):
@@ -2825,7 +3474,7 @@ class NoticeDialog(QDialog):
 # ----------------------------------------------------------------------------------------------
 class MainWindow(QMainWindow):
     NAV = (("Dashboard", "home"), ("Voice History", "history"), ("Settings", "settings"),
-           ("How to use", "help"), ("More Apps", "apps"), ("Developer", "user"))
+           ("How to use", "help"), ("More Apps", "apps"), ("Developer", "user"), ("Account", "user"))
 
     def __init__(self):
         super().__init__()
@@ -2994,10 +3643,13 @@ class MainWindow(QMainWindow):
         self.help_page = HelpPage()
         self.more_apps_page = MoreAppsPage()
         self.developer_page = DeveloperPage()
+        self.account = AccountService(self.settings)
+        self.account_page = AccountPage(self.account, self.signals, self._account_changed)
         self.more_apps_page.bind_signals(self.signals)
+        self.more_apps_page.bind_account(self.account)
         self.stack = QStackedWidget()
         for page in (self.dashboard_page, self.history_page, self.settings_page, self.help_page,
-                     self.more_apps_page, self.developer_page):
+                     self.more_apps_page, self.developer_page, self.account_page):
             self.stack.addWidget(scroll_page(page))
         right.addWidget(self.stack, 1)
 
@@ -3032,6 +3684,11 @@ class MainWindow(QMainWindow):
             button.setText("  " + T(label))
         self.tagline.setText(T("AI voice typing · by RUHUL"))
         self.dashboard_page.retranslate()
+        self.account_page.retranslate()
+        self.more_apps_page.retranslate_account()
+
+    def _account_changed(self):
+        self.more_apps_page.refresh_account()
 
     def switch_page(self, index):
         self.stack.setCurrentIndex(index)

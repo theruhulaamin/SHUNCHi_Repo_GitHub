@@ -138,7 +138,7 @@
       });
     }
     viaGitHub().catch(function (er) { try { console.warn("Inbox:", er && er.message); } catch (x) {} return viaFormSubmit(); }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) { try { console.warn("FormSubmit:", r.status, j && j.message); } catch (x) {} throw new Error((j && j.message) || ("HTTP " + r.status)); } }); })
-      .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); showTrack(code); })
+      .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); showTrack(code); try { document.dispatchEvent(new CustomEvent("shunchi:idea", { detail: { track: code, title: title, details: details, type: payload.Type } })); } catch (x) {} })
       .catch(function (err) {
         try { console.warn("Idea form failed:", err && err.message); } catch (x) {}
         var body = "Tracking: " + code + "\nType: " + payload.Type + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + payload.Name + "\nEmail: " + email + "\nPhone: " + phone + "\nAddress: " + address;

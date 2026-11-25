@@ -1,0 +1,39 @@
+rules_version = '2';
+// SHUNCHi accounts. Paste this in Firebase Console -> Firestore Database -> Rules -> Publish.
+// ADMIN: change the email below if your admin Google account is different.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.email == 'ruhulaaminn@gmail.com' && request.auth.token.email_verified == true; }
+    function me() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function notBlocked() { return !exists(me()) || get(me()).data.get('status', 'active') != 'blocked'; }
+
+    match /users/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      // users can never change their own status (active / inactive / blocked); only the admin can
+      allow create: if signedIn() && request.auth.uid == uid && (!('status' in request.resource.data) || request.resource.data.status == 'active');
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid && request.resource.data.get('status', 'active') == resource.data.get('status', 'active'));
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+
+      match /{sub}/{doc} {
+        allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+        allow write: if isAdmin() || (signedIn() && request.auth.uid == uid && notBlocked());
+        allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      }
+    }
+
+    // admin reads every user's ideas in one query
+    match /{path=**}/ideas/{id} { allow read: if isAdmin(); }
+
+    match /comments/{id} {
+      allow read: if true;
+      allow create: if signedIn() && notBlocked() && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+                    && request.resource.data.name is string && request.resource.data.name.size() <= 60
+                    && request.resource.data.slug is string;
+      allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update: if false;
+    }
+  }
+}

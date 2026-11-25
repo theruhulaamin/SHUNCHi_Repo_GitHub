@@ -1,7 +1,15 @@
-SHUNCHi 4.6.1 — Dashboard in Bangla/English, smoother pop-up, update prompt, installer version
+SHUNCHi 4.7.0 — Optional account, idea tracking number, encrypted idea details
+==============================================================================================
 
-- আইডিয়া পাঠালে এখন ট্র্যাকিং নম্বর (SH-XXXXXXXX) পাওয়া যায়, অ্যাপে কপিও হয়। ওয়েবসাইটের “আইডিয়ার স্ট্যাটাস” অংশে নম্বর দিয়ে স্ট্যাটাস ও মতামত দেখা যায়।
-- নাম, ইমেইল, ফোন, ঠিকানা এনক্রিপ্ট হয়ে যায়; শুধু ডেভেলপারের কী দিয়ে খোলা যায়।
+1. Account (optional, never forced): Account page in the sidebar. Sign up or log in with email + password,
+   or Continue with Google. SHUNCHi works fully without an account.
+2. Profile: name, phone, address saved to your account. "Fill from my account" button in the idea form.
+3. Ideas: every idea gets a tracking number (SH-XXXXXXXX), copied for you. Logged-in users see their ideas
+   with status and feedback in the app and on shunchiai.com/account. Anyone can check a number on the website.
+4. Privacy: name, email, phone and address of an idea are encrypted before sending; only the developer's key opens them.
+5. The same account is used on the website (comments on blog posts, profile, saved data for upcoming tools).
+
+SHUNCHi 4.6.1 — Dashboard in Bangla/English, smoother pop-up, update prompt, installer version
 ==============================================================================================
 
 1. Dashboard: English | বাংলা switch (top right). Sidebar and dashboard follow it and it is remembered.

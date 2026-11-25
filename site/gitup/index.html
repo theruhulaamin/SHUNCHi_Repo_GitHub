@@ -225,6 +225,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></symbol>
   <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></symbol>
   <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol>
   <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
@@ -286,6 +287,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     <nav class="nav" id="nav" aria-label="Admin">
       <button type="button" data-tab="dash" aria-current="page"><svg class="i"><use href="#i-home"/></svg><span class="tx" data-bn="ড্যাশবোর্ড">Dashboard</span></button>
       <button type="button" data-tab="ideas"><svg class="i"><use href="#i-inbox"/></svg><span class="tx" data-bn="আইডিয়া">Ideas</span><span class="bdg hidden" id="b-ideas">0</span></button>
+      <button type="button" data-tab="users"><svg class="i"><use href="#i-user"/></svg><span class="tx" data-bn="ইউজার">Users</span></button>
       <button type="button" data-tab="software"><svg class="i"><use href="#i-box"/></svg><span class="tx" data-bn="সফটওয়্যার">Software</span></button>
       <button type="button" data-tab="popups"><svg class="i"><use href="#i-bell"/></svg><span class="tx" data-bn="অ্যাপ পপ-আপ">App pop-ups</span></button>
       <button type="button" data-tab="videos"><svg class="i"><use href="#i-play"/></svg><span class="tx" data-bn="ভিডিও">Videos</span></button>
@@ -358,6 +360,21 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
               <a class="btn" target="_blank" rel="noopener" href="https://tagmanager.google.com/#/container/accounts/6407955145/containers/288738820/workspaces/2">Tag Manager <svg class="i s"><use href="#i-out"/></svg></a>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- ===== USERS ===== -->
+      <section id="p-users" class="sec hidden">
+        <div class="page-h"><div><h1 data-bn="ইউজার">Users</h1><p data-bn="ওয়েবসাইট ও অ্যাপে যারা অ্যাকাউন্ট খুলেছে। স্ট্যাটাস বদলান, ডেটা দেখুন, মন্তব্য মডারেট করুন।">People with an account on the website and app. Change status, see their data, moderate comments.</p></div>
+          <div class="row"><button class="btn" id="u-reload" type="button"><svg class="i s"><use href="#i-refresh"/></svg><span data-bn="রিফ্রেশ">Refresh</span></button><button class="btn" id="u-csv" type="button"><svg class="i s"><use href="#i-dl"/></svg>CSV</button></div></div>
+        <div class="card" id="u-conn"></div>
+        <div id="u-main" class="hidden">
+          <div id="u-stats" style="margin-bottom:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px"></div>
+          <div class="card">
+            <div class="row" style="flex-wrap:wrap;margin-bottom:10px"><input id="u-q" type="search" placeholder="Search name, email, phone" style="flex:1;min-width:200px"><div class="chips" id="u-chips"></div></div>
+            <div id="u-list"></div>
+          </div>
+          <div class="card" style="margin-top:12px"><div class="card-h"><h2 data-bn="সাম্প্রতিক মন্তব্য">Recent comments</h2></div><div id="u-comments"></div></div>
         </div>
       </section>
 
@@ -772,13 +789,14 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   ["logout", "logout2", "logout3"].forEach(function (id) { $("#" + id).addEventListener("click", disconnect); });
 
   /* ---------- navigation ---------- */
-  var TABS = ["dash", "ideas", "software", "popups", "videos", "blog", "release", "help"];
+  var TABS = ["dash", "ideas", "users", "software", "popups", "videos", "blog", "release", "help"];
   function go(tab, silent) {
     if (!silent && S.tab === "blog" && S.editing && tab !== "blog" && S.dirty) { if (!window.confirm(T("You have unsaved changes in the editor. Leave anyway?", "এডিটরে সেভ না করা পরিবর্তন আছে। তবুও ছাড়বেন?"))) return; S.dirty = false; }
     S.tab = tab; TABS.forEach(function (t) { $("#p-" + t).classList.toggle("hidden", t !== tab); });
     $$("#nav button").forEach(function (b) { if (b.dataset.tab === tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
     try { history.replaceState(null, "", "#" + tab); } catch (e) {}
     if (tab === "ideas") markIdeasSeen();
+    if (tab === "users" && S.onUsers) S.onUsers();
     if (tab === "release" && S.onRelease) S.onRelease();
     window.scrollTo(0, 0);
   }
@@ -1099,6 +1117,106 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     var csv = "﻿" + ["Date", "Tracking", "Status", "Type", "Idea", "Details", "Name", "Email", "Phone", "Address", "Contact", "Language"].join(",") + "\n" + S.ideas.map(function (x) { return [x.at, x.track, x.status, x.type, x.title, x.details, x.name, x.email, x.phone, x.address, x.contact, x.lang].map(q).join(","); }).join("\n");
     var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "shunchi-ideas-" + today() + ".csv"; document.body.appendChild(a); a.click(); a.remove();
   });
+
+  /* ================= USERS (Firebase) ================= */
+  var FB = { cfg: null, F: null, db: null, auth: null, user: null, V: "10.14.1" }, USERS = [], UCOMM = [], UIDEAS = [], uFilter = "", ADMIN_HINT = "shunchi_admin_fb";
+  var DORMANT_DAYS = 30;
+  function tsm(v) { return v && v.toMillis ? v.toMillis() : v && v.seconds ? v.seconds * 1000 : +v || 0; }
+  function dstr(v) { var t = tsm(v); return t ? new Date(t).toISOString().slice(0, 10) : "-"; }
+  function uEff(u) { if (u.status === "blocked") return "blocked"; if (u.status === "inactive") return "inactive"; var la = tsm(u.lastActive) || tsm(u.createdAt); return la && Date.now() - la > DORMANT_DAYS * 864e5 ? "inactive" : "active"; }
+  function uName(k) { return { active: T("Active", "অ্যাকটিভ"), inactive: T("Inactive", "ইনঅ্যাকটিভ"), blocked: T("Blocked", "ব্লকড") }[k] || k; }
+  function uPill(k) { return '<span class="pill ' + ({ active: "ok", inactive: "wn", blocked: "er" }[k] || "") + '">' + esc(uName(k)) + '</span>'; }
+  function fbLoad() {
+    if (FB.F) return Promise.resolve();
+    return fetch("../data/firebase-config.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (c) {
+      if (!c || !c.apiKey || !c.projectId) throw new Error("nocfg"); FB.cfg = c;
+      var B = "https://www.gstatic.com/firebasejs/" + FB.V + "/";
+      return Promise.all([import(B + "firebase-app.js"), import(B + "firebase-auth.js"), import(B + "firebase-firestore.js")]);
+    }).then(function (m) {
+      FB.F = {}; m.forEach(function (x) { for (var k in x) FB.F[k] = x[k]; });
+      var app = FB.F.initializeApp({ apiKey: FB.cfg.apiKey, authDomain: FB.cfg.authDomain || (FB.cfg.projectId + ".firebaseapp.com"), projectId: FB.cfg.projectId, appId: FB.cfg.appId }, "admin");
+      FB.auth = FB.F.getAuth(app); FB.db = FB.F.getFirestore(app);
+      return new Promise(function (res) { FB.F.onAuthStateChanged(FB.auth, function (u) { FB.user = u; res(); }); });
+    });
+  }
+  function usersConn(msg) {
+    var box = $("#u-conn"), nc = msg === "nocfg";
+    if (FB.user && !msg) { box.innerHTML = '<div class="row" style="flex-wrap:wrap"><span class="pill ok">' + T("Connected", "কানেক্টেড") + '</span><span class="muted">' + esc(FB.user.email) + '</span><span class="sp"></span><button class="btn sm" id="u-out" type="button">' + T("Sign out", "সাইন আউট") + '</button></div>'; $("#u-out").onclick = function () { FB.F.signOut(FB.auth).then(function () { try { localStorage.removeItem(ADMIN_HINT); } catch (e) {} usersConn(); $("#u-main").classList.add("hidden"); }); }; return; }
+    box.innerHTML = nc ? '<b>' + T("Accounts are not set up yet.", "অ্যাকাউন্ট সিস্টেম এখনো সেটআপ হয়নি।") + '</b><p class="muted">' + T("Fill in site/data/firebase-config.json with your Firebase web config (see firebase/SETUP_BN.md), publish, then come back.", "site/data/firebase-config.json এ আপনার Firebase কনফিগ বসান (firebase/SETUP_BN.md দেখুন), পাবলিশ করে তারপর আসুন।") + '</p>' :
+      '<b>' + T("Sign in as admin to see users", "ইউজার দেখতে অ্যাডমিন হিসেবে সাইন ইন করুন") + '</b><p class="muted">' + T("Use the Google account set as admin in the Firestore rules. This is separate from your GitHub token.", "Firestore rules-এ যে Google অ্যাকাউন্ট অ্যাডমিন করা আছে সেটি দিয়ে। এটি GitHub টোকেন থেকে আলাদা।") + '</p>' + (msg ? '<p style="color:var(--bad,#b91c1c)">' + esc(msg) + '</p>' : "") + '<button class="btn p" id="u-signin" type="button">' + T("Sign in with Google", "Google দিয়ে সাইন ইন") + '</button>';
+    var b = $("#u-signin"); if (b) b.onclick = function () {
+      busy(b, true);
+      var pr = new FB.F.GoogleAuthProvider(); pr.setCustomParameters({ prompt: "select_account" });
+      FB.F.signInWithPopup(FB.auth, pr).then(function (c) { FB.user = c.user; try { localStorage.setItem(ADMIN_HINT, "1"); } catch (e) {} loadUsers(); }, function (e) { busy(b, false); usersConn(T("Sign-in failed: ", "সাইন ইন হয়নি: ") + (e.code || e.message)); });
+    };
+  }
+  function loadUsers() {
+    usersConn(); var F = FB.F, db = FB.db;
+    return Promise.all([F.getDocs(F.collection(db, "users")), F.getDocs(F.collection(db, "comments")), F.getDocs(F.collectionGroup(db, "ideas"))]).then(function (r) {
+      USERS = []; r[0].forEach(function (x) { var v = x.data(); v.uid = x.id; USERS.push(v); });
+      UCOMM = []; r[1].forEach(function (x) { var v = x.data(); v.id = x.id; UCOMM.push(v); });
+      UIDEAS = []; r[2].forEach(function (x) { var v = x.data(); v.uid = x.ref.parent.parent.id; UIDEAS.push(v); });
+      USERS.sort(function (a, b) { return tsm(b.createdAt) - tsm(a.createdAt); }); UCOMM.sort(function (a, b) { return tsm(b.createdAt) - tsm(a.createdAt); });
+      $("#u-main").classList.remove("hidden"); renderUsers();
+    }, function (e) { $("#u-main").classList.add("hidden"); usersConn(e.code === "permission-denied" ? T("This Google account is not the admin in the Firestore rules, or the rules are not published.", "এই Google অ্যাকাউন্ট Firestore rules-এ অ্যাডমিন নয়, অথবা rules পাবলিশ করা হয়নি।") : (e.code || e.message)); });
+  }
+  function cnt(arr, uid) { return arr.filter(function (x) { return x.uid === uid; }).length; }
+  function renderUsers() {
+    var c = { "": USERS.length, active: 0, inactive: 0, blocked: 0 }, week = 0;
+    USERS.forEach(function (u) { c[uEff(u)]++; if (Date.now() - tsm(u.createdAt) < 7 * 864e5) week++; });
+    $("#u-stats").innerHTML = [[T("Total users", "মোট ইউজার"), c[""]], [T("Active", "অ্যাকটিভ"), c.active], [T("Inactive", "ইনঅ্যাকটিভ"), c.inactive], [T("Blocked", "ব্লকড"), c.blocked], [T("New this week", "এই সপ্তাহে নতুন"), week]].map(function (x) { return '<div class="stat"><div class="k">' + esc(x[0]) + '</div><div class="v">' + x[1] + '</div></div>'; }).join("");
+    $("#u-chips").innerHTML = ["", "active", "inactive", "blocked"].map(function (k) { return '<button type="button" class="btn sm' + (uFilter === k ? " p" : "") + '" data-uc="' + k + '">' + (k ? esc(uName(k)) : T("All", "সব")) + ' <span style="opacity:.75">' + c[k] + '</span></button>'; }).join("");
+    $$("[data-uc]", $("#u-chips")).forEach(function (b) { b.onclick = function () { uFilter = b.dataset.uc; renderUsers(); }; });
+    var q = $("#u-q").value.trim().toLowerCase();
+    var rows = USERS.filter(function (u) { return (!uFilter || uEff(u) === uFilter) && (!q || (u.name + " " + u.email + " " + u.phone).toLowerCase().indexOf(q) >= 0); });
+    $("#u-list").innerHTML = rows.length ? rows.map(function (u) {
+      var i = USERS.indexOf(u);
+      return '<div class="idea"><div class="row"><h3 style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(u.name || T("No name", "নাম নেই")) + '</h3>' + uPill(uEff(u)) + '</div><div class="mt"><span>' + esc(u.email || "-") + '</span><span>·</span><span>' + esc(u.phone || T("no phone", "ফোন নেই")) + '</span><span>·</span><span>' + T("Joined ", "জয়েন ") + dstr(u.createdAt) + '</span><span>·</span><span>' + T("Last seen ", "শেষ দেখা ") + dstr(u.lastActive) + '</span><span>·</span><span>' + cnt(UIDEAS, u.uid) + T(" ideas", " আইডিয়া") + '</span><span>·</span><span>' + cnt(UCOMM, u.uid) + T(" comments", " মন্তব্য") + '</span></div>' +
+        '<div class="row" style="flex-wrap:wrap"><button class="btn sm" data-uv="' + i + '" type="button">' + T("View data", "ডেটা দেখুন") + '</button><span class="sp"></span>' + ["active", "inactive", "blocked"].map(function (k) { return '<button class="btn sm' + (u.status === k || (!u.status && k === "active") ? " p" : "") + '" data-us="' + k + '" data-i="' + i + '" type="button">' + esc(uName(k)) + '</button>'; }).join("") + '</div></div>';
+    }).join("") : '<div class="empty"><b>' + (USERS.length ? T("Nothing matches", "কিছু মেলেনি") : T("No users yet", "এখনো কোনো ইউজার নেই")) + '</b></div>';
+    $$("[data-us]", $("#u-list")).forEach(function (b) { b.onclick = function () { setUserStatus(USERS[+b.dataset.i], b.dataset.us, b); }; });
+    $$("[data-uv]", $("#u-list")).forEach(function (b) { b.onclick = function () { viewUser(USERS[+b.dataset.uv]); }; });
+    $("#u-comments").innerHTML = UCOMM.length ? UCOMM.slice(0, 30).map(function (m) { return '<div class="row" style="padding:8px 0;border-top:1px solid var(--line)"><div style="flex:1;min-width:0"><b>' + esc(m.name) + '</b> <span class="muted">' + esc(m.slug) + ' · ' + dstr(m.createdAt) + '</span><div style="overflow-wrap:anywhere">' + esc(m.text) + '</div></div><button class="btn sm" data-cd="' + esc(m.id) + '" type="button">' + T("Delete", "ডিলিট") + '</button></div>'; }).join("") : '<p class="muted">' + T("No comments yet.", "এখনো কোনো মন্তব্য নেই।") + '</p>';
+    $$("[data-cd]", $("#u-comments")).forEach(function (b) { b.onclick = function () { if (!confirm(T("Delete this comment?", "মন্তব্যটি ডিলিট করবেন?"))) return; FB.F.deleteDoc(FB.F.doc(FB.db, "comments", b.dataset.cd)).then(function () { UCOMM = UCOMM.filter(function (x) { return x.id !== b.dataset.cd; }); renderUsers(); }, function (e) { toast(e.code || e.message, "er"); }); }; });
+  }
+  function setUserStatus(u, st, btn) {
+    if (st === "blocked" && !confirm(T("Block this user? They will not be able to comment, send ideas to their profile or save data.", "ইউজারকে ব্লক করবেন? সে মন্তব্য করতে বা ডেটা সেভ করতে পারবে না।"))) return;
+    if (btn) btn.disabled = true;
+    FB.F.setDoc(FB.F.doc(FB.db, "users", u.uid), { status: st, statusAt: FB.F.serverTimestamp(), lastActive: u.lastActive || FB.F.serverTimestamp() }, { merge: true }).then(function () { u.status = st; if (st === "active") u.lastActive = { seconds: Date.now() / 1000 }; toast(T("Status saved: ", "স্ট্যাটাস সেভ হয়েছে: ") + uName(st), "ok"); renderUsers(); }, function (e) { if (btn) btn.disabled = false; toast(e.code || e.message, "er"); });
+  }
+  function viewUser(u) {
+    var F = FB.F, root = $("#modal-root"), ideas = UIDEAS.filter(function (x) { return x.uid === u.uid; }), cms = UCOMM.filter(function (x) { return x.uid === u.uid; });
+    root.innerHTML = '<div class="modal" role="dialog" aria-modal="true"><div class="box" style="max-width:640px;max-height:88vh;overflow:auto"><h3>' + esc(u.name || u.email) + ' ' + uPill(uEff(u)) + '</h3>' +
+      '<div class="muted" style="line-height:1.8">' + [["Email", u.email], ["Phone", u.phone], ["Address", u.address], ["UID", u.uid], ["Joined", dstr(u.createdAt)], ["Last seen", dstr(u.lastActive)]].map(function (x) { return '<b>' + x[0] + ':</b> ' + esc(x[1] || "-"); }).join("<br>") + '</div>' +
+      '<h4 style="margin:14px 0 4px">' + T("Ideas", "আইডিয়া") + ' (' + ideas.length + ')</h4>' + (ideas.map(function (x) { return '<div style="padding:6px 0;border-top:1px solid var(--line)"><b>' + esc(x.title) + '</b> <code>' + esc(x.track) + '</code><div class="muted" style="overflow-wrap:anywhere">' + esc(x.details) + '</div></div>'; }).join("") || '<p class="muted">-</p>') +
+      '<h4 style="margin:14px 0 4px">' + T("Comments", "মন্তব্য") + ' (' + cms.length + ')</h4>' + (cms.map(function (x) { return '<div style="padding:6px 0;border-top:1px solid var(--line);overflow-wrap:anywhere"><span class="muted">' + esc(x.slug) + '</span> ' + esc(x.text) + '</div>'; }).join("") || '<p class="muted">-</p>') +
+      '<h4 style="margin:14px 0 4px">' + T("Saved tool data", "টুলের সেভ করা ডেটা") + '</h4><pre id="uv-data" class="muted" style="white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px">…</pre>' +
+      '<div class="row" style="flex-wrap:wrap;margin-top:14px"><button class="btn" id="uv-x" type="button">' + T("Close", "বন্ধ") + '</button><span class="sp"></span><button class="btn" id="uv-del" type="button">' + T("Delete this user's data", "এই ইউজারের ডেটা ডিলিট") + '</button></div>' +
+      '<p class="muted" style="font-size:12px;margin-top:8px">' + T("Deleting removes their profile, ideas, saved data and comments. Their login itself stays in Firebase Authentication; remove it in the Firebase console if needed. To stop someone, use Block instead.", "ডিলিট করলে প্রোফাইল, আইডিয়া, সেভ ডেটা ও মন্তব্য মুছে যায়। লগইন অ্যাকাউন্ট Firebase Authentication-এ থেকে যায়, দরকারে কনসোল থেকে মুছুন। কাউকে থামাতে Block ব্যবহার করুন।") + '</p></div></div>';
+    $("#uv-x", root).onclick = function () { root.innerHTML = ""; };
+    F.getDocs(F.collection(FB.db, "users", u.uid, "appdata")).then(function (sn) { var o = {}; sn.forEach(function (x) { o[x.id] = x.data().data; }); $("#uv-data", root).textContent = Object.keys(o).length ? JSON.stringify(o, null, 2) : "-"; }, function () { $("#uv-data", root).textContent = "-"; });
+    $("#uv-del", root).onclick = function () {
+      if (!confirm(T("Delete all data of this user? This cannot be undone.", "এই ইউজারের সব ডেটা ডিলিট করবেন? ফেরানো যাবে না।"))) return;
+      Promise.all([F.getDocs(F.collection(FB.db, "users", u.uid, "ideas")), F.getDocs(F.collection(FB.db, "users", u.uid, "appdata"))]).then(function (r) {
+        var jobs = []; r[0].forEach(function (x) { jobs.push(F.deleteDoc(x.ref)); }); r[1].forEach(function (x) { jobs.push(F.deleteDoc(x.ref)); }); cms.forEach(function (c) { jobs.push(F.deleteDoc(F.doc(FB.db, "comments", c.id))); });
+        return Promise.all(jobs);
+      }).then(function () { return F.deleteDoc(F.doc(FB.db, "users", u.uid)); }).then(function () { root.innerHTML = ""; toast(T("User data deleted.", "ইউজারের ডেটা ডিলিট হয়েছে।"), "ok"); loadUsers(); }, function (e) { toast(e.code || e.message, "er"); });
+    };
+  }
+  S.onUsers = function () {
+    usersConn();
+    if (FB.F && FB.user) { if (!USERS.length) loadUsers(); return; }
+    fbLoad().then(function () { if (FB.user) loadUsers(); else usersConn(); }, function (e) { usersConn(e.message === "nocfg" ? "nocfg" : String(e.message)); });
+  };
+  $("#u-reload").addEventListener("click", function () { if (FB.user) loadUsers(); else S.onUsers(); });
+  $("#u-q").addEventListener("input", renderUsers);
+  $("#u-csv").addEventListener("click", function () {
+    if (!USERS.length) { toast(T("No users to export.", "এক্সপোর্ট করার ইউজার নেই।"), "er"); return; }
+    var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
+    var csv = "﻿" + ["Name", "Email", "Phone", "Address", "Status", "Joined", "LastSeen", "Ideas", "Comments", "UID"].join(",") + "\n" + USERS.map(function (u) { return [u.name, u.email, u.phone, u.address, uEff(u), dstr(u.createdAt), dstr(u.lastActive), cnt(UIDEAS, u.uid), cnt(UCOMM, u.uid), u.uid].map(q).join(","); }).join("\n");
+    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "shunchi-users-" + today() + ".csv"; document.body.appendChild(a); a.click(); a.remove();
+  });
+  REND.push(function () { if (USERS.length) renderUsers(); });
 
   /* ================= SOFTWARE ================= */
   function loadApps() {

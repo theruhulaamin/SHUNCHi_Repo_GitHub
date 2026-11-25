@@ -115,11 +115,13 @@ def header(P, current=""):
     <a class="brand" href="{P}index.html" aria-label="SHUNCHi home"><img src="{P}assets/shunchi-logo.png" alt="SHUNCHi" width="96" height="36"></a>
     <nav class="links" aria-label="Main">{links}</nav>
     <div class="actions">{lang}<button class="theme-btn" id="theme-btn" type="button" aria-label="Toggle dark mode" title="Dark / Light"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg></button>
+      <button class="acct-btn" id="acct-btn" type="button" hidden></button>
       <a class="btn btn-primary btn-sm" href="{P}download/index.html"><span class="en">Download</span><span class="bn">ডাউনলোড</span></a>
       <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menu">{ICON_MENU}</button>
     </div>
   </div>
   <div class="menu-panel" id="menu-panel"><nav aria-label="Mobile">{menu}</nav>
+    <button class="btn" id="acct-btn-m" type="button" hidden></button>
     <a class="btn btn-primary" href="{P}download/index.html"><span class="en">Download for Windows</span><span class="bn">উইন্ডোজের জন্য ডাউনলোড</span></a></div>
 </header>
 '''
@@ -170,7 +172,7 @@ def tabbar(P):
       + '</nav>\n')
 
 
-SUGGEST_FORM = '''<div class="idea-box" id="suggest">
+SUGGEST_FORM = '''<div class="idea-box" id="suggest" data-needs-auth>
   <div class="suggest-head">
     <div class="suggest-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></div>
     <div><h3><span class="en">Suggest an app or tool</span><span class="bn">অ্যাপ বা টুলের আইডিয়া দিন</span></h3>
@@ -300,6 +302,7 @@ def post_card(p, P):
 def write(path, text):
     full = os.path.join(SITE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
+    text = re.sub(r'(<script src="([^"]*)assets/site\.js\?v=\d+"></script>)', lambda m: m.group(1) + '<script src="' + m.group(2) + 'assets/auth.js?v=1" defer></script>', text)
     open(full, "w", encoding="utf-8").write(text)
 
 
@@ -699,6 +702,40 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
 '''
 write("download/index.html", dl)
 
+# ====================================================================== ACCOUNT PAGE (not in sitemap)
+acc = head("../", "My account | SHUNCHi", "Your SHUNCHi profile, ideas and saved data.", "account/", robots="noindex,nofollow") + header("../") + '''
+<main id="main">
+<div class="wrap page-head"><h1><span class="en">My account</span><span class="bn">আমার অ্যাকাউন্ট</span></h1></div>
+<section class="wrap account" id="account" data-needs-auth>
+  <div id="acct-guest"><div class="acct-card"><h3><span class="en">Log in to see your profile</span><span class="bn">প্রোফাইল দেখতে লগইন করুন</span></h3>
+    <p class="muted"><span class="en">An account is optional. It keeps your ideas with their status, your details for quick filling, and your data in the upcoming tools.</span><span class="bn">অ্যাকাউন্ট ঐচ্ছিক। এটি আপনার আইডিয়া ও স্ট্যাটাস, দ্রুত পূরণের তথ্য এবং আসন্ন টুলগুলোর ডেটা সংরক্ষণ করে।</span></p>
+    <div class="row"><button type="button" class="btn btn-primary" data-open-auth="login"><span class="en">Log in</span><span class="bn">লগইন</span></button><button type="button" class="btn btn-ghost" data-open-auth="signup"><span class="en">Sign up</span><span class="bn">সাইন আপ</span></button></div></div></div>
+  <div id="acct-body" hidden>
+    <div class="acct-card ac-head"><i class="ac-av" id="ac-av"></i><div><h2 id="ac-name"></h2><p class="muted" id="ac-mail"></p>
+      <p class="muted"><span class="en">Member since</span><span class="bn">সদস্য হয়েছেন</span> <span id="ac-since"></span> <span class="status-pill st-approved" id="ac-ver-ok" hidden><span class="en">Email verified</span><span class="bn">ইমেইল ভেরিফাইড</span></span> <button type="button" class="au-link" id="ac-ver" hidden><span class="en">Verify email</span><span class="bn">ইমেইল ভেরিফাই করুন</span></button></p></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="ac-out"><span class="en">Log out</span><span class="bn">লগআউট</span></button></div>
+    <div class="acct-card"><h3><span class="en">My details</span><span class="bn">আমার তথ্য</span></h3>
+      <p class="muted"><span class="en">Used by the “fill my details” button in the idea form.</span><span class="bn">আইডিয়া ফর্মের “তথ্য বসান” বাটনে এগুলো ব্যবহার হয়।</span></p>
+      <form id="ac-form" class="ac-form" novalidate>
+        <label><span><span class="en">Name</span><span class="bn">নাম</span></span><input name="name" maxlength="60" autocomplete="name"></label>
+        <label><span><span class="en">Email</span><span class="bn">ইমেইল</span></span><input name="email" disabled></label>
+        <label><span><span class="en">Phone</span><span class="bn">ফোন</span></span><input name="phone" type="tel" maxlength="30" autocomplete="tel"></label>
+        <label><span><span class="en">Address</span><span class="bn">ঠিকানা</span></span><input name="address" maxlength="160" autocomplete="street-address"></label>
+        <div class="c-act"><button class="btn btn-primary btn-sm" type="submit"><span class="en">Save</span><span class="bn">সেভ</span></button><span class="auth-msg" id="ac-msg" role="status"></span></div></form></div>
+    <div class="acct-card"><h3><span class="en">My ideas</span><span class="bn">আমার আইডিয়া</span> <small id="ac-ideas-n"></small></h3><div id="ac-ideas"></div></div>
+    <div class="acct-card"><h3><span class="en">Saved data from tools</span><span class="bn">টুলের সেভ করা ডেটা</span></h3><div id="ac-data"></div></div>
+    <div class="acct-card"><h3><span class="en">My comments</span><span class="bn">আমার মন্তব্য</span></h3><div id="ac-comments"></div></div>
+    <div class="acct-card"><h3><span class="en">Security and privacy</span><span class="bn">নিরাপত্তা ও গোপনীয়তা</span></h3>
+      <div class="row"><button type="button" class="btn btn-ghost btn-sm" id="ac-reset"><span class="en">Email me a password reset link</span><span class="bn">পাসওয়ার্ড রিসেট লিংক ইমেইল করুন</span></button>
+      <button type="button" class="btn btn-ghost btn-sm" id="ac-export"><span class="en">Download my data</span><span class="bn">আমার ডেটা ডাউনলোড</span></button>
+      <button type="button" class="btn btn-ghost btn-sm danger" id="ac-del"><span class="en">Delete my account</span><span class="bn">অ্যাকাউন্ট ডিলিট</span></button></div><p class="auth-msg" id="ac-pw-msg"></p></div>
+  </div>
+</section>
+</main>
+''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
+write("account/index.html", acc)
+
+
 # ====================================================================== PRIVACY
 reg("privacy.html", "0.3", "yearly")
 priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, text and API key. Your key stays on your PC and audio goes only to Google for transcription.", "privacy.html",
@@ -716,7 +753,8 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
     <h2>Your API key</h2><p>Your key is stored in Windows Credential Manager on your computer. It is sent only to Google when you dictate or press “Save &amp; test”. It never goes to this website.</p>
     <h2>Your history</h2><p>The list of past dictations is kept on your computer only. You can clear it from the Voice History page.</p>
     <h2>This website and updates</h2><p>The app checks <code>shunchiai.com/update.json</code> to learn whether a new version exists. That request contains the app version in its user agent and nothing about you. The website does not use advertising trackers.</p>
-    <h2>Contact</h2><p>Questions: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
+    <h2>Optional account</h2><p>An account is optional. If you create one (email and password, or Google), we store your name, email and the details you add (phone, address), your ideas, comments you post and data saved by upcoming tools. It is stored with Google Firebase. Only you and the site admin can see it. You can download or delete it from your account page, and an admin can block an account that breaks the rules. Voice recordings are never stored in your account.</p>
+        <h2>Contact</h2><p>Questions: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
   </div>
   <div class="bn">
     <h2>আপনার কণ্ঠ</h2><p>আপনি যখন ডিকটেট করেন, শুধু তখনই, শুরু থেকে শেষ পর্যন্ত, SHUNCHi আপনার মাইক্রোফোন থেকে রেকর্ড করে। রেকর্ডিংটি আপনার নিজের API কী দিয়ে লেখায় রূপান্তরের জন্য গুগলের Gemini সেবায় পাঠানো হয়। এটি আমরা পাই না এবং জমা রাখার মতো কোনো সার্ভারও আমাদের নেই।</p>
@@ -724,7 +762,8 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
     <h2>আপনার API কী</h2><p>কী-টি আপনার কম্পিউটারের Windows Credential Manager-এ থাকে। ডিকটেশনের সময় বা “Save &amp; test” চাপলে এটি শুধু গুগলে যায়। এই ওয়েবসাইটে কখনও আসে না।</p>
     <h2>আপনার হিস্ট্রি</h2><p>আগের ডিকটেশনের তালিকা শুধু আপনার কম্পিউটারেই থাকে। Voice History পাতা থেকে আপনি তা মুছে ফেলতে পারেন।</p>
     <h2>এই ওয়েবসাইট ও আপডেট</h2><p>নতুন ভার্সন আছে কিনা জানতে অ্যাপটি <code>shunchiai.com/update.json</code> দেখে। এই অনুরোধে শুধু অ্যাপের ভার্সন থাকে, আপনার সম্পর্কে কিছু থাকে না। ওয়েবসাইটে বিজ্ঞাপনের ট্র্যাকার নেই।</p>
-    <h2>যোগাযোগ</h2><p>প্রশ্ন থাকলে: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
+    <h2>ঐচ্ছিক অ্যাকাউন্ট</h2><p>অ্যাকাউন্ট ঐচ্ছিক। খুললে আপনার নাম, ইমেইল, যোগ করা তথ্য (ফোন, ঠিকানা), আইডিয়া, মন্তব্য এবং আসন্ন টুলের সেভ করা ডেটা Google Firebase-এ থাকে। শুধু আপনি ও সাইটের অ্যাডমিন দেখতে পারেন। অ্যাকাউন্ট পেজ থেকে ডেটা ডাউনলোড বা ডিলিট করা যায়, নিয়ম ভাঙলে অ্যাডমিন অ্যাকাউন্ট ব্লক করতে পারে। ভয়েস রেকর্ডিং অ্যাকাউন্টে কখনো সেভ হয় না।</p>
+        <h2>যোগাযোগ</h2><p>প্রশ্ন থাকলে: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
   </div>
 </div></section>
 </main>
@@ -787,6 +826,15 @@ for p in POSTS:
     <p><span class="en">Voice typing in Bangla and English for Windows. Speak, and the text appears in any app.</span><span class="bn">উইন্ডোজে বাংলা ও ইংরেজি ভয়েস টাইপিং। বলুন, যেকোনো অ্যাপে লেখা বসে যাবে।</span></p></div>
     <a class="btn btn-primary" href="../download/index.html"><span class="en">Download for Windows</span><span class="bn">উইন্ডোজের জন্য ডাউনলোড</span></a></div>
 </article>
+<section class="wrap comments" id="comments" data-slug="{p["slug"]}" data-needs-auth hidden>
+  <h2><span class="en">Comments</span><span class="bn">মন্তব্য</span> <small id="c-count"></small></h2>
+  <ul class="c-list" id="c-list"></ul>
+  <div class="c-gate" id="c-gate"><p><span class="en">You need an account to comment. It takes a minute and it is free.</span><span class="bn">মন্তব্য করতে অ্যাকাউন্ট লাগবে। এক মিনিটে ফ্রিতে খোলা যায়।</span></p>
+    <button type="button" class="btn btn-primary btn-sm" id="c-signup"><span class="en">Create account</span><span class="bn">অ্যাকাউন্ট খুলুন</span></button>
+    <button type="button" class="btn btn-ghost btn-sm" id="c-login"><span class="en">Log in</span><span class="bn">লগইন</span></button></div>
+  <form class="c-form" id="c-form" hidden><textarea name="text" rows="3" maxlength="1000" required aria-label="Comment"></textarea>
+    <div class="c-act"><button class="btn btn-primary btn-sm" type="submit"><span class="en">Post comment</span><span class="bn">মন্তব্য করুন</span></button><span class="auth-msg err" id="c-msg"></span></div></form>
+</section>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
 ''' + footer("../") + '<script src="../assets/site.js?v=30"></script>\n</body>\n</html>\n'
