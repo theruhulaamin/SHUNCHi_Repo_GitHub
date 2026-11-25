@@ -72,7 +72,7 @@
 (function () {
   var form = document.getElementById("suggest-form"); if (!form) return;
   var msg = document.getElementById("suggest-msg"), btn = form.querySelector("button[type=submit]");
-  var TO = "voice.shunchi@gmail.com";
+  var TO = "ruhulaaminn@gmail.com";
   function bn() { return document.documentElement.lang === "bn"; }
   function say(en, b, ok) { msg.textContent = bn() ? b : en; msg.className = "suggest-msg " + (ok ? "ok" : "err"); }
   form.addEventListener("submit", function (e) {
