@@ -3512,7 +3512,13 @@ class DeveloperPage(QWidget):
         site_button.clicked.connect(lambda: open_website("/#developer"))
         root.addWidget(site_button, 0, Qt.AlignLeft)
 
-        root.addWidget(self._official_card())
+        try:
+            root.addWidget(self._official_card())
+        except Exception:
+            logging.exception("Official card failed")
+            fallback = QLabel(f"Official SHUNCHi: {WEBSITE_URL}  ·  voice.shunchi@gmail.com")
+            fallback.setObjectName("cardText")
+            root.addWidget(fallback)
 
         root.addStretch()
 

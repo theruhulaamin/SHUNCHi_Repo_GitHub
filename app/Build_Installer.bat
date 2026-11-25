@@ -103,12 +103,16 @@ if errorlevel 1 goto fail
 echo.
 echo [3/3] Building the small WEB installer (downloads the latest version)...
 "%ISCC_EXE%" SHUNCHi_Web.iss
-if errorlevel 1 goto fail
+if errorlevel 1 (
+  echo.
+  echo WARNING: the small web installer could not be built. The FULL installer is fine, so the build continues.
+  echo The web installer does not change between versions, so the one already on your website keeps working.
+)
 
 if exist release rmdir /s /q release
 mkdir release
 copy /y "installer_output\SHUNCHi_Setup_%APPVER%.exe" release\ >nul
-copy /y "installer_output\SHUNCHi_Setup.exe" release\ >nul
+if exist "installer_output\SHUNCHi_Setup.exe" copy /y "installer_output\SHUNCHi_Setup.exe" release\ >nul
 certutil -hashfile "release\SHUNCHi_Setup_%APPVER%.exe" SHA256 > release\SHA256.txt
 
 echo.
