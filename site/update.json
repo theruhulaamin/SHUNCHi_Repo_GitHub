@@ -1,15 +1,15 @@
 {
-  "latest_version": "4.6.0",
+  "latest_version": "5.0.0",
   "download_url": "https://shunchiai.com/download/",
-  "installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/download/v4.6.0/SHUNCHi_Setup_4.6.0.exe",
-  "installer_sha256": "4514606dc772ded0e4d366558fab0ecab10fc10c65d3423b54dcbe2181b65553",
-  "installer_size": 45113778,
+  "installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/download/v5.0.0/SHUNCHi_Setup_5.0.0.exe",
+  "installer_sha256": "cf07462f33315dd1419b48e5f01cf2520ec31ed1b1d2bb7aa98ed4b448b0758d",
+  "installer_size": 45163843,
   "web_installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/latest/download/SHUNCHi_Setup.exe",
-  "release_notes": "Version 4.6.0",
-  "release_notes_en": "Version 4.6.0",
-  "release_notes_bn": "",
+  "release_notes": "What's New in SHUNCHi\n• Added a Log in / Sign up button to the top-right corner of the dashboard.\n• Added a profile menu where users can view their name, email, phone number and address, access their full profile, or log out.\n• Redesigned the Official SHUNCHi section with a verified badge, quick-access links to the Website, Email, Facebook and Instagram, and a security notice about official downloads.\n• Enabled the same account to work across the SHUNCHi app and shunchiai.com.\n• Set a minimum password length of 8 characters for sign-up, matching the website's requirements.\n• Added a verification notice after sign-up to inform users that a verification email has been sent. Email verification is required to comment on the website.\n• Updated all new texts to follow the English / বাংলা language switch.\n• Kept all existing features intact. Everything from SHUNCHi 4.7.0 and earlier continues to work as before.",
+  "release_notes_en": "What's New in SHUNCHi\n• Added a Log in / Sign up button to the top-right corner of the dashboard.\n• Added a profile menu where users can view their name, email, phone number and address, access their full profile, or log out.\n• Redesigned the Official SHUNCHi section with a verified badge, quick-access links to the Website, Email, Facebook and Instagram, and a security notice about official downloads.\n• Enabled the same account to work across the SHUNCHi app and shunchiai.com.\n• Set a minimum password length of 8 characters for sign-up, matching the website's requirements.\n• Added a verification notice after sign-up to inform users that a verification email has been sent. Email verification is required to comment on the website.\n• Updated all new texts to follow the English / বাংলা language switch.\n• Kept all existing features intact. Everything from SHUNCHi 4.7.0 and earlier continues to work as before.",
+  "release_notes_bn": "SHUNCHi-এর নতুন আপডেট\n• ড্যাশবোর্ডের উপরের ডান কোণায় Log in / Sign up বাটন যুক্ত করা হয়েছে।\n• প্রোফাইল মেনু যুক্ত করা হয়েছে, যেখানে ব্যবহারকারীরা নিজের নাম, ইমেইল, ফোন নম্বর ও ঠিকানা দেখতে পারবেন, সম্পূর্ণ প্রোফাইল পেজে যেতে পারবেন অথবা লগ আউট করতে পারবেন।\n• Official SHUNCHi অংশটি নতুনভাবে সাজানো হয়েছে। এতে ভেরিফায়েড ব্যাজ, Website, Email, Facebook ও Instagram-এ দ্রুত যাওয়ার সুবিধা এবং অফিসিয়াল ডাউনলোডের নিরাপত্তা বার্তা যুক্ত করা হয়েছে।\n• SHUNCHi অ্যাপ এবং shunchiai.com-এ একই অ্যাকাউন্ট ব্যবহার করার সুবিধা চালু করা হয়েছে।\n• সাইন আপের জন্য কমপক্ষে ৮ অক্ষরের পাসওয়ার্ড বাধ্যতামূলক করা হয়েছে, যা ওয়েবসাইটের নিয়মের সঙ্গে সামঞ্জস্যপূর্ণ।\n• সাইন আপের পর ভেরিফিকেশন ইমেইল পাঠানোর নোটিশ যুক্ত করা হয়েছে। ওয়েবসাইটে মন্তব্য করার জন্য ইমেইল ভেরিফিকেশন সম্পন্ন করতে হবে।\n• নতুন যুক্ত হওয়া সব লেখা English / বাংলা ভাষা সুইচ অনুযায়ী পরিবর্তিত হবে।\n• আগের কোনো ফিচার বাদ দেওয়া হয়নি। SHUNCHi 4.7.0 এবং এর আগের সংস্করণগুলোর সব ফিচার আগের মতোই কাজ করবে।",
   "released": "2026-11-25",
-  "web_installer_size": 2130689,
+  "web_installer_size": 2130751,
   "apps": [],
-  "min_version": "4.6.0"
+  "min_version": "5.0.0"
 }
