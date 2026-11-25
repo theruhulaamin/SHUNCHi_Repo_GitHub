@@ -369,10 +369,10 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
           <p class="muted" style="margin:6px 0 10px" data-bn="ফর্মের লেখা আপনার ইমেইলে আসে। এখানে দেখতে FormSubmit-এর API key লাগবে। key আপনার ইমেইলে আসবে।">Idea form messages arrive in your email. To see them here you need the FormSubmit API key. It is sent to your email.</p>
           <ol class="steps">
             <li data-bn="নিচের বাটনে চাপ দিন। নতুন ট্যাবে লেখা আসবে &quot;API key sent&quot;।">Press the button below. A new tab opens and says the key was sent.</li>
-            <li data-bn="ইমেইল খুলে FormSubmit-এর মেইল থেকে key কপি করুন। Spam ফোল্ডারও দেখুন।">Open your email, find the FormSubmit mail and copy the key. Check Spam too.</li>
+            <li data-bn="ইমেইল (ruhulaaminn@gmail.com) খুলে FormSubmit-এর মেইল থেকে key কপি করুন। Spam ফোল্ডারও দেখুন।">Open your email (ruhulaaminn@gmail.com), find the FormSubmit mail and copy the key. Check Spam too.</li>
             <li data-bn="key নিচের বক্সে বসিয়ে Save চাপুন।">Paste the key below and press Save.</li>
           </ol>
-          <div class="row" style="margin:8px 0 12px"><input id="fs-mail" type="email" placeholder="your email" autocomplete="off" style="flex:1;min-width:220px"><a class="btn" id="fs-getkey" target="_blank" rel="noopener" href="#" data-bn="ইমেইলে API key পাঠান">Email me the API key</a></div>
+          <div class="row" style="margin:8px 0 12px"><a class="btn" id="fs-getkey" target="_blank" rel="noopener" href="https://formsubmit.co/api/get-apikey/ruhulaaminn@gmail.com" data-bn="ইমেইলে API key পাঠান">Email me the API key</a></div>
           <div class="row"><input id="fs-key" type="password" placeholder="FormSubmit API key" autocomplete="off" style="flex:1;min-width:220px"><button class="btn p" id="fs-save" type="button" data-bn="সেভ">Save</button></div>
         </div>
         <div class="card hidden" id="ideas-paste">
@@ -942,8 +942,6 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 
   window.__S = S;
   function isDraft(p) { return /^(1|true|yes)$/i.test((p.meta && p.meta.draft) || ""); }
-
-  $("#fs-getkey").addEventListener("click", function (e) { var m = ($("#fs-mail").value || "").trim(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) { e.preventDefault(); toast(T("Type your email first.", "আগে আপনার ইমেইল লিখুন।"), "er"); return; } this.href = "https://formsubmit.co/api/get-apikey/" + encodeURIComponent(m); });
 
   /* ================= VIDEOS ================= */
   S.videos = []; S.videosSha = null; S.curVid = null;
