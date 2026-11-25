@@ -78,6 +78,8 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <title>{t}</title>
 <meta name="description" content="{d}">
 <meta name="robots" content="{robots}">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="base-uri 'self'; object-src 'none'; form-action 'self' https://formsubmit.co https://api.github.com">
 <meta name="author" content="Ruhul Amin">
 <link rel="canonical" href="{url}">
 <link rel="alternate" type="application/rss+xml" title="SHUNCHi blog" href="{DOMAIN}/feed.xml">

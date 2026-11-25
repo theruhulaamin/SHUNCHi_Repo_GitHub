@@ -77,7 +77,9 @@
     return F.getDocs(F.query(F.collection(db, "comments"), F.where("slug", "==", slug))).then(function (s) { var a = []; s.forEach(function (x) { var v = x.data(); v.id = x.id; a.push(v); }); a.sort(function (x, y) { return ts(x.createdAt) - ts(y.createdAt); }); return a; });
   };
   api.myComments = function () { var u = auth.currentUser; if (!u) return Promise.resolve([]); return F.getDocs(F.query(F.collection(db, "comments"), F.where("uid", "==", u.uid))).then(function (s) { var a = []; s.forEach(function (x) { var v = x.data(); v.id = x.id; a.push(v); }); a.sort(function (x, y) { return ts(y.createdAt) - ts(x.createdAt); }); return a; }); };
+  var lastCm = 0;
   api.addComment = function (slug, text) {
+    if (Date.now() - lastCm < 20000) return Promise.reject(new Error("slow-down")); lastCm = Date.now();
     var u = auth.currentUser; if (!u || api.blocked) return Promise.reject(new Error("signed-out")); text = String(text || "").trim().slice(0, 1000); if (!text) return Promise.reject(new Error("empty"));
     return F.addDoc(F.collection(db, "comments"), { slug: slug, uid: u.uid, name: (api.profile && api.profile.name) || u.displayName || "Reader", text: text, createdAt: F.serverTimestamp() });
   };
@@ -174,7 +176,7 @@
       e.preventDefault(); var f = e.target, name = f.name.value.trim(), em = f.email.value.trim(), pw = f.pass.value;
       if (mode === "signup" && !name) { say(L("Please enter your name.", "নাম লিখুন।")); return; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { say(L("Enter a valid email.", "সঠিক ইমেইল দিন।")); return; }
-      if (pw.length < 6) { say(L("Password must be at least 6 characters.", "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।")); return; }
+      if (pw.length < (mode === "signup" ? 8 : 6)) { say(mode === "signup" ? L("Use at least 8 characters for a new password.", "নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের দিন।") : L("Password must be at least 6 characters.", "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।")); return; }
       busy(true); say("");
       (mode === "signup" ? api.signup(name, em, pw) : api.login(em, pw)).then(function () { close(); if (mode === "signup") d.dispatchEvent(new CustomEvent("shunchi:signup")); }, function (er) { say(errMsg(er)); }).then(function () { busy(false); });
     });
@@ -401,7 +403,7 @@
       });
       $("#pw-form").addEventListener("submit", function (e) {
         e.preventDefault(); var fm = e.target, m = $("#pw-msg"), pw = fm.elements.pw.value, say = function (t, ok) { m.className = "auth-msg " + (ok ? "ok" : "err"); m.textContent = t; };
-        if (pw.length < 6) { say(L("Password must be at least 6 characters.", "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।")); return; }
+        if (pw.length < 8) { say(L("Use at least 8 characters.", "কমপক্ষে ৮ অক্ষর দিন।")); return; }
         if (pw !== fm.elements.pw2.value) { say(L("The two passwords do not match.", "দুটি পাসওয়ার্ড মেলেনি।")); return; }
         if (api.hasPassword() && !fm.elements.cur.value) { /* Firebase asks for a fresh login only when needed; try without first */ }
         var btn = $("#pw-go"); btn.disabled = true; say(L("Saving…", "সেভ হচ্ছে…"), true);

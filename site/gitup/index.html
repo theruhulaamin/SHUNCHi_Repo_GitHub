@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://accounts.google.com; connect-src 'self' https://api.github.com https://uploads.github.com https://formsubmit.co https://*.googleapis.com https://accounts.google.com https://*.firebaseapp.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; frame-src https://accounts.google.com https://*.firebaseapp.com; base-uri 'none'; object-src 'none'; form-action 'none'">
 <meta name="theme-color" content="#1F62E8">
 <title>Sign in</title>
 <link rel="icon" type="image/png" href="../assets/favicon.png">
@@ -876,10 +878,26 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 
   /* ---------- connect ---------- */
   function saveCfg(remember) {
-    var data = JSON.stringify({ repo: S.repo, branch: S.branch, token: S.token });
+    var data = JSON.stringify({ repo: S.repo, branch: S.branch, token: S.token, ts: Date.now() });
     try { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); (remember ? localStorage : sessionStorage).setItem(KEY, data); } catch (e) {}
   }
-  function loadCfg() { try { return JSON.parse(localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || "null"); } catch (e) { return null; } }
+  // a remembered token is forgotten after 7 days; a session token after 30 minutes without use
+  function loadCfg() {
+    try {
+      var c = JSON.parse(localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || "null");
+      if (c && localStorage.getItem(KEY) && (!c.ts || Date.now() - c.ts > 7 * 864e5)) { localStorage.removeItem(KEY); return null; }
+      return c;
+    } catch (e) { return null; }
+  }
+  (function idleGuard() {
+    var last = Date.now(), LIM = 30 * 60 * 1000;
+    ["click", "keydown", "mousemove", "touchstart", "scroll"].forEach(function (ev) { window.addEventListener(ev, function () { last = Date.now(); }, { passive: true }); });
+    setInterval(function () {
+      if (Date.now() - last < LIM || !S.token) return;
+      try { sessionStorage.removeItem(KEY); sessionStorage.removeItem("shunchi_gitup_ok"); sessionStorage.removeItem("shunchi_ga_tok"); } catch (e) {}
+      S.token = ""; location.reload();
+    }, 30000);
+  })();
   function connect() {
     S.repo = $("#repo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, ""); S.branch = $("#branch").value.trim() || "main"; S.token = $("#token").value.trim();
     if (!S.repo || !S.token) { toast(T("Enter the repository and the token.", "রিপোজিটরি ও টোকেন দিন।"), "er"); return; }
@@ -889,7 +907,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       saveCfg($("#remember").checked); S.info = r;
       $("#who").textContent = r.full_name; $("#connect").classList.add("hidden"); $("#app").classList.remove("hidden");
       $("#actions-link").href = "https://github.com/" + S.repo + "/actions";
-      var h = (location.hash || "").slice(1); go(["dash", "ideas", "software", "popups", "spop", "videos", "blog", "release", "help"].indexOf(h) >= 0 ? h : "dash", true);
+      var h = (location.hash || "").slice(1); go(["dash", "ideas", "users", "software", "popups", "spop", "videos", "blog", "release", "help"].indexOf(h) >= 0 ? h : "dash", true);
       refreshAll();
     }).catch(function (e) { toast(e.status === 404 ? T("Repository not found, or the token has no access to it.", "রিপোজিটরি পাওয়া যায়নি, বা টোকেনের অ্যাক্সেস নেই।") : errText(e), "er"); })
       .then(function () { busy(btn, false); });

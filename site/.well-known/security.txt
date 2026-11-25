@@ -1,0 +1,4 @@
+Contact: mailto:voice.shunchi@gmail.com
+Expires: 2027-11-26T00:00:00.000Z
+Preferred-Languages: bn, en
+Canonical: https://shunchiai.com/.well-known/security.txt
