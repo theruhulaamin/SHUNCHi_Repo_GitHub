@@ -1,0 +1,173 @@
+SHUNCHi 4.4.0 — Polish, Updates and Speed
+==========================================
+
+1. Installer
+   - "Desktop shortcut" and "Start with Windows" are both ticked by default, under one clear
+     "Recommended" heading with plain descriptions. The folder page and the ready page are skipped.
+   - The dashboard opens by itself the moment installation finishes (no extra tick-box to click).
+   - An update over an older version closes the running tray app first, so files are never locked.
+   - Uninstall also removes the start-up entry even if it was switched on later in Settings.
+
+2. Dashboard opens fast, closes to the tray
+   - The window appears immediately at start; checks run afterwards.
+   - Closing the window sends SHUNCHi to the system tray; "Exit SHUNCHi" in the tray menu quits.
+
+3. Settings > Dictation redesigned
+   - "Finish after a pause": Quick / Normal / Relaxed buttons. "Longest recording": 2 / 5 / 10 min.
+   - Microphone is a full-width box that ignores the mouse wheel: scrolling the page never changes it.
+   - Older saved values are mapped to the nearest new choice (for example 1.2 s becomes Normal).
+
+4. More Apps menu
+   - Shows SHUNCHi and future apps from the developer. The list comes from the website, so new apps
+     appear without reinstalling. A "More apps are on the way" card shows until then.
+
+5. Updates connected to shunchiai.com
+   - About 6 seconds after start and every 6 hours SHUNCHi reads https://shunchiai.com/update.json.
+   - A newer version shows a banner on the Dashboard, a prompt (or a tray message when the window is
+     hidden, so it never interrupts dictation) and a "Download update" button.
+   - Only https://shunchiai.com addresses are accepted for downloads. Settings > Updates has an
+     on/off switch and "Check now". Failures are silent unless you press "Check now".
+
+6. shunchiai.com added to the Dashboard header, sidebar, footer, Settings, Developer page, tray menu,
+   Help page and the installer.
+
+7. Popup redesigned and faster text
+   - New light card: round status badge that pulses with your voice, scrolling voice line, timer,
+     small credit line, smooth fade and slide. Still no transcript; text goes to your cursor.
+   - Faster: after a short pause (about half a second) transcription starts early, so when you finish
+     the text is usually ready. Default pause is 1.0 s (was 1.2 s). Paste delay reduced.
+   - At most two early requests per dictation. They count towards your Gemini free-tier limit.
+
+--------------------------------------------------------------------------------------------------
+
+SHUNCHi 4.3.0 — Simple, Fast and Polished
+==========================================
+
+WHAT CHANGED (based on real-world testing of 4.2.0)
+
+1. Voice to text is now ONE simple step
+   - Old: live WebSocket + separate AI polish + backup (three things that could fail).
+   - New: your speech is recorded, trimmed of silence, and sent once to Gemini 3.5 Transcribe in
+     "Smart" mode, which already removes filler words, adds punctuation and formats lists.
+     If that model is unavailable, a plain request and then Gemini 3.8 Flash are tried automatically.
+   - The API key is sent in a request header (never in a URL) and is removed from every log line.
+   - Real error messages: invalid key, quota reached, no internet, no model access, no speech.
+   - Removed dependencies: google-genai, websockets, SciPy, PyAutoGUI (smaller, safer build).
+
+2. Auto-stop now works
+   - New adaptive voice detector: it learns the room noise, keeps adapting during pauses, and stops
+     after your chosen silence (default 1.2 s). Tested with quiet rooms, noisy fans, quiet speakers,
+     short pauses inside a sentence, key clicks and silence.
+
+3. Voice popup redesigned
+   - Compact, clean, professional: live voice line, timer, status pill, tiny credit line.
+   - No transcript is shown in the popup. When you finish, the polished text is typed at your cursor.
+   - States: Listening, Writing, Done, Notice (with a readable message).
+
+4. Dashboard and every menu redesigned
+   - Light, minimal design system with drawn vector icons (no emoji icons).
+   - Dashboard: status banner, shortcut cards, "Try it here" box.
+   - Voice History: simple searchable list with Copy and Clear only.
+   - Settings: auto-saving options with real on/off switches.
+   - Fixed the boxed labels, cropped header and ugly scroll bars seen in 4.2.0.
+
+5. Start with Windows is now a Settings switch (on/off at any time) and an installer option
+   (selected by default).
+
+6. Installer
+   - Per-user install: no administrator prompt.
+   - New clean wizard artwork (sharp on high-DPI screens), shorter wizard, friendly welcome and
+     finish text, "Start with Windows" selected by default.
+
+7. Other fixes
+   - Gemini Live is no longer needed; its 10-minute limit and setup problems are gone.
+   - Long dictations are sent in 2-minute pieces so they never hit request-size limits.
+   - A hard time limit prevents a slow network from freezing the popup.
+
+NOTHING WAS REMOVED THAT YOU USE: all pages, shortcuts, history, developer information, support
+links, credits and assets remain.
+
+----------------------------------------------------------------------------------------------------
+PREVIOUS RELEASES
+----------------------------------------------------------------------------------------------------
+SHUNCHi 4.2.0 — Final Stability Release
+=======================================
+
+CRITICAL FIXES (these caused the repeated failures in earlier builds)
+- Fixed a startup crash: the main window connected to a "live_error" signal that did not exist,
+  so the app raised an error before the Dashboard could open.
+- Fixed Gemini Live always being reported as "setup did not complete": the server confirms setup with
+  an EMPTY object ({"setupComplete": {}}), which the old code treated as "no reply". Live captions
+  now connect correctly. Same fix in the API Test.
+- Fixed the Live-failure handler (it called a missing helper), so the backup transcription path is now
+  reliably armed when Live drops. A broken connection is also noticed immediately instead of only
+  after you stop speaking, and the worker can no longer hang on exit.
+- Fixed literal "\n" text in error messages, How-to-use page, History view and "Copy all".
+- Fixed log redaction when no API key is present (it could insert "[redacted]" between every character).
+- An empty polished transcript no longer leaves the popup stuck.
+
+GEMINI API ALIGNMENT (verified against the current Google documentation)
+- Models unchanged: gemini-3.5-transcribe-live, gemini-3.5-transcribe, gemini-3.8-flash.
+- Requests use the v1beta endpoint. Gemini 3.8 Flash ignores temperature, so it is removed;
+  thinking_level LOW is used for fast polishing/backup (MINIMAL is rejected by 3.8 Flash).
+- The polish prompt now treats the transcript strictly as text to edit (it will not answer questions
+  spoken inside the dictation) and a length safety check keeps the original if the model misbehaves.
+- API errors are translated into short, actionable messages (invalid key, quota, no internet, no access).
+
+AUDIO
+- New stateful NumPy resampler (44.1/48/32/24 kHz -> 16 kHz). The old per-chunk resampling created a tiny
+  click every 100 ms, which hurts Bangla recognition. SciPy is no longer needed (smaller, safer build).
+
+PASTE
+- Auto-paste now uses the Windows SendInput API (PyAutoGUI removed) and waits until Win/Ctrl/Shift/Alt are
+  released before pasting, so text no longer lands as a shortcut. Clipboard is restored afterwards.
+
+UI / UX
+- Popup redesigned: vector microphone mark (no emoji font), 40 bars that scroll with the real voice, blue
+  gradient progress, coloured status pill (LIVE / BACKUP / ERROR / DONE), opens on the screen where the
+  mouse is.
+- Dashboard: new "Try it here" practice box for first-time users.
+- Closing the window shows a one-time tray hint. Start-with-Windows launches minimised in the tray.
+- Log file is size-limited (rotating).
+
+INSTALLER / BUILD
+- Build_Installer.bat now checks the source and dependencies before building, uses CRLF line endings, and
+  builds a much smaller package (no collect-all of PySide6/SciPy).
+- Installer: same AppId (upgrades 4.1.4 in place), removes stale _internal files on upgrade, stops a running
+  SHUNCHi.exe on uninstall, requires Windows 10 or newer.
+
+NOTHING WAS REMOVED: all pages, shortcuts, history, developer info, assets, support links, installer
+wizard images and documents are retained.
+
+----------------------------------------------------------------------------------------------------
+PREVIOUS RELEASE
+----------------------------------------------------------------------------------------------------
+SHUNCHi 4.1.4 — Live Setup & Transcription Reliability Hotfix
+=============================================================
+
+- Bumped app, installer and diagnostics version to 4.1.4.
+- Live setup receive loop now tolerates one-second network gaps until its full setup deadline instead
+  of aborting on the first receive timeout.
+- API Live setup test uses the same receive-timeout handling.
+- Gemini response text extraction now safely handles SDK response objects whose .text property raises
+  when no text part exists, and falls back to candidate audio-transcription parts.
+- Increased the silent API audio capability probe to one full second at 16 kHz PCM16.
+- Live API failure does not stop the microphone or discard the captured dictation; audio fallback runs
+  after automatic silence stop.
+- Dedicated gemini-3.5-transcribe request uses AudioTranscriptionConfig and the correct selected language
+  hints; gemini-3.8-flash remains the secondary audio fallback and text-polishing model.
+- Live final event handling uses input_transcription, and interim preview uses interim_input_transcription.
+- Automatic stop remains enabled (default 1.1 seconds of silence); no second shortcut is required.
+- Compact light HTML-inspired 40-bar popup, real mic waveform, timer, live preview, backup status,
+  automatic close after paste.
+- Actual microphone format retries (mono/stereo, supported rates) and 44.1/48 kHz resampling retained.
+- Developer portrait, personal details, official SHUNCHi contacts, all logo assets, responsive pages,
+  local history, installer and uninstaller retained.
+- PyInstaller remains --windowed --onedir; terminal window should not appear.
+
+Validation performed:
+- Python compile + AST.
+- Static assertions for timeout loops, SDK text extraction, Live setup, fallback transcription,
+  microphone retries/resampling, auto-stop, UI, user assets and installer metadata.
+
+Still requires a real Windows 11 run with the user's microphone, Google API key and Inno Setup compiler.

@@ -1,0 +1,25 @@
+name: Release update
+on:
+  release: { types: [published] }
+permissions: { contents: write, pages: write, id-token: write }
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - name: Write update manifest
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          BODY: ${{ github.event.release.body }}
+          ASSETS: ${{ join(github.event.release.assets.*.browser_download_url, ' ') }}
+        run: python3 .github/scripts/make_update.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add site; git diff --cached --quiet || git commit -m "Update manifest for ${{ github.event.release.tag_name }}"
+          git push origin main
+  deploy:
+    needs: manifest
+    uses: ./.github/workflows/pages.yml
+    permissions: { contents: read, pages: write, id-token: write }

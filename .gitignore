@@ -1,0 +1,7 @@
+.venv/
+dist/
+build/
+installer_output/
+*.spec
+__pycache__/
+_optional_php_admin/

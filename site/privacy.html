@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8FAFD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A1222" media="(prefers-color-scheme: dark)">
+<title>Privacy | SHUNCHi</title>
+<meta name="description" content="How SHUNCHi handles your voice, text and API key.">
+<link rel="canonical" href="https://shunchiai.com/privacy.html">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SHUNCHi">
+<meta property="og:title" content="Privacy | SHUNCHi"><meta property="og:description" content="How SHUNCHi handles your voice, text and API key.">
+<meta property="og:url" content="https://shunchiai.com/privacy.html"><meta property="og:image" content="https://shunchiai.com/assets/og-cover.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="index.html" aria-label="SHUNCHi home"><img src="assets/shunchi-logo.png" alt="SHUNCHi" width="96" height="36"></a>
+    <nav class="links" aria-label="Main"><a href="index.html#features"><span class="en">Features</span><span class="bn">সুবিধা</span></a><a href="index.html#setup"><span class="en">Setup</span><span class="bn">সেটআপ</span></a><a href="apps/index.html"><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></a><a href="index.html#faq"><span class="en">FAQ</span><span class="bn">প্রশ্নোত্তর</span></a><a href="index.html#developer"><span class="en">Developer</span><span class="bn">ডেভেলপার</span></a></nav>
+    <div class="actions"><div class="lang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="bn" aria-pressed="false">বাংলা</button></div>
+      <a class="btn btn-primary btn-sm" href="download/index.html"><span class="en">Download</span><span class="bn">ডাউনলোড</span></a>
+      <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" aria-label="Menu"><svg class="bars" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><svg class="x" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </div>
+  <div class="menu-panel" id="menu-panel"><nav aria-label="Mobile"><a class="item" href="index.html#features"><span class="en">Features</span><span class="bn">সুবিধা</span></a><a class="item" href="index.html#setup"><span class="en">Setup</span><span class="bn">সেটআপ</span></a><a class="item" href="apps/index.html"><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></a><a class="item" href="index.html#faq"><span class="en">FAQ</span><span class="bn">প্রশ্নোত্তর</span></a><a class="item" href="index.html#developer"><span class="en">Developer</span><span class="bn">ডেভেলপার</span></a></nav>
+    <a class="btn btn-primary" href="download/index.html"><span class="en">Download for Windows</span><span class="bn">উইন্ডোজের জন্য ডাউনলোড</span></a></div>
+</header>
+
+<main id="main">
+<div class="wrap page-head">
+  <ol class="crumbs"><li><a href="index.html"><span class="en">Home</span><span class="bn">হোম</span></a></li><li aria-current="page"><span class="en">Privacy</span><span class="bn">গোপনীয়তা</span></li></ol>
+  <h1><span class="en">Privacy</span><span class="bn">গোপনীয়তা</span></h1>
+  <p><span class="en">Short and plain. What SHUNCHi does with your voice, your text and your key.</span><span class="bn">সংক্ষেপে ও সহজ ভাষায়: আপনার কণ্ঠ, লেখা ও কী নিয়ে শুনছি কী করে।</span></p>
+</div>
+<section style="padding-top:20px"><div class="wrap prose">
+  <div class="en">
+    <h2>Your voice</h2><p>When you dictate, SHUNCHi records from your microphone only between the start and the end of that dictation. The recording is sent to Google's Gemini service to be turned into text, using your own API key. We do not receive it and we do not run a server that stores it.</p>
+    <h2>Google's free tier</h2><p>On Google's free tier, content you send may be used by Google to improve its products. Please do not dictate passwords, bank details or other secrets. Paid Gemini plans have different terms.</p>
+    <h2>Your API key</h2><p>Your key is stored in Windows Credential Manager on your computer. It is sent only to Google when you dictate or press “Save &amp; test”. It never goes to this website.</p>
+    <h2>Your history</h2><p>The list of past dictations is kept on your computer only. You can clear it from the Voice History page.</p>
+    <h2>This website and updates</h2><p>The app checks <code>shunchiai.com/update.json</code> to learn whether a new version exists. That request contains the app version in its user agent and nothing about you. The website does not use advertising trackers.</p>
+    <h2>Contact</h2><p>Questions: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
+  </div>
+  <div class="bn">
+    <h2>আপনার কণ্ঠ</h2><p>আপনি যখন ডিকটেট করেন, শুধু তখনই, শুরু থেকে শেষ পর্যন্ত, শুনছি আপনার মাইক্রোফোন থেকে রেকর্ড করে। রেকর্ডিংটি আপনার নিজের API কী দিয়ে লেখায় রূপান্তরের জন্য গুগলের Gemini সেবায় পাঠানো হয়। এটি আমরা পাই না এবং জমা রাখার মতো কোনো সার্ভারও আমাদের নেই।</p>
+    <h2>গুগলের ফ্রি টিয়ার</h2><p>গুগলের ফ্রি টিয়ারে আপনার পাঠানো কনটেন্ট গুগল তাদের পণ্যের উন্নয়নে ব্যবহার করতে পারে। তাই পাসওয়ার্ড, ব্যাংকের তথ্য বা অন্য গোপন কিছু ডিকটেট করবেন না। পেইড Gemini প্ল্যানের শর্ত আলাদা।</p>
+    <h2>আপনার API কী</h2><p>কী-টি আপনার কম্পিউটারের Windows Credential Manager-এ থাকে। ডিকটেশনের সময় বা “Save &amp; test” চাপলে এটি শুধু গুগলে যায়। এই ওয়েবসাইটে কখনও আসে না।</p>
+    <h2>আপনার হিস্ট্রি</h2><p>আগের ডিকটেশনের তালিকা শুধু আপনার কম্পিউটারেই থাকে। Voice History পাতা থেকে আপনি তা মুছে ফেলতে পারেন।</p>
+    <h2>এই ওয়েবসাইট ও আপডেট</h2><p>নতুন ভার্সন আছে কিনা জানতে অ্যাপটি <code>shunchiai.com/update.json</code> দেখে। এই অনুরোধে শুধু অ্যাপের ভার্সন থাকে, আপনার সম্পর্কে কিছু থাকে না। ওয়েবসাইটে বিজ্ঞাপনের ট্র্যাকার নেই।</p>
+    <h2>যোগাযোগ</h2><p>প্রশ্ন থাকলে: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
+  </div>
+</div></section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div><img src="assets/shunchi-logo.png" alt="SHUNCHi" width="90" height="34">
+        <p><span class="en">Free AI voice typing for Windows. You speak, we write.</span><span class="bn">উইন্ডোজের জন্য ফ্রি এআই ভয়েস টাইপিং। আপনি বলুন, আমরা লিখি।</span></p></div>
+      <div><h4>SHUNCHi</h4><ul>
+        <li><a href="index.html#features"><span class="en">Features</span><span class="bn">সুবিধা</span></a></li>
+        <li><a href="index.html#setup"><span class="en">Setup guide</span><span class="bn">সেটআপ গাইড</span></a></li>
+        <li><a href="index.html#faq"><span class="en">FAQ</span><span class="bn">প্রশ্নোত্তর</span></a></li>
+        <li><a href="download/index.html"><span class="en">Download</span><span class="bn">ডাউনলোড</span></a></li></ul></div>
+      <div><h4><span class="en">More</span><span class="bn">আরও</span></h4><ul>
+        <li><a href="apps/index.html"><span class="en">Apps and free tools</span><span class="bn">অ্যাপ ও ফ্রি টুল</span></a></li>
+        <li><a href="index.html#developer"><span class="en">Developer</span><span class="bn">ডেভেলপার</span></a></li>
+        <li><a href="privacy.html"><span class="en">Privacy</span><span class="bn">গোপনীয়তা</span></a></li></ul></div>
+      <div><h4><span class="en">Contact</span><span class="bn">যোগাযোগ</span></h4><ul>
+        <li><a href="https://www.facebook.com/voice.shunchi" rel="noopener">Facebook</a></li>
+        <li><a href="https://www.instagram.com/voice.shunchi/" rel="noopener">Instagram</a></li>
+        <li><a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></li></ul></div>
+    </div>
+    <div class="legal"><span>© <span id="year">2026</span> SHUNCHi · Ruhul Amin</span>
+      <span><span class="en">Made in Bangladesh</span><span class="bn">বাংলাদেশে তৈরি</span></span></div>
+  </div>
+</footer>
+<script src="assets/site.js"></script>
+</body>
+</html>
