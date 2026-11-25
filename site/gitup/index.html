@@ -1696,6 +1696,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       var rt = $("#rel-retry"); if (rt) rt.onclick = function () { relActionsReset(); publishRelease(); };
       var dc = $("#rel-discard"); if (dc) dc.onclick = function () { gh("/releases/" + R.draft.id, { method: "DELETE" }).then(function () { R.draft = null; R.done = {}; toast(T("Draft discarded.", "ড্রাফট বাতিল হয়েছে।"), "ok"); setStep(3); $("#rel-prog").classList.add("hidden"); relActionsReset(); }, function (x) { toast(errText(x), "er"); }); };
       toast(er.message, "er");
+      try { var ra = $("#rel-prog .note.wn") || $("#rel-actions"); if (ra) ra.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (x) {}
       if (cors && !attach) $("#rel-prog").insertAdjacentHTML("beforeend", '<div class="note wn">' + T("Your browser may block big uploads to GitHub. Use “Do it on GitHub instead”: it opens the release page with the tag ready, attach both files there and press Publish. The website updates by itself after that.", "ব্রাউজার বড় আপলোড আটকে দিতে পারে। “GitHub-এ নিজে করুন” চাপুন: ট্যাগসহ রিলিজ পেজ খুলবে, সেখানে দুটি ফাইল দিয়ে Publish চাপুন। এরপর ওয়েবসাইট নিজেই আপডেট হবে।") + '</div>');
     }
   }
