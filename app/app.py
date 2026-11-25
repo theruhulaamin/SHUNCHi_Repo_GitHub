@@ -35,12 +35,12 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QComboBox, QCheckBox, QLineEdit, QMessageBox, QSystemTrayIcon,
     QMenu, QFrame, QStackedWidget, QTableWidget, QTableWidgetItem, QHeaderView,
-    QPlainTextEdit, QSizePolicy, QScrollArea,
+    QPlainTextEdit, QSizePolicy, QScrollArea, QWidgetAction,
     QAbstractItemView, QButtonGroup, QDialog, QProgressDialog
 )
 
 APP_NAME = "SHUNCHi"
-APP_VERSION = "4.7.0"
+APP_VERSION = "5.0.0"
 APP_VENDOR = "RUHUL"
 KEYRING_SERVICE = "SHUNCHi"
 KEYRING_USERNAME = "gemini_api_key"
@@ -1490,6 +1490,10 @@ QPushButton#seg:hover { color: @TEXT@; }
 QPushButton#seg:checked { background: white; color: @PRIMARY_DARK@; border: 1px solid #D5DDE9; }
 QPushButton#chip { background: @SOFT@; color: @PRIMARY_DARK@; border: 0; border-radius: 15px; padding: 7px 14px; font-size: 12px; font-weight: 600; }
 QPushButton#chip:hover { background: #DCEAFF; }
+QMenu { background: white; border: 1px solid @BORDER@; padding: 6px 0; }
+QMenu::item { padding: 8px 22px; color: @TEXT@; }
+QMenu::item:selected { background: @SOFT@; color: @TEXT@; }
+QMenu::separator { height: 1px; background: @BORDER@; margin: 6px 10px; }
 QComboBox QAbstractItemView { background: white; border: 1px solid @BORDER@; selection-background-color: @SOFT@; selection-color: @TEXT@; outline: 0; }
 QPlainTextEdit { background: #F8FAFD; border: 1px solid #D5DDE9; border-radius: 10px; padding: 8px; font-size: 14px; color: @TEXT@; }
 QPlainTextEdit:focus { border: 1px solid @PRIMARY@; }
@@ -2165,8 +2169,10 @@ class DashboardPage(QWidget):
         "error": (C_ERR, C_ERR_SOFT, "#F7CACA"),
     }
 
-    def __init__(self, open_settings, on_language=None):
+    def __init__(self, open_settings, on_language=None, on_account=None):
         super().__init__()
+        self.on_account = on_account
+        self._acct = {"in": False}
         self._api = ("missing", "Add your Gemini API key in Settings to start voice typing.")
         self._act = ""
         self._upd = None
@@ -2190,6 +2196,12 @@ class DashboardPage(QWidget):
         if on_language is not None:
             self.lang_switch.valueChanged.connect(on_language)
         head.addWidget(self.lang_switch, 0, Qt.AlignTop)
+        self.acct_chip = QPushButton("")
+        self.acct_chip.setObjectName("chip")
+        self.acct_chip.setCursor(Qt.PointingHandCursor)
+        self.acct_chip.setIconSize(QSize(16, 16))
+        self.acct_chip.clicked.connect(self._account_clicked)
+        head.addWidget(self.acct_chip, 0, Qt.AlignTop)
         site_chip = QPushButton(f"{WEBSITE_LABEL}  ↗")
         site_chip.setObjectName("chip")
         site_chip.setCursor(Qt.PointingHandCursor)
@@ -2323,7 +2335,95 @@ class DashboardPage(QWidget):
         if self._upd:
             self.show_update(*self._upd)
         self.lang_switch.set_value(UI_BN)
+        self._paint_account()
         harden_labels(self)
+
+    # ---- account corner (top right): Log in / Sign up, or the name with the profile menu
+    def set_account(self, info):
+        """info: {"in": bool, "name", "email", "phone", "address"}; called by the main window whenever the account changes."""
+        self._acct = dict(info or {"in": False})
+        self._paint_account()
+
+    def _paint_account(self):
+        try:
+            a = self._acct
+            try:
+                self.acct_chip.setIcon(make_icon("user", C_PRIMARY_DARK, 16))
+            except Exception:
+                pass
+            if a.get("in"):
+                label = (a.get("name") or a.get("email") or "").strip() or T("Your profile")
+                if len(label) > 18:
+                    label = label[:17] + "…"
+                self.acct_chip.setText(f" {label}  ▾")
+                self.acct_chip.setToolTip(T("Account menu"))
+            else:
+                self.acct_chip.setText(" " + T("Log in / Sign up"))
+                self.acct_chip.setToolTip("")
+        except Exception:
+            logging.exception("account chip")
+
+    def _account_clicked(self):
+        try:
+            if not self._acct.get("in"):
+                if self.on_account:
+                    self.on_account("page")
+                return
+            self._show_account_menu()
+        except Exception:
+            logging.exception("account menu")
+
+    def _show_account_menu(self):
+        a = self._acct
+        menu = QMenu(self)
+        name = (a.get("name") or a.get("email") or "").strip()
+        head = QWidget()
+        hl = QHBoxLayout(head)
+        hl.setContentsMargins(16, 12, 20, 8)
+        hl.setSpacing(12)
+        avatar = QLabel(AccountPage._initials(name or "?"))
+        avatar.setFixedSize(40, 40)
+        avatar.setAlignment(Qt.AlignCenter)
+        avatar.setStyleSheet(f"background:{C_PRIMARY};color:white;border-radius:20px;font-size:14px;font-weight:700;")
+        col = QVBoxLayout()
+        col.setSpacing(1)
+        n = QLabel(html_escape(name))
+        n.setStyleSheet(f"font-size:14px;font-weight:700;color:{C_TEXT};")
+        m = QLabel(html_escape(a.get("email", "")))
+        m.setStyleSheet(f"font-size:12px;color:{C_MUTED};")
+        col.addWidget(n)
+        col.addWidget(m)
+        hl.addWidget(avatar)
+        hl.addLayout(col)
+        wa = QWidgetAction(menu)
+        wa.setDefaultWidget(head)
+        menu.addAction(wa)
+        menu.addSeparator()
+        rows = QWidget()
+        rl = QVBoxLayout(rows)
+        rl.setContentsMargins(16, 4, 20, 4)
+        rl.setSpacing(6)
+        for title, key in (("Phone", "phone"), ("Address", "address")):
+            val = (a.get(key) or "").strip()
+            if len(val) > 46:
+                val = val[:45] + "…"
+            line = QLabel(f"<span style='color:{C_MUTED};font-size:11px;'>{html_escape(T(title))}</span><br>"
+                          f"<span style='color:{C_TEXT if val else C_FAINT};font-size:13px;'>{html_escape(val or T('Not added'))}</span>")
+            line.setTextFormat(Qt.RichText)
+            rl.addWidget(line)
+        wr = QWidgetAction(menu)
+        wr.setDefaultWidget(rows)
+        menu.addAction(wr)
+        menu.addSeparator()
+        act_open = menu.addAction(T("Open my profile"))
+        act_out = menu.addAction(T("Log out"))
+        act_open.triggered.connect(lambda: self.on_account and self.on_account("page"))
+        act_out.triggered.connect(lambda: self.on_account and self.on_account("logout"))
+        menu.ensurePolished()
+        width = max(menu.sizeHint().width(), 260)
+        menu.setMinimumWidth(width)
+        pos = self.acct_chip.mapToGlobal(QPoint(self.acct_chip.width() - width, self.acct_chip.height() + 6))
+        menu.exec(pos)
 
     def set_api_state(self, state, text):
         self._api = (state, text)
@@ -2983,6 +3083,15 @@ BN.update({
 STATUS_LABEL = {"pending": "Pending", "analysis": "Under analysis", "approved": "Approved", "rejected": "Not taken forward"}
 
 
+BN.update({
+    "Log in / Sign up": "লগইন / সাইন আপ", "Open my profile": "আমার প্রোফাইল খুলুন", "Not added": "যোগ করা হয়নি",
+    "Your profile": "আপনার প্রোফাইল", "Account menu": "অ্যাকাউন্ট মেনু",
+    "Password must be at least 8 characters.": "পাসওয়ার্ড কমপক্ষে ৮ অক্ষর হতে হবে।",
+    "Account created. We emailed you a verification link (needed to comment on the website).":
+        "অ্যাকাউন্ট তৈরি হয়েছে। আপনার ইমেইলে একটি ভেরিফিকেশন লিংক পাঠানো হয়েছে (ওয়েবসাইটে মন্তব্য করতে লাগবে)।",
+})
+
+
 class AccountPage(QWidget):
     """Optional login / sign up and the profile. The app never asks for it."""
 
@@ -3154,8 +3263,9 @@ class AccountPage(QWidget):
             return self._say(self.out_status, "Enter your name.", False)
         if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
             return self._say(self.out_status, "Enter a valid email.", False)
-        if len(pw) < 6:
-            return self._say(self.out_status, "Password must be at least 6 characters.", False)
+        if len(pw) < (8 if self.mode == "signup" else 6):
+            return self._say(self.out_status, "Password must be at least 8 characters." if self.mode == "signup"
+                             else "Password must be at least 6 characters.", False)
         self._busy(True)
         self._say(self.out_status, "Please wait…")
         if self.mode == "signup":
@@ -3192,9 +3302,12 @@ class AccountPage(QWidget):
             self._busy(False)
             if not ok:
                 return self._say(self.out_status, str(data), False)
+            was_signup = self.mode == "signup"
             self.f_pass.clear()
             self.refresh()
             self.on_change()
+            if was_signup:
+                self._say(self.in_status, "Account created. We emailed you a verification link (needed to comment on the website).", True)
         elif action == "reset":
             self._say(self.out_status, "Password reset email sent. Check your inbox." if ok else str(data), ok)
         elif action == "save":
@@ -3399,30 +3512,113 @@ class DeveloperPage(QWidget):
         site_button.clicked.connect(lambda: open_website("/#developer"))
         root.addWidget(site_button, 0, Qt.AlignLeft)
 
-        official, official_layout = make_card((22, 18, 22, 18), 8)
+        root.addWidget(self._official_card())
+
+        root.addStretch()
+
+
+    @staticmethod
+    def _channel_button(glyph, color, title, handle, url):
+        """One official channel as a clickable row: coloured badge, name, handle and an arrow."""
+        button = QPushButton()
+        button.setObjectName("chRow")
+        button.setCursor(Qt.PointingHandCursor)
+        button.setMinimumHeight(64)
+        button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        button.setStyleSheet(
+            f"QPushButton#chRow{{background:#F8FAFD;border:1px solid {C_BORDER};border-radius:12px;text-align:left;padding:0;min-height:0;}}"
+            f"QPushButton#chRow:hover{{background:{C_PRIMARY_SOFT};border:1px solid #C7DBFB;}}")
+        row = QHBoxLayout(button)
+        row.setContentsMargins(14, 0, 14, 0)
+        row.setSpacing(12)
+        badge = QLabel(glyph)
+        badge.setFixedSize(38, 38)
+        badge.setAlignment(Qt.AlignCenter)
+        badge.setStyleSheet(f"background:{color};color:white;border-radius:19px;font-size:13px;font-weight:700;")
+        col = QVBoxLayout()
+        col.setSpacing(1)
+        col.setContentsMargins(0, 0, 0, 0)
+        t = QLabel(title)
+        t.setStyleSheet(f"background:transparent;border:0;font-size:13.5px;font-weight:700;color:{C_TEXT};")
+        h = QLabel(handle)
+        h.setStyleSheet(f"background:transparent;border:0;font-size:12px;color:{C_MUTED};")
+        col.addStretch()
+        col.addWidget(t)
+        col.addWidget(h)
+        col.addStretch()
+        arrow = QLabel("↗")
+        arrow.setStyleSheet(f"background:transparent;border:0;font-size:15px;color:{C_FAINT};")
+        for w in (badge, t, h, arrow):
+            w.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        row.addWidget(badge)
+        row.addLayout(col, 1)
+        row.addWidget(arrow)
+        button.clicked.connect(lambda _c=False, u=url: QDesktopServices.openUrl(QUrl(u)))
+        return button
+
+    def _official_card(self):
+        card, layout = make_card((24, 22, 24, 22), 14)
+        head = QHBoxLayout()
+        head.setSpacing(14)
+        logo = QLabel()
+        logo.setFixedSize(46, 46)
+        pix = QPixmap(resource_path("assets/shunchi-icon-512.png"))
+        if not pix.isNull():
+            logo.setPixmap(pix.scaled(46, 46, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        titles = QVBoxLayout()
+        titles.setSpacing(2)
         ot = QLabel("Official SHUNCHi")
-        ot.setObjectName("cardTitle")
+        ot.setStyleSheet(f"font-size:18px;font-weight:700;color:{C_TEXT};")
         od = QLabel("Product updates, installation help, troubleshooting and new releases.")
         od.setObjectName("cardText")
         od.setWordWrap(True)
-        ol = QLabel(
-            f'<a href="{WEBSITE_URL}" style="color:#2563EB;text-decoration:none;">Website · {WEBSITE_LABEL}</a><br/>'
-            '<a href="https://www.facebook.com/voice.shunchi" style="color:#2563EB;text-decoration:none;">Facebook · @voice.shunchi</a><br/>'
-            '<a href="https://www.instagram.com/voice.shunchi/" style="color:#2563EB;text-decoration:none;">Instagram · @voice.shunchi</a><br/>'
-            '<a href="mailto:voice.shunchi@gmail.com" style="color:#2563EB;text-decoration:none;">voice.shunchi@gmail.com</a>')
-        ol.setOpenExternalLinks(True)
-        ol.setTextInteractionFlags(Qt.TextBrowserInteraction)
-        official_layout.addWidget(ot)
-        official_layout.addWidget(od)
-        official_layout.addWidget(ol)
-        root.addWidget(official)
+        titles.addWidget(ot)
+        titles.addWidget(od)
+        badge = QLabel("✓  Official")
+        badge.setStyleSheet(f"background:{C_OK_SOFT};color:{C_OK};border:1px solid #BBF7D0;border-radius:11px;"
+                            "padding:3px 10px;font-size:11.5px;font-weight:700;")
+        head.addWidget(logo, 0, Qt.AlignTop)
+        head.addLayout(titles, 1)
+        head.addWidget(badge, 0, Qt.AlignTop)
+        layout.addLayout(head)
 
+        line = QFrame()
+        line.setFixedHeight(1)
+        line.setStyleSheet(f"background:{C_BORDER};border:0;")
+        layout.addWidget(line)
+
+        rows = (
+            (("W", C_PRIMARY, "Website", WEBSITE_LABEL, WEBSITE_URL),
+             ("@", C_WARN, "Email support", "voice.shunchi@gmail.com", "mailto:voice.shunchi@gmail.com")),
+            (("f", "#1877F2", "Facebook", "@voice.shunchi", "https://www.facebook.com/voice.shunchi"),
+             ("IG", "#C13584", "Instagram", "@voice.shunchi", "https://www.instagram.com/voice.shunchi/")),
+        )
+        for pair in rows:
+            r = QHBoxLayout()
+            r.setSpacing(12)
+            for spec in pair:
+                r.addWidget(self._channel_button(*spec))
+            layout.addLayout(r)
+
+        safe = QFrame()
+        safe.setObjectName("safeNote")
+        safe.setStyleSheet(f"QFrame#safeNote{{background:{C_WARN_SOFT};border:1px solid #FDE2A8;border-radius:12px;}}"
+                           "QFrame#safeNote QLabel{background:transparent;border:0;}")
+        sl = QHBoxLayout(safe)
+        sl.setContentsMargins(14, 10, 14, 10)
+        sl.setSpacing(10)
+        shield = QLabel("!")
+        shield.setFixedSize(22, 22)
+        shield.setAlignment(Qt.AlignCenter)
+        shield.setStyleSheet(f"background:{C_WARN};color:white;border-radius:11px;font-size:13px;font-weight:800;")
         note = QLabel(f"Download updates only from {WEBSITE_LABEL} or the official SHUNCHi pages. "
                       "Do not install modified builds and never share your personal Gemini API key.")
-        note.setObjectName("muted")
         note.setWordWrap(True)
-        root.addWidget(note)
-        root.addStretch()
+        note.setStyleSheet(f"font-size:12.5px;color:{C_WARN};font-weight:600;")
+        sl.addWidget(shield, 0, Qt.AlignTop)
+        sl.addWidget(note, 1)
+        layout.addWidget(safe)
+        return card
 
 
 class NoticeDialog(QDialog):
@@ -3641,7 +3837,7 @@ class MainWindow(QMainWindow):
         right = QVBoxLayout()
         right.setContentsMargins(0, 0, 0, 0)
         right.setSpacing(0)
-        self.dashboard_page = DashboardPage(lambda: self.switch_page(2), self.set_ui_language)
+        self.dashboard_page = DashboardPage(lambda: self.switch_page(2), self.set_ui_language, self._dashboard_account)
         self.history_page = HistoryPage()
         self.settings_page = SettingsPage(self)
         self.help_page = HelpPage()
@@ -3677,6 +3873,7 @@ class MainWindow(QMainWindow):
         right.addWidget(footer)
         outer.addLayout(right, 1)
         harden_labels(self)
+        self._sync_dashboard_account()
         self.switch_page(0)
 
     def set_ui_language(self, bangla):
@@ -3693,6 +3890,28 @@ class MainWindow(QMainWindow):
 
     def _account_changed(self):
         self.more_apps_page.refresh_account()
+        self._sync_dashboard_account()
+
+    def _sync_dashboard_account(self):
+        """Keeps the account corner of the dashboard (Log in / name + profile menu) in step with the account."""
+        try:
+            acc = self.account
+            if not acc.logged_in:
+                self.dashboard_page.set_account({"in": False})
+                return
+            p = acc.profile_cache or {}
+            self.dashboard_page.set_account({
+                "in": True, "name": p.get("name") or acc.name, "email": p.get("email") or acc.email,
+                "phone": p.get("phone", ""), "address": p.get("address", "")})
+        except Exception:
+            logging.exception("Dashboard account sync failed")
+
+    def _dashboard_account(self, action):
+        """Clicks from the dashboard account corner: open the Account page, or log out."""
+        if action == "logout":
+            self.account_page._logout()
+        else:
+            self.switch_page(len(self.NAV) - 1)
 
     def switch_page(self, index):
         self.stack.setCurrentIndex(index)

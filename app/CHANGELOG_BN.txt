@@ -1,3 +1,14 @@
+SHUNCHi 5.0.0 — Account in the dashboard corner, professional Official SHUNCHi page
+==================================================================================
+
+1. Dashboard: a Log in / Sign up button now sits in the top-right corner. After login it shows your name;
+   click it to see your profile (name, email, phone, address), open the full profile page, or log out.
+2. Developer page: "Official SHUNCHi" redesigned. Verified badge, one-click rows for the website, email,
+   Facebook and Instagram, and a clear safety note about official downloads and your Gemini key.
+3. Account: sign-up passwords are at least 8 characters (same as the website). After sign-up the app tells you
+   that a verification link was emailed (needed to comment on the website).
+4. Same account on the app and on shunchiai.com. Everything from 4.7.0 and earlier is kept.
+
 SHUNCHi 4.7.0 — Optional account, idea tracking number, encrypted idea details
 ==============================================================================================
 
