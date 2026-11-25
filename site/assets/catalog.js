@@ -267,6 +267,10 @@ var TOOLS = [
       return (t.t + " " + t.tb + " " + t.d + " " + t.db + " " + t.id).toLowerCase().indexOf(q) >= 0;
     });
     list.sort(function (a, b) { return rank(a) - rank(b); });
+    if (o.featured) {
+      /* hand-picked most powerful tools, in this order (used on the home page) */
+      list = o.featured.map(function (id) { return TOOLS.filter(function (t) { return t.id === id; })[0]; }).filter(Boolean);
+    }
     if (o.limit) list = list.slice(0, o.limit);
     if (!list.length) {
       var none = el("p", "empty"); none.appendChild(bi("No tool matches your search yet. Tell us what you need and we will add it.", "এই নামে কোনো টুল এখনও নেই। কী দরকার জানান, আমরা যোগ করব।"));
@@ -292,8 +296,22 @@ var TOOLS = [
       list.forEach(function (t) { grid2.appendChild(toolCard(t)); });
       container.appendChild(grid2);
     }
+    reveal(container);
     return list.length;
   };
+
+  /* Staggered fade-up when cards scroll into view. Without JS or with reduced motion, cards just show. */
+  function reveal(container) {
+    var cards = container.querySelectorAll(".tool");
+    var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (calm || !("IntersectionObserver" in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    cards.forEach(function (c, i) {
+      c.classList.add("rv"); c.style.setProperty("--d", (i % 6) * 70 + "ms"); io.observe(c);
+    });
+  }
 
   /* category chips with counts: renderCategoryTabs(container, onPick) */
   window.renderCategoryTabs = function (container, onPick) {

@@ -405,3 +405,22 @@ html[lang="bn"] .official-title{text-transform:none;letter-spacing:0;font-size:1
   .official-links a{justify-content:center;font-size:13.5px}
   .official-links a:last-child{grid-column:1 / -1}
 }
+
+/* ---------- animated tool cards ---------- */
+.tool{position:relative;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.tool.rv{opacity:0;transform:translateY(18px) scale(.98)}
+.tool.rv.in{opacity:1;transform:none;transition:opacity .55s ease var(--d,0ms),transform .55s cubic-bezier(.2,.7,.2,1) var(--d,0ms),box-shadow .25s ease,border-color .25s ease}
+@media (hover:hover){.tool:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:var(--shadow)}}
+.tool-icon{transition:transform .3s ease,background .3s ease}
+@media (hover:hover){.tool:hover .tool-icon{transform:rotate(-6deg) scale(1.1)}}
+.tool-icon svg{animation:tfloat 3.6s ease-in-out infinite}
+.tool:nth-child(2n) .tool-icon svg{animation-delay:-1.2s}.tool:nth-child(3n) .tool-icon svg{animation-delay:-2.2s}
+@keyframes tfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.badge:not(.live){position:relative;overflow:hidden}
+.badge:not(.live)::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:bshine 3.2s ease-in-out infinite}
+.badge.next::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:1px;animation:bpulse 1.6s ease-in-out infinite}
+@keyframes bshine{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+@keyframes bpulse{0%,100%{box-shadow:0 0 0 0 rgba(31,98,232,.5)}60%{box-shadow:0 0 0 6px rgba(31,98,232,0)}}
+.tool::before{content:"";position:absolute;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),transparent);border-radius:var(--r) var(--r) 0 0;transition:width .45s ease}
+@media (hover:hover){.tool:hover::before{width:100%}}
+@media (prefers-reduced-motion:reduce){.tool-icon svg,.badge::after,.badge.next::before{animation:none!important}.tool,.tool.rv{opacity:1!important;transform:none!important}}
