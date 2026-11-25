@@ -1274,13 +1274,16 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   }
   function loadUsers() {
     usersConn(); var F = FB.F, db = FB.db;
-    return Promise.all([F.getDocs(F.collection(db, "users")), F.getDocs(F.collection(db, "comments")), F.getDocs(F.collectionGroup(db, "ideas"))]).then(function (r) {
+    var fails = [], soft = function (name, pr) { return pr.then(function (r) { return r; }, function (e) { fails.push(name + ": " + (e.code || e.message)); return null; }); };
+    return Promise.all([soft("users", F.getDocs(F.collection(db, "users"))), soft("comments", F.getDocs(F.collection(db, "comments"))), soft("ideas", F.getDocs(F.collectionGroup(db, "ideas")))]).then(function (r) {
+      if (!r[0]) { $("#u-main").classList.add("hidden"); usersConn(/permission-denied/.test(fails[0] || "") ? T("Permission denied. Check: (1) the latest firebase/firestore.rules is published in Firebase, (2) you are signed in with an admin email whose address is verified. Signed in as: ", "অনুমতি নেই। দেখুন: (১) সর্বশেষ firestore.rules Firebase-এ Publish করা আছে কিনা, (২) অ্যাডমিন ইমেইলটি ভেরিফাইড কিনা। সাইন ইন করা: ") + ((FB.user && FB.user.email) || "-") : fails[0]); return; }
       USERS = []; r[0].forEach(function (x) { var v = x.data(); v.uid = x.id; USERS.push(v); });
-      UCOMM = []; r[1].forEach(function (x) { var v = x.data(); v.id = x.id; UCOMM.push(v); });
-      UIDEAS = []; r[2].forEach(function (x) { var v = x.data(); v.uid = x.ref.parent.parent.id; UIDEAS.push(v); });
+      UCOMM = []; if (r[1]) r[1].forEach(function (x) { var v = x.data(); v.id = x.id; UCOMM.push(v); });
+      UIDEAS = []; if (r[2]) r[2].forEach(function (x) { var v = x.data(); v.uid = x.ref.parent.parent.id; UIDEAS.push(v); });
       USERS.sort(function (a, b) { return tsm(b.createdAt) - tsm(a.createdAt); }); UCOMM.sort(function (a, b) { return tsm(b.createdAt) - tsm(a.createdAt); });
       $("#u-main").classList.remove("hidden"); renderUsers(); try { renderCommunity(); } catch (e) {}
-    }, function (e) { $("#u-main").classList.add("hidden"); usersConn(e.code === "permission-denied" ? T("This Google account is not the admin in the Firestore rules, or the rules are not published.", "এই Google অ্যাকাউন্ট Firestore rules-এ অ্যাডমিন নয়, অথবা rules পাবলিশ করা হয়নি।") : (e.code || e.message)); });
+      if (fails.length) toast(T("Some data could not load (", "কিছু ডেটা লোড হয়নি (") + fails.join("; ") + T("). Publish the latest firestore.rules.", ")। সর্বশেষ firestore.rules Publish করুন।"), "er");
+    });
   }
   function cnt(arr, uid) { return arr.filter(function (x) { return x.uid === uid; }).length; }
   function renderUsers() {
@@ -1313,7 +1316,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     Promise.all([F.getDocs(F.collection(FB.db, "users", u.uid, "ideas")), F.getDocs(F.collection(FB.db, "users", u.uid, "appdata"))]).then(function (r) {
       var jobs = []; r[0].forEach(function (x) { jobs.push(F.deleteDoc(x.ref)); }); r[1].forEach(function (x) { jobs.push(F.deleteDoc(x.ref)); }); cms.forEach(function (c) { jobs.push(F.deleteDoc(F.doc(FB.db, "comments", c.id))); });
       return Promise.all(jobs);
-    }).then(function () { return F.deleteDoc(F.doc(FB.db, "users", u.uid)); }).then(function () { if (done) done(); toast(T("User deleted.", "ইউজার ডিলিট হয়েছে।"), "ok"); loadUsers(); }, function (e) { toast(e.code || e.message, "er"); });
+    }).then(function () { return F.deleteDoc(F.doc(FB.db, "users", u.uid)); }).then(function () { if (done) done(); toast(T("User deleted.", "ইউজার ডিলিট হয়েছে।"), "ok"); loadUsers(); }, function (e) { toast(e.code === "permission-denied" ? T("Delete not allowed: publish the latest firestore.rules in Firebase (admin delete rules).", "ডিলিট করা যায়নি: Firebase-এ সর্বশেষ firestore.rules Publish করুন।") : (e.code || e.message), "er"); });
   }
   function viewUser(u) {
     var F = FB.F, root = $("#modal-root"), ideas = UIDEAS.filter(function (x) { return x.uid === u.uid; }), cms = UCOMM.filter(function (x) { return x.uid === u.uid; });
