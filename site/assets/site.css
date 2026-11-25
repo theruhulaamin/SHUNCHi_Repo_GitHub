@@ -928,3 +928,25 @@ body.auth-open{overflow:hidden}
   .c-act .btn,.ac-form .btn,#pw-form .btn{width:100%;justify-content:center}
   .ac-verify .row .btn{flex:1}
 }
+/* ---- profile hero v4 ---- */
+.ac-cover{height:128px;display:flex;align-items:flex-end;justify-content:space-between;padding:16px 22px;color:#fff;overflow:hidden}
+.ac-wel,.ac-cover .ac-out{position:relative;z-index:1}
+.ac-wel{display:grid;gap:0;line-height:1.1}.ac-wel small{font-size:13px;font-weight:600;opacity:.85;letter-spacing:.02em}.ac-wel b{font-size:30px;font-weight:800;letter-spacing:.01em}.ac-tag{font-size:13px;opacity:.9;margin-top:4px}
+.ac-cover .ac-out{position:absolute;top:12px;right:14px;height:34px;padding:0 14px;border-radius:99px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.16);color:#fff;font:700 13px/1 inherit;cursor:pointer;backdrop-filter:blur(4px)}
+.ac-cover .ac-out:hover{background:rgba(255,255,255,.28)}
+.ac-id{display:flex!important;flex-direction:row;align-items:center;gap:16px;padding:0 22px 18px!important;margin-top:0!important}
+.ac-hero .ac-av{margin-top:-40px!important;width:88px;height:88px;flex:none}
+.ac-who{flex:1!important;min-width:0!important;margin:0!important;padding:10px 0 0!important}
+.ac-who h1{font-size:22px;line-height:1.2}.ac-who p{margin:2px 0 8px;word-break:break-all}
+.ac-stats>div{min-width:0}.ac-stats b{white-space:nowrap}
+@media (max-width:860px){
+  .ac-cover{height:104px;padding:12px 16px}.ac-wel b{font-size:24px}.ac-wel small,.ac-tag{font-size:12px}
+  .ac-id{display:grid!important;grid-template-columns:1fr;grid-template-areas:"av" "who"!important;gap:0;padding:0 16px 16px!important}
+  .ac-hero .ac-av{grid-area:av;width:76px;height:76px;margin-top:-38px!important;font-size:26px}
+  .ac-who{grid-area:who;padding:8px 0 0!important}.ac-who h1{font-size:20px}
+  .ac-stats b{font-size:16px}.ac-stats span{font-size:10.5px}
+  .ac-cover .ac-out{top:10px;right:12px}
+}
+.ac-cover{height:144px;align-items:flex-start!important;padding:18px 22px 0!important}
+.ac-id{align-items:flex-start!important}.ac-who{padding-top:12px!important}
+@media (max-width:860px){.ac-cover{height:132px;padding:14px 16px 0!important}.ac-cover .ac-out{top:12px}.ac-hero .ac-av{margin-top:-36px!important}}

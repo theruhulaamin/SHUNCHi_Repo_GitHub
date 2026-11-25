@@ -728,12 +728,13 @@ acc = head("../", "My account | SHUNCHi", "Your SHUNCHi profile, ideas and saved
       <div class="row"><button type="button" class="btn btn-sm btn-primary" id="ac-ver"><span class="en">Resend link</span><span class="bn">আবার পাঠান</span></button><button type="button" class="btn btn-sm btn-ghost" id="ac-ver-chk"><span class="en">I have verified</span><span class="bn">ভেরিফাই করেছি</span></button></div></div>
 
     <header class="ac-hero">
-      <div class="ac-cover" aria-hidden="true"></div>
+      <div class="ac-cover"><div class="ac-wel"><small><span class="en">Welcome to</span><span class="bn">স্বাগতম</span></small><b>SHUNCHi</b><span class="ac-tag"><span class="en">Speak. We write.</span><span class="bn">আপনি বলুন, আমরা লিখি।</span></span></div>
+        <button type="button" class="ac-out" id="ac-out"><span class="en">Log out</span><span class="bn">লগআউট</span></button></div>
       <div class="ac-id">
         <i class="ac-av" id="ac-av"></i>
         <div class="ac-who"><h1 id="ac-name"></h1><p id="ac-mail"></p>
           <div class="ac-badges"><span class="chip-v ok" id="ac-ver-ok" hidden>''' + _ic('<path d="M5 12l4 4 10-10"/>') + '''<span class="en">Email verified</span><span class="bn">ইমেইল ভেরিফাইড</span></span><span class="chip-v" id="ac-prov"></span></div></div>
-        <button type="button" class="btn btn-ghost btn-sm ac-out" id="ac-out"><span class="en">Log out</span><span class="bn">লগআউট</span></button>
+        
       </div>
       <div class="ac-stats">
         <div><b id="st-ideas">0</b><span><span class="en">Ideas</span><span class="bn">আইডিয়া</span></span></div>
