@@ -14,6 +14,12 @@ def jld(obj): return '<script type="application/ld+json">' + json.dumps(obj, ens
 
 _cat = json.loads(subprocess.run(["node", os.path.join(HERE, "dump_catalog.js"), SITE], capture_output=True, text=True, check=True).stdout)
 CATS, APPS_BASE, TOOLS = _cat["CATS"], _cat["APPS"], _cat["TOOLS"]
+try: CONFIG = json.load(open(os.path.join(HERE, "site_config.json"), encoding="utf-8"))
+except Exception: CONFIG = {}
+GTM_ID = os.environ.get("GTM_ID") or CONFIG.get("gtm_id", "")
+if GTM_ID and not re.fullmatch(r"GTM-[A-Z0-9]{4,10}", GTM_ID): raise SystemExit("gtm_id must look like GTM-XXXXXXX")
+GTM_HEAD = ("<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" + GTM_ID + "');</script>\n") if GTM_ID else ""
+GTM_BODY = ('<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=' + GTM_ID + '" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>\n') if GTM_ID else ""
 try: APPS_JSON = json.load(open(os.path.join(SITE, "data", "apps.json"), encoding="utf-8")) or []
 except Exception: APPS_JSON = []
 
@@ -35,7 +41,7 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>try{{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
+{GTM_HEAD}<script>try{{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
 <meta name="theme-color" content="#F8FAFD" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0A1222" media="(prefers-color-scheme: dark)">
 <title>{t}</title>
@@ -54,7 +60,7 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <link rel="stylesheet" href="{P}assets/site.css?v=17">
 {extra}{ldtxt}</head>
 <body>
-<a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
+{GTM_BODY}<a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
 '''
 
 def header(P, current=""):
@@ -622,6 +628,9 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
 </body>
 </html>
 '''
+if GTM_ID:
+    priv = priv.replace("<h2>Contact</h2>", "<h2>Website analytics</h2><p>This website uses Google Tag Manager to count visits and see which pages help people. It does not receive your dictations, text or API key, because those never pass through this website.</p>\n    <h2>Contact</h2>", 1)
+    priv = priv.replace("<h2>যোগাযোগ</h2>", "<h2>ওয়েবসাইট অ্যানালিটিক্স</h2><p>এই ওয়েবসাইট কতজন ঘুরে গেলেন ও কোন পেজ কাজে লাগছে তা জানতে Google Tag Manager ব্যবহার করে। আপনার ডিকটেশন, লেখা বা API কী এই ওয়েবসাইটের মধ্য দিয়ে যায় না, তাই এগুলো এখানে পৌঁছায় না।</p>\n    <h2>যোগাযোগ</h2>", 1)
 write("privacy.html", priv)
 
 # ====================================================================== 404
