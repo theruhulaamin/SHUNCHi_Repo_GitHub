@@ -289,6 +289,9 @@ faq = "".join([
     q("Is SHUNCHi really free?", "শুনছি কি সত্যিই ফ্রি?",
       "<p>Yes. The app is free. It uses your own Gemini API key, and Google's free tier has daily limits. If you reach the limit, SHUNCHi tells you and works again after it resets.</p>",
       "<p>হ্যাঁ, অ্যাপটি সম্পূর্ণ ফ্রি। এটি আপনার নিজের Gemini API কী ব্যবহার করে, আর গুগলের ফ্রি টিয়ারে দৈনিক একটা সীমা আছে। সীমা শেষ হলে শুনছি আপনাকে জানায় এবং রিসেটের পর আবার চলে।</p>"),
+    q("Do I need a microphone?", "আমার কি মাইক্রোফোন লাগবে?",
+      "<p>Yes, SHUNCHi listens through a microphone. Most laptops have one built in, so you need nothing extra. A desktop computer usually has none, so plug in a microphone or a headset (USB or 3.5 mm).</p>",
+      "<p>হ্যাঁ, শুনছি মাইক্রোফোনের মাধ্যমে আপনার কথা শোনে। বেশিরভাগ ল্যাপটপে মাইক্রোফোন বিল্ট-ইন থাকে, তাই আলাদা কিছু লাগে না। ডেস্কটপ কম্পিউটারে সাধারণত থাকে না, তাই একটি মাইক্রোফোন বা হেডসেট (USB বা ৩.৫ মিমি) লাগাতে হবে।</p>"),
     q("Nothing happens when I press the shortcut", "শর্টকাট চাপলে কিছুই হয় না",
       "<p>Check that SHUNCHi is running (its icon sits in the system tray) and that Settings shows <b>Connected</b> next to your key. Press the left Win key together with the left Ctrl or left Shift key.</p>",
       "<p>শুনছি চলছে কিনা দেখুন (সিস্টেম ট্রেতে এর আইকন থাকে) এবং Settings-এ কী-র পাশে <b>Connected</b> লেখা আছে কিনা মিলিয়ে নিন। বাঁ পাশের Win কী-র সাথে বাঁ Ctrl বা বাঁ Shift একসাথে চাপুন।</p>"),
@@ -394,7 +397,7 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
 <section id="setup" class="alt"><div class="wrap setup">
   <div class="head"><div class="eyebrow"><span class="en">Setup guide</span><span class="bn">সেটআপ গাইড</span></div>
     <h2><span class="en">Ready in about 1.5 minutes</span><span class="bn">প্রায় ১.৫ মিনিটেই তৈরি</span></h2>
-    <p><span class="en">You need Windows 10 or 11 (64-bit), a microphone and an internet connection.</span><span class="bn">লাগবে উইন্ডোজ ১০ বা ১১ (৬৪-বিট), একটি মাইক্রোফোন আর ইন্টারনেট সংযোগ।</span></p></div>
+    <p><span class="en">You need Windows 10 or 11 (64-bit), a microphone and an internet connection. Most laptops have a microphone built in. A desktop computer needs a separate microphone or headset.</span><span class="bn">লাগবে উইন্ডোজ ১০ বা ১১ (৬৪-বিট), একটি মাইক্রোফোন আর ইন্টারনেট সংযোগ। ল্যাপটপে মাইক্রোফোন বিল্ট-ইন থাকে। ডেস্কটপ কম্পিউটারে আলাদা মাইক্রোফোন বা হেডসেট লাগবে।</span></p></div>
   <ol class="steps">
     <li><h3><span class="en">Get a free Gemini API key</span><span class="bn">ফ্রি Gemini API কী নিন</span></h3>
       <div class="en"><p>The key lets SHUNCHi use Google's speech recognition on your own free quota.</p><ul><li>Open <a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a> and sign in with a Google account.</li><li>Choose <b>Create API key</b> and copy it.</li></ul></div>

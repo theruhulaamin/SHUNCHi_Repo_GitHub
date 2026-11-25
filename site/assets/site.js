@@ -87,15 +87,16 @@
       Type: d.get("type"), Idea: title, Details: details,
       Name: d.get("name") || "-", Contact: d.get("contact") || "-", Language: document.documentElement.lang, Page: location.href
     };
+    var ctl = window.AbortController ? new AbortController() : null, timer = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
     fetch("https://formsubmit.co/ajax/" + TO, {
-      method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload)
+      method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload), signal: ctl ? ctl.signal : undefined
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) throw 0; }); })
       .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); })
       .catch(function () {
         var body = "Type: " + payload.Type + "\nIdea: " + title + "\nDetails: " + details + "\nName: " + payload.Name + "\nContact: " + payload.Contact;
         location.href = "mailto:" + TO + "?subject=" + encodeURIComponent(payload._subject) + "&body=" + encodeURIComponent(body);
         say("Could not send directly. Your mail app opened instead.", "সরাসরি পাঠানো যায়নি। তাই আপনার মেইল অ্যাপ খুলেছে।", false);
-      }).then(function () { btn.disabled = false; });
+      }).then(function () { clearTimeout(timer); btn.disabled = false; });
   });
 })();
 
