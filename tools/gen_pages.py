@@ -23,6 +23,9 @@ GTM_BODY = ('<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=
 try: APPS_JSON = json.load(open(os.path.join(SITE, "data", "apps.json"), encoding="utf-8")) or []
 except Exception: APPS_JSON = []
 
+try: VIDEOS_JSON = [v for v in (json.load(open(os.path.join(SITE, "data", "videos.json"), encoding="utf-8")) or []) if re.fullmatch(r"[A-Za-z0-9_-]{11}", str(v.get("id", "")))]
+except Exception: VIDEOS_JSON = []
+
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
          '<link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">')
 
@@ -37,11 +40,11 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
     url = f"{DOMAIN}/{path}"
     ldtxt = "".join(jld(x) for x in (ld or []))
     return f'''<!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-{GTM_HEAD}<script>try{{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
+{GTM_HEAD}<script>try{{var l=localStorage.getItem("shunchi-lang");document.documentElement.lang=l==="en"?"en":"bn"}}catch(e){{}}try{{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}}catch(e){{}}</script>
 <meta name="theme-color" content="#F8FAFD" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0A1222" media="(prefers-color-scheme: dark)">
 <title>{t}</title>
@@ -57,7 +60,7 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <link rel="icon" type="image/png" href="{P}assets/favicon.png"><link rel="apple-touch-icon" href="{P}assets/apple-touch-icon.png">
 {FONTS}
 <link rel="manifest" href="{P}manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SHUNCHi">
-<link rel="stylesheet" href="{P}assets/site.css?v=18">
+<link rel="stylesheet" href="{P}assets/site.css?v=19">
 {extra}{ldtxt}</head>
 <body>
 {GTM_BODY}<a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
@@ -258,6 +261,23 @@ def write(path, text):
     os.makedirs(os.path.dirname(full), exist_ok=True)
     open(full, "w", encoding="utf-8").write(text)
 
+
+# ---------------------------------------------------------------- setup videos (YouTube links added in the admin panel)
+def video_card(v):
+    vid = v["id"]; te = esc(v.get("title_en") or v.get("title_bn") or "Video"); tb = esc(v.get("title_bn") or v.get("title_en") or "")
+    return (f'<figure class="vid"><a class="vid-thumb" href="https://www.youtube.com/watch?v={vid}" data-vid="{vid}" target="_blank" rel="noopener" aria-label="Play: {te}">'
+            f'<img src="https://i.ytimg.com/vi/{vid}/hqdefault.jpg" alt="" loading="lazy" width="480" height="360">'
+            '<span class="vid-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></a>'
+            f'<figcaption><span class="en">{te}</span><span class="bn">{tb}</span></figcaption></figure>')
+
+def videos_block(P, limit=3):
+    if not VIDEOS_JSON: return ""
+    shown = VIDEOS_JSON[:limit]
+    return (f'<div class="wrap vids-wrap" id="videos"><div class="head"><div class="eyebrow"><span class="en">Video guide</span><span class="bn">ভিডিও গাইড</span></div>'
+            '<h2><span class="en">Watch how to set it up</span><span class="bn">দেখে দেখে সেটআপ করুন</span></h2></div>'
+            f'<div class="vids" data-n="{len(shown)}">' + "".join(video_card(v) for v in shown) + '</div>'
+            f'<p class="vids-more"><a class="btn btn-ghost" href="{P}videos/index.html"><span class="en">View all videos</span><span class="bn">সব ভিডিও দেখুন</span> <span aria-hidden="true">→</span></a></p></div>')
+
 # ====================================================================== HOME
 FAQ_ITEMS = []
 def q(en, bn, ae, ab):
@@ -336,9 +356,13 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
       <div class="keybox"><span class="label"><span class="en">English</span><span class="bn">ইংরেজি</span></span><kbd>Win</kbd><span class="plus">+</span><kbd>Left Shift</kbd></div>
     </div>
   </div>
-  <div class="demo" aria-hidden="true">
-    <div class="demo-bar"><i></i><i></i><i></i></div>
-    <div class="demo-field"><span class="en">Hi Rahim, the files are ready. I will send them tonight.</span><span class="bn">রহিম ভাই, ফাইলগুলো তৈরি। আমি আজ রাতেই পাঠিয়ে দেব।</span><span class="caret"></span></div>
+  <div class="demo" aria-hidden="true" data-demo>
+    <div class="demo-tabs"><span class="dt on" data-app="wa"><i></i>WhatsApp</span><span class="dt" data-app="ms"><i></i>Messenger</span><span class="dt" data-app="em"><i></i><span class="en">Email</span><span class="bn">ইমেইল</span></span><span class="dt" data-app="nt"><i></i><span class="en">Notes</span><span class="bn">নোটস</span></span></div>
+    <div class="ds" data-skin="wa">
+      <div class="ds-head"><span class="av">R</span><div><b class="ds-name"><span class="en">Rahim</span><span class="bn">রহিম</span></b><small class="ds-sub"><span class="en">online</span><span class="bn">অনলাইন</span></small></div></div>
+      <div class="ds-msgs"></div>
+      <div class="ds-input"><span class="typed"><span class="en">Hi Rahim, the files are ready. I will send them tonight.</span><span class="bn">রহিম ভাই, ফাইলগুলো তৈরি। আমি আজ রাতেই পাঠিয়ে দেব।</span></span><span class="caret"></span></div>
+    </div>
     <div class="popup"><div class="popup-row">
       <div class="orb"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
       <div class="wave"><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
@@ -390,7 +414,8 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
       <div class="en"><ul><li><b>Finish after a pause:</b> Quick, Normal or Relaxed. Choose Relaxed if you speak slowly.</li><li><b>Microphone:</b> pick another input if the default is wrong.</li><li><b>Start with Windows:</b> on by default. Closing the window keeps SHUNCHi running in the system tray. Use Exit in the tray menu to quit.</li></ul></div>
       <div class="bn"><ul><li><b>Finish after a pause:</b> Quick, Normal বা Relaxed। ধীরে কথা বললে Relaxed বেছে নিন।</li><li><b>Microphone:</b> ডিফল্ট মাইক ঠিক না হলে অন্যটি বেছে নিন।</li><li><b>Start with Windows:</b> ডিফল্টে চালু। উইন্ডো বন্ধ করলে শুনছি সিস্টেম ট্রেতে চলতে থাকে। পুরোপুরি বন্ধ করতে ট্রে মেনুর Exit চাপুন।</li></ul></div></li>
   </ol>
-</div></section>
+</div>
+{videos_block("", 3)}</section>
 
 <section id="apps"><div class="wrap">
   <div class="head"><div class="eyebrow"><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></div>
@@ -423,7 +448,24 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
     <div class="eyebrow"><span class="en">Creator and developer</span><span class="bn">নির্মাতা ও ডেভেলপার</span></div>
     <h2>Ruhul Amin</h2>
     <p class="role"><span class="en">Builder of SHUNCHi · Bangladesh</span><span class="bn">শুনছির নির্মাতা · বাংলাদেশ</span></p>
-    <p class="bio"><span class="en">I build free, simple software so that everyone can use good tools in their own language. SHUNCHi began with one question: why should voice typing in Bangla not be easy, fast and free for everyone?</span><span class="bn">আমি সবার জন্য সহজ ও ফ্রি সফটওয়্যার বানাই, যাতে নিজের ভাষাতেই ভালো টুল ব্যবহার করা যায়। শুনছির শুরু একটি প্রশ্ন থেকে: বাংলায় ভয়েস টাইপিং কেন সহজ, দ্রুত আর সবার জন্য ফ্রি হবে না?</span></p>
+    <div class="story">
+      <div class="en">
+        <p><strong>SHUNCHi began with one question: why should voice typing in Bangla not be easy, fast and free for everyone?</strong></p>
+        <p>How much more typing do we have to learn? Why should anyone pay just to work in their own language? Why should learning small digital tasks mean running to a training centre?</p>
+        <p>Technology is here to make our work easier, not harder.</p>
+        <p>That thought is where SHUNCHi started. Our goal is to build simple, useful tools that everyone can use in their own language: easily, comfortably and at almost no cost.</p>
+        <p>Starting with voice typing, many everyday tools will be added to SHUNCHi one by one, such as email, CV making and file conversion.</p>
+        <p class="tag">SHUNCHi: let technology be easy, for everyone.</p>
+      </div>
+      <div class="bn">
+        <p><strong>SHUNCHi-র যাত্রা শুরু হয়েছিল একটি প্রশ্ন থেকে—বাংলায় ভয়েস টাইপিং কেন সহজ, দ্রুত এবং সবার জন্য বিনামূল্যে হবে না?</strong></p>
+        <p>আর কত টাইপিং শিখতে হবে? কেন নিজের ভাষায় কাজ করার জন্য টাকা খরচ করতে হবে? কেন ছোট ছোট ডিজিটাল কাজ শেখার জন্য ট্রেনিং সেন্টারে দৌড়াতে হবে?</p>
+        <p>প্রযুক্তি তো আমাদের কাজ সহজ করার জন্য, কঠিন করার জন্য নয়!</p>
+        <p>সেই ভাবনা থেকেই SHUNCHi-র শুরু। আমাদের লক্ষ্য, এমন সব সহজ ও কার্যকর টুল তৈরি করা, যা সবাই নিজের ভাষায় ব্যবহার করতে পারবেন—সহজে, স্বাচ্ছন্দ্যে এবং নামমাত্র খরচে।</p>
+        <p>ভয়েস টাইপিং থেকে শুরু করে ইমেইল, CV তৈরি, ফাইল কনভার্টসহ প্রতিদিনের প্রয়োজনীয় অনেক টুল একে একে যুক্ত হবে SHUNCHi-তে।</p>
+        <p class="tag">SHUNCHi—প্রযুক্তি হোক সহজ, সবার জন্য।</p>
+      </div>
+    </div>
     <div class="links-row">
       <a class="pill" href="https://www.facebook.com/iamruhulaamin" rel="noopener">{SOCIAL_ICONS["fb"]}Facebook</a>
       <a class="pill" href="https://www.instagram.com/iamruhulaamin/" rel="noopener">{SOCIAL_ICONS["ig"]}Instagram</a>
@@ -441,8 +483,8 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/catalog.js?v=18" data-base=""></script>
-<script src="assets/site.js?v=18"></script>
+''' + footer("") + '''<script src="assets/catalog.js?v=19" data-base=""></script>
+<script src="assets/site.js?v=19"></script>
 <script>
 (function () {
   function drawApps() { renderApps(document.getElementById("app-list"), 4); }
@@ -490,8 +532,8 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 </div></section>
 <section><div class="wrap">''' + SUGGEST_FORM + '''</div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/catalog.js?v=18" data-base="../"></script>
-<script src="../assets/site.js?v=18"></script>
+''' + footer("../") + '''<script src="../assets/catalog.js?v=19" data-base="../"></script>
+<script src="../assets/site.js?v=19"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
@@ -531,7 +573,7 @@ tmpl = head("../", "Tool name | SHUNCHi", "One sentence about the tool.", "apps/
   <div class="dl-card" id="tool-area"><p><span class="en">Build the tool here.</span><span class="bn">টুলটি এখানে বানান।</span></p></div>
 </div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=18"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=19"></script>
 </body>
 </html>
 '''
@@ -564,7 +606,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   </div>
 </div>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=18"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=19"></script>
 <script>
 (function () {
   if (!window.fetch) return;
@@ -624,7 +666,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/site.js?v=18"></script>
+''' + footer("") + '''<script src="assets/site.js?v=19"></script>
 </body>
 </html>
 '''
@@ -640,7 +682,7 @@ nf = head("/", "Page not found | SHUNCHi", "This page does not exist.", "404.htm
   <p><span class="en">The link may be old or mistyped.</span><span class="bn">লিংকটি পুরনো বা ভুল হতে পারে।</span></p>
   <p style="margin-top:22px"><a class="btn btn-primary" href="/index.html"><span class="en">Back to home</span><span class="bn">হোমে ফিরুন</span></a></p>
 </div></main>
-''' + footer("/") + '<script src="/assets/site.js?v=18"></script>\n</body>\n</html>\n'
+''' + footer("/") + '<script src="/assets/site.js?v=19"></script>\n</body>\n</html>\n'
 write("404.html", nf)
 print("pages written")
 
@@ -685,7 +727,7 @@ for p in POSTS:
 </article>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=18"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=19"></script>\n</body>\n</html>\n'
     write(url, page)
 
 reg("blog/", "0.8", "weekly", POSTS[0]["date"] if POSTS else TODAY)
@@ -704,8 +746,30 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
 </div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=18"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=19"></script>\n</body>\n</html>\n'
 write("blog/index.html", blog_index)
+
+
+# ====================================================================== VIDEOS PAGE
+if VIDEOS_JSON:
+    reg("videos/", "0.6", "weekly")
+    vld = [crumbs_ld([("Home", ""), ("Videos", "videos/")]),
+           {"@context": "https://schema.org", "@type": "ItemList", "itemListElement": [
+               {"@type": "ListItem", "position": i + 1, "item": {"@type": "VideoObject", "name": v.get("title_en") or v.get("title_bn"), "description": (v.get("title_en") or v.get("title_bn")) + " | SHUNCHi",
+                "thumbnailUrl": f"https://i.ytimg.com/vi/{v['id']}/hqdefault.jpg", "uploadDate": v.get("date") or TODAY, "embedUrl": f"https://www.youtube.com/embed/{v['id']}", "contentUrl": f"https://www.youtube.com/watch?v={v['id']}"}}
+               for i, v in enumerate(VIDEOS_JSON)]}]
+    vpage = head("../", "Video Guides: Set Up SHUNCHi Step by Step | SHUNCHi",
+                 "Watch short videos on how to install SHUNCHi, get a free Gemini key and type in Bangla with your voice. ভিডিও দেখে শুনছি সেটআপ করুন।", "videos/", ld=vld) + header("../") + f'''
+<main id="main">
+<div class="wrap page-head">
+  {crumbs_html("../", [("Home","হোম","../index.html"),("Videos","ভিডিও",None)])}
+  <h1><span class="en">Video guides</span><span class="bn">ভিডিও গাইড</span></h1>
+  <p><span class="en">Short videos to help you set up and use SHUNCHi.</span><span class="bn">শুনছি সেটআপ ও ব্যবহারের ছোট ভিডিও।</span></p>
+</div>
+<section style="padding-top:28px"><div class="wrap"><div class="vids all">{"".join(video_card(v) for v in VIDEOS_JSON)}</div></div></section>
+</main>
+''' + footer("../") + '<script src="../assets/site.js?v=19"></script>\n</body>\n</html>\n'
+    write("videos/index.html", vpage)
 
 # RSS feed
 def rss_item(p):
@@ -745,12 +809,12 @@ for a in APPS_JSON:
     {dlbtn}</div>
 </div>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=18"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=19"></script>\n</body>\n</html>\n'
     write(url, page)
 
 # ====================================================================== SITEMAP + ROBOTS
 SITEMAP.sort(key=lambda r: (-float(r[2]), r[0]))
 write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "".join(
     f"<url><loc>{DOMAIN}/{p}</loc><lastmod>{lm}</lastmod><changefreq>{fr}</changefreq><priority>{pr}</priority></url>\n" for p, lm, pr, fr in SITEMAP) + "</urlset>\n")
-write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /apps/_template.html\n\nSitemap: {DOMAIN}/sitemap.xml\n")
+write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /apps/_template.html\n\nSitemap: {DOMAIN}/sitemap.xml\n")
 print("sitemap urls:", len(SITEMAP), "posts:", len(POSTS), "software pages:", len([a for a in APPS_JSON if a.get('id')]))

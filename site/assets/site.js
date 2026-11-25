@@ -12,8 +12,7 @@
   bnBtns.forEach(function (b) { b.addEventListener("click", function () { setLang("bn"); }); });
   var saved = null;
   try { saved = localStorage.getItem("shunchi-lang"); } catch (e) {}
-  if (!saved && /^bn/i.test(navigator.language || "")) saved = "bn";
-  if (saved === "bn") setLang("bn");
+  setLang(saved === "en" ? "en" : "bn");
 
   var btn = document.getElementById("menu-btn"), panel = document.getElementById("menu-panel");
   function closeMenu() { if (!btn) return; document.body.classList.remove("menu-open"); btn.setAttribute("aria-expanded", "false"); }
@@ -139,4 +138,62 @@
   }
   window.addEventListener("scroll", function () { if (!tick) { tick = true; requestAnimationFrame(upd); } }, { passive: true });
   upd();
+})();
+
+/* Hero demo: the same sentence is "typed" into WhatsApp, Messenger, Email and Notes in turn. */
+(function () {
+  var demo = document.querySelector("[data-demo]"); if (!demo) return;
+  var skin = demo.querySelector(".ds"), typed = demo.querySelector(".typed"), msgs = demo.querySelector(".ds-msgs"), timer = demo.querySelector(".timer"), input = demo.querySelector(".ds-input");
+  var name = demo.querySelector(".ds-name"), sub = demo.querySelector(".ds-sub"), av = demo.querySelector(".av"), tabs = [].slice.call(demo.querySelectorAll(".dt")), caret = demo.querySelector(".caret");
+  var TXT = { en: "Hi Rahim, the files are ready. I will send them tonight.", bn: "রহিম ভাই, ফাইলগুলো তৈরি। আমি আজ রাতেই পাঠিয়ে দেব।" };
+  var APPS = [
+    { k: "wa", n: { en: "Rahim", bn: "রহিম" }, s: { en: "online", bn: "অনলাইন" }, p: { en: "Type a message", bn: "মেসেজ লিখুন" }, a: "R", send: 1 },
+    { k: "ms", n: { en: "Rahim", bn: "রহিম" }, s: { en: "Active now", bn: "এখন সক্রিয়" }, p: { en: "Aa", bn: "Aa" }, a: "R", send: 1 },
+    { k: "em", n: { en: "New message", bn: "নতুন মেইল" }, s: { en: "To: Rahim · Subject: Files", bn: "প্রাপক: রহিম · বিষয়: ফাইল" }, p: { en: "Write your email", bn: "মেইল লিখুন" }, a: "✉" },
+    { k: "nt", n: { en: "Notes", bn: "নোটস" }, s: { en: "Today", bn: "আজ" }, p: { en: "Start typing", bn: "লেখা শুরু করুন" }, a: "✎" }
+  ];
+  function L() { return document.documentElement.lang === "en" ? "en" : "bn"; }
+  var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (calm || !window.Promise) return;
+  var seg = window.Intl && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+  function pieces(s) { return seg ? [].slice.call(seg.segment(s), function (x) { return x.segment; }) : s.split(/(\s+)/); }
+  var run = 0, visible = true, idx = 0;
+  function wait(ms, id) { return new Promise(function (r) { setTimeout(function () { r(id === run); }, ms); }); }
+  function until(id) { return new Promise(function (r) { (function tick() { if (id !== run) return r(false); if (visible && !document.hidden) return r(true); setTimeout(tick, 400); })(); }); }
+  function setApp(i) {
+    var a = APPS[i], l = L(); skin.setAttribute("data-skin", a.k); name.textContent = a.n[l]; sub.textContent = a.s[l]; av.textContent = a.a;
+    tabs.forEach(function (t) { t.classList.toggle("on", t.getAttribute("data-app") === a.k); });
+    msgs.innerHTML = ""; typed.innerHTML = '<span class="ph">' + a.p[l] + "</span>";
+  }
+  function clock(id) { var s = 0; timer.textContent = "00:00"; var iv = setInterval(function () { if (id !== run) return clearInterval(iv); s++; timer.textContent = "00:0" + Math.min(s, 9); }, 1000); return function () { clearInterval(iv); }; }
+  async function cycle(id) {
+    while (id === run) {
+      if (!(await until(id))) return;
+      var a = APPS[idx], l = L();
+      skin.classList.add("fade"); if (!(await wait(260, id))) return; setApp(idx); skin.classList.remove("fade");
+      demo.classList.add("is-listen"); var stop = clock(id);
+      if (!(await wait(1900, id))) { stop(); return; } stop(); demo.classList.remove("is-listen");
+      typed.innerHTML = ""; var parts = pieces(TXT[l]), acc = "";
+      for (var k = 0; k < parts.length; k++) { acc += parts[k]; typed.textContent = acc; if (!(await wait(/\s/.test(parts[k]) ? 20 : 42, id))) return; }
+      if (!(await wait(900, id))) return;
+      if (a.send) { var b = document.createElement("div"); b.className = "bub"; b.textContent = TXT[l]; msgs.appendChild(b); typed.innerHTML = '<span class="ph">' + a.p[l] + "</span>"; if (!(await wait(2200, id))) return; }
+      else if (!(await wait(2000, id))) return;
+      idx = (idx + 1) % APPS.length;
+    }
+  }
+  if ("IntersectionObserver" in window) new IntersectionObserver(function (e) { visible = e[0].isIntersecting; }, { threshold: 0.15 }).observe(demo);
+  function start() { run++; cycle(run); }
+  start();
+  if (window.MutationObserver) new MutationObserver(function () { start(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+})();
+
+/* Setup videos: click the picture to play the YouTube video right there (privacy-friendly embed). */
+(function () {
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a.vid-thumb[data-vid]"); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    var f = document.createElement("iframe"); f.src = "https://www.youtube-nocookie.com/embed/" + a.getAttribute("data-vid") + "?autoplay=1&rel=0&modestbranding=1";
+    f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true; f.title = a.getAttribute("aria-label") || "Video";
+    a.replaceWith ? (function () { var box = document.createElement("div"); box.className = "vid-thumb"; box.appendChild(f); a.replaceWith(box); })() : null;
+  });
 })();

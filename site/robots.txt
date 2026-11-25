@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /admin/
 Disallow: /apps/_template.html
 
 Sitemap: https://shunchiai.com/sitemap.xml
