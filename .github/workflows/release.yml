@@ -11,33 +11,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { ref: main }
-      - name: Read the release (manual run)
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        env: { GH_TOKEN: "${{ github.token }}", REL_ID: "${{ inputs.release_id }}" }
+      - name: Read the release and make sure it has a real version tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REL_ID: ${{ github.event.release.id || inputs.release_id }}
         run: |
           gh api "repos/$GITHUB_REPOSITORY/releases/$REL_ID" > rel.json
-          python3 - <<'PY'
-          import json, os, re, uuid
+          # A release published from a GitHub draft can end up with a tag like untagged-abc. Give it v<version> (taken from its name).
+          FIX=$(python3 - <<'PY'
+          import json, re
           r = json.load(open("rel.json"))
           tag = r.get("tag_name") or ""
-          if tag.startswith("untagged-"):
-              m = re.search(r"(\d+(?:\.\d+)+)", r.get("name") or "")
-              if m: tag = "v" + m.group(1)
+          m = re.search(r"(\d+(?:\.\d+)+)", r.get("name") or "")
+          if tag.startswith("untagged-") and m:
+              print("v" + m.group(1))
+          PY
+          )
+          if [ -n "$FIX" ]; then
+            echo "Fixing tag $FIX"
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$REL_ID" -f tag_name="$FIX" -f target_commitish=main > /dev/null
+            gh api "repos/$GITHUB_REPOSITORY/releases/$REL_ID" > rel.json
+          fi
+          python3 - <<'PY'
+          import json, os, uuid
+          r = json.load(open("rel.json"))
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
               d = "EOF" + uuid.uuid4().hex
-              f.write("RESOLVED_TAG=%s\nRESOLVED_ASSETS=%s\nRESOLVED_BODY<<%s\n%s\n%s\n" % (tag, " ".join(a["browser_download_url"] for a in r.get("assets", [])), d, r.get("body") or "", d))
+              f.write("RESOLVED_TAG=%s\nRESOLVED_ASSETS=%s\nRESOLVED_BODY<<%s\n%s\n%s\n" % (r.get("tag_name") or "", " ".join(a["browser_download_url"] for a in r.get("assets", [])), d, r.get("body") or "", d))
           PY
       - name: Write update manifest
         env:
-          TAG: ${{ github.event.release.tag_name || env.RESOLVED_TAG }}
+          TAG: ${{ env.RESOLVED_TAG }}
           GH_TOKEN: ${{ github.token }}
-          BODY: ${{ github.event.release.body || env.RESOLVED_BODY }}
-          ASSETS: ${{ join(github.event.release.assets.*.browser_download_url, ' ') || env.RESOLVED_ASSETS }}
+          BODY: ${{ env.RESOLVED_BODY }}
+          ASSETS: ${{ env.RESOLVED_ASSETS }}
         run: python3 .github/scripts/make_update.py
       - name: Commit
         run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
-          git add site; git diff --cached --quiet || git commit -m "Update manifest for ${{ github.event.release.tag_name }}"
+          git add site; git diff --cached --quiet || git commit -m "Update manifest for ${{ env.RESOLVED_TAG }}"
           git push origin main
   deploy:
     needs: manifest
