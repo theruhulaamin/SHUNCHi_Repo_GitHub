@@ -19,7 +19,7 @@
 
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:84px}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:clip}
 html[lang="bn"] body{font-family:var(--font-bn);line-height:1.85}
 html[lang="bn"] .en,html:not([lang="bn"]) .bn{display:none}
 img,svg{max-width:100%}img{display:block}
@@ -366,7 +366,6 @@ html[lang="bn"] .foot-grid h4{text-transform:none;letter-spacing:0;font-size:14p
 @media (max-width:900px){.site-footer .legal{flex-direction:row;justify-content:space-between;gap:4px 12px}}
 
 /* ---------- mobile fixes: dev links, 6-tab bar, no sideways overflow ---------- */
-html{overflow-x:hidden}
 @media (max-width:900px){
   .tabbar{grid-template-columns:repeat(6,minmax(0,1fr));padding-left:4px;padding-right:4px}
   .tabbar a{font-size:10px;padding:0 1px;text-align:center;line-height:1.15;white-space:nowrap}
@@ -380,3 +379,12 @@ html{overflow-x:hidden}
 }
 @media (max-width:360px){.tabbar a{font-size:9.5px}.tabbar svg{width:21px;height:21px}}
 @media (max-width:900px){.links-row .pill:nth-child(3){grid-column:1 / -1}}
+
+/* theme toggle */
+.theme-btn{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;flex:none;padding:0}
+.theme-btn:hover{border-color:var(--accent)}
+.theme-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.theme-btn .i-sun{display:none}
+.theme-btn[aria-pressed="true"] .i-sun{display:block}
+.theme-btn[aria-pressed="true"] .i-moon{display:none}
+@media (max-width:900px){.actions{gap:8px}}

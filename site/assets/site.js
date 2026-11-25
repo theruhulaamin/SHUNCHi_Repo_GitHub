@@ -49,3 +49,21 @@
   Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
   window.addEventListener("scroll", function () { if (window.scrollY < 300) mark("home"); }, { passive: true });
 })();
+
+/* Dark / light toggle: remembers the choice; default follows the device. */
+(function () {
+  var btn = document.getElementById("theme-btn"); if (!btn) return;
+  var root = document.documentElement;
+  function isDark() {
+    var t = root.getAttribute("data-theme");
+    return t ? t === "dark" : window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function sync() { btn.setAttribute("aria-pressed", isDark() ? "true" : "false"); }
+  btn.addEventListener("click", function () {
+    var next = isDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    sync();
+  });
+  sync();
+})();
