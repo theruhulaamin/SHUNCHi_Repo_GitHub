@@ -29,3 +29,23 @@
   var year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();
 })();
+
+/* Bottom tab bar: highlight the current page, or the section being read on the home page. */
+(function () {
+  var tabs = document.querySelectorAll(".tabbar a");
+  if (!tabs.length) return;
+  var path = location.pathname.replace(/index\.html$/, "");
+  function mark(key) { tabs.forEach(function (a) { a.classList.toggle("on", a.getAttribute("data-tab") === key); }); }
+  if (/\/apps\/?/.test(path)) return mark("apps");
+  if (/\/download\/?/.test(path)) return mark("download");
+  var home = /\/(privacy\.html)?$/.test(path) && !/privacy/.test(path);
+  if (!home || !("IntersectionObserver" in window)) return mark(home ? "home" : "");
+  var map = { setup: "setup", apps: "apps", faq: "faq" }, current = "home";
+  mark("home");
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { current = map[e.target.id]; mark(current); } });
+    var top = window.scrollY < 300; if (top) mark("home");
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+  window.addEventListener("scroll", function () { if (window.scrollY < 300) mark("home"); }, { passive: true });
+})();
