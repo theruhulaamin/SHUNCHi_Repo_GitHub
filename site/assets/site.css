@@ -653,3 +653,14 @@ html,body{max-width:100%}
 .vid figcaption{font-weight:700;color:var(--ink);font-size:16px;line-height:1.4}
 .vids-more{margin-top:28px;text-align:center}
 @media (max-width:900px){.vids[data-n="2"],.vids[data-n="3"]{grid-template-columns:minmax(0,1fr)}.vids-wrap{margin-top:44px}.vid-play{width:54px;height:54px;margin:-27px 0 0 -27px}}
+
+/* Download page */
+.dl-card{background:var(--surface);border:1px solid var(--line,#e3e8f2);border-radius:22px;padding:26px;box-shadow:0 10px 30px rgba(20,40,90,.06);margin-top:22px;max-width:760px}
+.dl-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dl-top h2{font-size:24px;margin:0}.dl-date{font-size:13px;color:var(--muted,#64748b);background:rgba(37,99,235,.08);padding:5px 12px;border-radius:99px}.dl-date:empty{display:none}
+.dl-actions{margin:20px 0 6px}.dl-main{display:flex;width:100%;justify-content:center;padding:17px 22px;font-size:18px;border-radius:16px}
+.dl-sub{font-size:14px;color:var(--muted,#64748b);margin:12px 0 0}.dl-sub a{font-weight:600}
+.dl-need{margin-top:20px;padding:16px 18px;border-radius:14px;background:rgba(37,99,235,.06)}.dl-need ul{margin:8px 0 0 18px;padding:0;display:grid;gap:5px;font-size:15px}
+.dl-notes{margin-top:16px;border-top:1px solid var(--line,#e3e8f2);padding-top:14px}.dl-notes summary{cursor:pointer;font-weight:700}.dl-notes ul{margin:10px 0 0 18px;padding:0;display:grid;gap:6px;font-size:15px;line-height:1.55}
+html[lang="bn"] .dl-notes ul.en,html[lang="en"] .dl-notes ul.bn{display:none}
+@media(max-width:600px){.dl-card{padding:18px;border-radius:18px}.dl-main{font-size:17px}}

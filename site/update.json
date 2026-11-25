@@ -5,7 +5,9 @@
   "installer_sha256": "c19ad401a98c1ee17c7d613238fce4bef85c170da9895de0cf1a56dbb34f92e8",
   "installer_size": 45099699,
   "web_installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/latest/download/SHUNCHi_Setup.exe",
-  "release_notes": "- First public release of SHUNCHi: free AI voice typing for Windows 10 and 11. - Speak in Bangla or English and it types in any app (browser, WhatsApp, Word and more). - Win + Left Ctrl for Bangla, Win + Left Shift for English. - Uses your own free Gemini API key. - Includes an automatic update notice and a small web installer. --- - শুনছি-র প্রথম পাবলিক রিলিজ: উইন্ডোজ ১০ ও ১১-এর জন্য ফ্রি এআই ভয়েস টাইপিং। - বাংলা বা ইংরেজিতে বলুন, ব্রাউজার, হোয়াটসঅ্যাপ, ওয়ার্ডসহ যেকোনো অ্যাপে লেখা হয়ে যাবে। - বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift। - আপনার নিজের ফ্রি Gemini API কী ব্যব",
+  "release_notes": "- First public release of SHUNCHi: free AI voice typing for Windows 10 and 11.\n- Speak in Bangla or English and it types in any app (browser, WhatsApp, Word and more).\n- Win + Left Ctrl for Bangla, Win + Left Shift for English.\n- Uses your own free Gemini API key.\n- Includes an automatic update notice and a small web installer.",
   "released": "2026-11-25",
-  "apps": []
+  "apps": [],
+  "release_notes_en": "- First public release of SHUNCHi: free AI voice typing for Windows 10 and 11.\n- Speak in Bangla or English and it types in any app (browser, WhatsApp, Word and more).\n- Win + Left Ctrl for Bangla, Win + Left Shift for English.\n- Uses your own free Gemini API key.\n- Includes an automatic update notice and a small web installer.",
+  "release_notes_bn": "- শুনছি-র প্রথম পাবলিক রিলিজ: উইন্ডোজ ১০ ও ১১-এর জন্য ফ্রি এআই ভয়েস টাইপিং।\n- বাংলা বা ইংরেজিতে বলুন, ব্রাউজার, হোয়াটসঅ্যাপ, ওয়ার্ডসহ যেকোনো অ্যাপে লেখা হয়ে যাবে।\n- বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।\n- আপনার নিজের ফ্রি Gemini API কী ব্যবহার করে।\n- নতুন ভার্সনের নোটিশ আর ছোট ওয়েব ইনস্টলারও আছে।"
 }
