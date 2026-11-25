@@ -343,7 +343,8 @@ var TOOLS = [
     var act = el("div", "app-act");
     if (live) {
       var go = el("a", "btn btn-primary btn-sm"); go.href = /^https?:/.test(a.url) ? a.url : BASE + a.url;
-      go.appendChild(bi(a.s === "live" && a.name === "SHUNCHi" ? "Download" : "Open", a.name === "SHUNCHi" ? "ডাউনলোড" : "খুলুন"));
+      var isDl = a.name === "SHUNCHi" || a.dl;
+      go.appendChild(bi(isDl ? "Download" : "Open", isDl ? "ডাউনলোড" : "খুলুন"));
       act.appendChild(go);
       if (a.more) { var m = el("a", "btn btn-ghost btn-sm"); m.href = BASE + a.more; m.appendChild(bi("Details", "বিস্তারিত")); act.appendChild(m); }
     } else if (a.idea) {
@@ -363,16 +364,15 @@ var TOOLS = [
   /* Apps published from the release panel / GitHub release appear here without editing this file. */
   window.loadRemoteApps = function (done) {
     if (!window.fetch || location.protocol.indexOf("http") !== 0) return;
-    fetch(BASE + "update.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (m) {
-      if (!m) return;
-      var extra = (m.apps || []).filter(function (a) { return a && a.name && /^https:\/\//.test(a.url || ""); });
-      if (extra.length) {
-        appsView = [APPS[0]].concat(extra.map(function (a) {
-          return { name: a.name, en: a.tagline || "", bn: a.tagline || "", url: a.url, badge: a.badge || "", s: "live", logo: "" };
-        }));
-      }
-      if (done) done(m);
-    }).catch(function () {});
+    /* Software added in the admin panel (data/apps.json) and anything listed in update.json */
+    fetch(BASE + "data/apps.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }).then(function (list) {
+      var extra = (list || []).filter(function (a) { return a && a.id && a.name && (a.status || "live") === "live"; }).map(function (a) {
+        return { name: a.name, en: a.tagline_en || a.tagline || "", bn: a.tagline_bn || a.tagline_en || a.tagline || "", url: a.url || "", badge: a.version || "",
+                 s: "live", logo: a.logo || "", more: "apps/" + a.id + ".html", dl: true };
+      });
+      if (extra.length) { appsView = [APPS[0]].concat(extra, APPS.slice(1)); }
+      if (done) done();
+    });
   };
   window.SITE_COUNTS = function () { return { tools: TOOLS.length, cats: CATS.length }; };
 })();

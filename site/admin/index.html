@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="theme-color" content="#1F62E8">
+<title>SHUNCHi Admin</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<style>
+:root{--bg:#F5F7FB;--surface:#fff;--ink:#0A1222;--text:#1d2740;--muted:#5d6b86;--line:#e1e6f0;--accent:#1F62E8;--accent-ink:#1450c8;--accent-soft:#e8f0fe;--ok:#12805c;--ok-soft:#e3f6ee;--err:#c8372d;--err-soft:#fdeceb;--warn-soft:#fff4d6;--r:14px;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0A1222;--surface:#101a30;--ink:#f2f5fb;--text:#d9e0ef;--muted:#93a1bd;--line:#22304e;--accent:#5a96ff;--accent-ink:#8db6ff;--accent-soft:#16264a;--ok:#4cd6a0;--ok-soft:#10302a;--err:#ff7b72;--err-soft:#3a1a1a;--warn-soft:#3a3016;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Bengali",sans-serif}
+a{color:var(--accent-ink)}
+h1,h2,h3{color:var(--ink);line-height:1.25;margin:0}
+.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.bar{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bar img{height:30px}
+.bar b{font-size:17px;color:var(--ink)}
+.grow{flex:1}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 90px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;max-width:1080px;margin:0 auto;scrollbar-width:none}
+.tab{border:1px solid var(--line);background:var(--surface);color:var(--text);padding:9px 16px;border-radius:99px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+.tab[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.card h2{font-size:20px;margin-bottom:6px}
+.muted{color:var(--muted);font-size:14.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:5px;font-weight:700;font-size:14px;color:var(--ink)}
+label small{font-weight:500;color:var(--muted)}
+input,select,textarea{font:inherit;font-size:16px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:90px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 18px;border-radius:10px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;min-height:44px}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.d{color:var(--err);border-color:var(--err)}
+.btn:disabled{opacity:.55;cursor:wait}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.list{display:grid;gap:10px}
+.item{display:flex;gap:12px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg)}
+.item b{color:var(--ink)}
+.pill{font-size:12px;font-weight:700;padding:2px 10px;border-radius:99px;background:var(--accent-soft);color:var(--accent-ink)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.er{background:var(--err-soft);color:var(--err)}.pill.wn{background:var(--warn-soft);color:var(--ink)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:92vw;padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.toast.ok{background:var(--ok);color:#fff}.toast.er{background:var(--err);color:#fff}.toast.in{background:var(--ink);color:var(--bg)}
+.hidden{display:none!important}
+.cnt{font-size:12.5px;font-weight:600;color:var(--muted)}.cnt.bad{color:var(--err)}.cnt.good{color:var(--ok)}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tools button{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:5px 11px;cursor:pointer}
+.preview{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--bg);max-height:520px;overflow:auto}
+.preview h2{font-size:22px;margin:.8em 0 .3em}.preview h3{font-size:18px;margin:.8em 0 .3em}.preview p{margin:.6em 0}.preview code{background:var(--accent-soft);padding:1px 6px;border-radius:5px}
+.steps{padding-left:20px}.steps li{margin:6px 0}
+code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-wrap:anywhere}
+.logo-prev{width:64px;height:64px;border-radius:14px;object-fit:cover;border:1px solid var(--line);background:var(--bg)}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="bar">
+    <img src="../assets/shunchi-logo.png" alt="SHUNCHi">
+    <b>Admin panel</b><span class="pill wn" id="who">Not connected</span>
+    <span class="grow"></span>
+    <a class="btn" href="../index.html" target="_blank" rel="noopener">View site</a>
+    <button class="btn" id="logout" type="button" hidden>Disconnect</button>
+  </div>
+  <nav class="tabs" id="tabs" hidden>
+    <button class="tab" data-tab="home" aria-pressed="true">Dashboard</button>
+    <button class="tab" data-tab="software" aria-pressed="false">Software</button>
+    <button class="tab" data-tab="blog" aria-pressed="false">Blog</button>
+    <button class="tab" data-tab="release" aria-pressed="false">SHUNCHi release</button>
+    <button class="tab" data-tab="help" aria-pressed="false">Help</button>
+  </nav>
+</div>
+
+<div class="wrap">
+  <!-- ================= CONNECT ================= -->
+  <section id="p-connect">
+    <div class="card">
+      <h2>Connect to GitHub</h2>
+      <p class="muted">This panel saves your changes straight into your GitHub repository. GitHub then rebuilds the website by itself in about 2 minutes. Nothing is stored on any other server.</p>
+      <div class="grid2" style="margin-top:14px">
+        <label>Repository <small>owner/name</small><input id="repo" value="theruhulaamin/shunchi_repo_github" autocomplete="off"></label>
+        <label>Branch<input id="branch" value="main" autocomplete="off"></label>
+      </div>
+      <label style="margin-top:14px">Access token <small>GitHub fine-grained token for this one repository (see Help)</small>
+        <input id="token" type="password" autocomplete="off" placeholder="github_pat_..."></label>
+      <label style="flex-direction:row;align-items:center;gap:8px;margin-top:12px;font-weight:600"><input type="checkbox" id="remember" style="width:auto"> Remember on this device (use only on your own computer)</label>
+      <div class="row" style="margin-top:16px"><button class="btn p" id="connect" type="button">Connect</button>
+        <a class="btn" target="_blank" rel="noopener" href="https://github.com/settings/personal-access-tokens/new">Create a token</a></div>
+    </div>
+  </section>
+
+  <!-- ================= DASHBOARD ================= -->
+  <section id="p-home" class="hidden">
+    <div class="grid3">
+      <div class="card"><h2 id="n-apps">0</h2><div class="muted">Software entries</div></div>
+      <div class="card"><h2 id="n-posts">0</h2><div class="muted">Blog posts</div></div>
+      <div class="card"><h2 id="n-run">-</h2><div class="muted">Last website build</div></div>
+    </div>
+    <div class="card">
+      <h2>What do you want to do?</h2>
+      <div class="row" style="margin-top:10px">
+        <button class="btn p" data-go="software">Publish software</button>
+        <button class="btn p" data-go="blog">Write a blog post</button>
+        <button class="btn" data-go="release">Release a new SHUNCHi version</button>
+        <button class="btn" id="redeploy" type="button">Rebuild website now</button>
+        <a class="btn" id="actions-link" target="_blank" rel="noopener" href="#">Build status</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SOFTWARE ================= -->
+  <section id="p-software" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>Software</h2><button class="btn p" id="app-new" type="button">+ Add software</button></div>
+      <p class="muted">Every item here gets its own page on the website (good for Google), appears in "More Apps", and is listed inside the SHUNCHi app.</p>
+      <div class="list" id="app-list" style="margin-top:12px"></div>
+    </div>
+    <div class="card hidden" id="app-form-card">
+      <h2 id="app-form-title">Add software</h2>
+      <form id="app-form" autocomplete="off">
+        <div class="grid2" style="margin-top:12px">
+          <label>Name<input name="name" required maxlength="60" placeholder="My Calculator"></label>
+          <label>Page address <small>lowercase letters, numbers, dashes. Becomes /apps/<b>this</b>.html</small><input name="id" required pattern="[a-z0-9-]+" maxlength="50" placeholder="my-calculator"></label>
+          <label>One-line description (English)<input name="tagline_en" required maxlength="120"></label>
+          <label>One-line description (Bangla)<input name="tagline_bn" maxlength="160"></label>
+          <label>About it (English) <small>2-4 sentences, what it does and who it is for</small><textarea name="desc_en" rows="4"></textarea></label>
+          <label>About it (Bangla)<textarea name="desc_bn" rows="4"></textarea></label>
+          <label>Version<input name="version" maxlength="20" placeholder="1.0.0"></label>
+          <label>Platform<input name="platform" maxlength="40" value="Windows"></label>
+          <label>Download link <small>full https link, e.g. a GitHub release file</small><input name="url" type="url" placeholder="https://github.com/..."></label>
+          <label>Status<select name="status"><option value="live">Live (show on site)</option><option value="soon">Coming soon (hidden)</option></select></label>
+          <label>Category<select name="category"><option>UtilitiesApplication</option><option>BusinessApplication</option><option>FinanceApplication</option><option>EducationalApplication</option><option>MultimediaApplication</option><option>ProductivityApplication</option></select></label>
+          <label>Logo <small>PNG or JPG, square, under 500 KB</small><input name="logo_file" type="file" accept="image/png,image/jpeg"></label>
+        </div>
+        <div class="row" style="margin-top:14px"><img class="logo-prev hidden" id="logo-prev" alt="">
+          <button class="btn p" type="submit" id="app-save">Save and publish</button>
+          <button class="btn" type="button" id="app-cancel">Cancel</button>
+          <button class="btn d hidden" type="button" id="app-del">Delete</button></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ================= BLOG ================= -->
+  <section id="p-blog" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>Blog posts</h2><button class="btn p" id="post-new" type="button">+ New post</button></div>
+      <div class="list" id="post-list" style="margin-top:12px"></div>
+    </div>
+    <div class="card hidden" id="post-form-card">
+      <h2 id="post-form-title">New post</h2>
+      <form id="post-form" autocomplete="off">
+        <div class="grid2" style="margin-top:12px">
+          <label>Title <span class="cnt" id="c-title"></span><input name="title" required maxlength="120"></label>
+          <label>Page address <small>english letters, numbers, dashes</small><input name="slug" required pattern="[a-z0-9-]+" maxlength="80"></label>
+          <label>Language<select name="lang"><option value="en">English</option><option value="bn">বাংলা</option></select></label>
+          <label>Date<input name="date" type="date" required></label>
+        </div>
+        <label style="margin-top:14px">Short summary for Google <span class="cnt" id="c-desc"></span><textarea name="description" rows="2" maxlength="200" required></textarea></label>
+        <div class="grid2" style="margin-top:14px">
+          <label>Tags <small>comma separated</small><input name="tags" placeholder="Bangla voice typing, Windows"></label>
+          <label>Cover image <small>optional, 1200x630 works best</small><input name="cover_file" type="file" accept="image/png,image/jpeg"></label>
+        </div>
+        <label style="margin-top:14px">Article <small>Markdown: ## heading, **bold**, [link](/download/), - list</small></label>
+        <div class="tools">
+          <button type="button" data-md="## |">H2</button><button type="button" data-md="### |">H3</button>
+          <button type="button" data-md="**|**">Bold</button><button type="button" data-md="[|](https://)">Link</button>
+          <button type="button" data-md="- |">List</button><button type="button" data-md="1. |">Numbered</button>
+        </div>
+        <div class="grid2">
+          <textarea name="body" id="post-body" rows="16" required style="min-height:320px"></textarea>
+          <div class="preview" id="post-preview" aria-label="Preview"></div>
+        </div>
+        <label style="flex-direction:row;align-items:center;gap:8px;margin-top:12px;font-weight:600"><input type="checkbox" name="draft" style="width:auto"> Draft (do not publish yet)</label>
+        <div class="row" style="margin-top:14px"><button class="btn p" type="submit" id="post-save">Save and publish</button>
+          <button class="btn" type="button" id="post-cancel">Cancel</button><button class="btn d hidden" type="button" id="post-del">Delete</button></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ================= RELEASE ================= -->
+  <section id="p-release" class="hidden">
+    <div class="card">
+      <h2>Release a new SHUNCHi version</h2>
+      <p class="muted">This is the safe 4-step flow. The website and the in-app update notice update by themselves once you publish the release on GitHub.</p>
+      <ol class="steps">
+        <li>On your PC run <code class="k">Build_Installer.bat</code>. It creates <code class="k">release\SHUNCHi_Setup_X.Y.Z.exe</code> and <code class="k">release\SHUNCHi_Setup.exe</code>.</li>
+        <li>Type the version below and press the button. GitHub opens a release page with the tag ready.</li>
+        <li>Attach <b>both</b> .exe files, write a short note, press <b>Publish release</b>.</li>
+        <li>Wait about 3 minutes. The Download page and the in-app update banner now show the new version.</li>
+      </ol>
+      <div class="row" style="margin-top:12px"><label style="min-width:160px">Version<input id="rel-ver" placeholder="4.5.0"></label>
+        <button class="btn p" id="rel-go" type="button" style="align-self:flex-end">Open GitHub release page</button></div>
+    </div>
+  </section>
+
+  <!-- ================= HELP ================= -->
+  <section id="p-help" class="hidden">
+    <div class="card">
+      <h2>How to create the access token (one time)</h2>
+      <ol class="steps">
+        <li>Open <a target="_blank" rel="noopener" href="https://github.com/settings/personal-access-tokens/new">GitHub, new fine-grained token</a>.</li>
+        <li>Name: <code class="k">SHUNCHi admin</code>. Expiration: 90 days (renew when it expires).</li>
+        <li>Repository access: <b>Only select repositories</b>, then choose this repository.</li>
+        <li>Permissions, Repository: <b>Contents = Read and write</b>, <b>Actions = Read and write</b>, Metadata = Read.</li>
+        <li>Press <b>Generate token</b>, copy it, paste it on the connect screen.</li>
+      </ol>
+      <p class="muted">The token works only for this repository. Keep it private. If you ever lose control of it, delete it in GitHub and make a new one. Use "Remember on this device" only on your own computer.</p>
+    </div>
+    <div class="card">
+      <h2>After you publish</h2>
+      <p class="muted">Changes go live in about 2 minutes. In Google Search Console (see docs/ADMIN_SEO_BN.md) you can paste the new page address into "URL inspection" and press "Request indexing" to be found faster.</p>
+    </div>
+  </section>
+</div>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s, r) { return (r || document).querySelector(s); }, $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var S = { repo: "", branch: "main", token: "", apps: [], appsSha: null, posts: [], cur: null };
+  var STORE_KEY = "shunchi_admin_v1";
+
+  /* ---------- helpers ---------- */
+  function toast(msg, kind) { var t = $("#toast"); t.textContent = msg; t.className = "toast " + (kind || "in"); clearTimeout(toast._t); toast._t = setTimeout(function () { t.className = "toast hidden"; }, kind === "er" ? 7000 : 3500); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function b64enc(str) { var bytes = new TextEncoder().encode(str), bin = ""; bytes.forEach(function (b) { bin += String.fromCharCode(b); }); return btoa(bin); }
+  function b64dec(b64) { var bin = atob(b64.replace(/\n/g, "")), bytes = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
+  function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60); }
+  function today() { return new Date().toISOString().slice(0, 10); }
+  function fileToB64(file) { return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(",")[1]); }; r.onerror = rej; r.readAsDataURL(file); }); }
+
+  function gh(path, opt) {
+    opt = opt || {};
+    return fetch("https://api.github.com/repos/" + S.repo + path, {
+      method: opt.method || "GET",
+      headers: { "Authorization": "Bearer " + S.token, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
+      body: opt.body ? JSON.stringify(opt.body) : undefined
+    }).then(function (r) {
+      if (r.status === 204) return null;
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.message || ("HTTP " + r.status)); e.status = r.status; throw e; } return j; });
+    });
+  }
+  function getFile(path) { return gh("/contents/" + encodeURI(path) + "?ref=" + S.branch).then(function (j) { return { text: j.content ? b64dec(j.content) : "", sha: j.sha }; }); }
+  function putRaw(path, b64, msg, sha) {
+    var body = { message: msg, content: b64, branch: S.branch }; if (sha) body.sha = sha;
+    return gh("/contents/" + encodeURI(path), { method: "PUT", body: body });
+  }
+  function putText(path, text, msg, sha) { return putRaw(path, b64enc(text), msg, sha); }
+  function exists(path) { return gh("/contents/" + encodeURI(path) + "?ref=" + S.branch).then(function (j) { return j.sha; }, function (e) { if (e.status === 404) return null; throw e; }); }
+  function delFile(path, sha, msg) { return gh("/contents/" + encodeURI(path), { method: "DELETE", body: { message: msg, sha: sha, branch: S.branch } }); }
+  function busy(btn, on) { if (btn) btn.disabled = !!on; }
+
+  /* ---------- connect ---------- */
+  function saveCfg(remember) {
+    var data = JSON.stringify({ repo: S.repo, branch: S.branch, token: S.token });
+    try { localStorage.removeItem(STORE_KEY); sessionStorage.removeItem(STORE_KEY); (remember ? localStorage : sessionStorage).setItem(STORE_KEY, data); } catch (e) {}
+  }
+  function loadCfg() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || sessionStorage.getItem(STORE_KEY) || "null"); } catch (e) { return null; } }
+  function connect(auto) {
+    S.repo = $("#repo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, ""); S.branch = $("#branch").value.trim() || "main"; S.token = $("#token").value.trim();
+    if (!S.repo || !S.token) { toast("Enter the repository and the token.", "er"); return; }
+    var btn = $("#connect"); busy(btn, true);
+    gh("").then(function (r) {
+      if (!r.permissions || !r.permissions.push) throw new Error("This token cannot write to the repository. Give it Contents: Read and write.");
+      saveCfg($("#remember").checked);
+      $("#who").textContent = "Connected: " + r.full_name; $("#who").className = "pill ok";
+      $("#p-connect").classList.add("hidden"); $("#tabs").hidden = false; $("#logout").hidden = false;
+      $("#actions-link").href = "https://github.com/" + S.repo + "/actions";
+      show("home"); return refresh();
+    }).catch(function (e) { toast(e.status === 401 ? "Token is wrong or expired." : e.status === 404 ? "Repository not found, or the token has no access to it." : e.message, "er"); })
+      .then(function () { busy(btn, false); });
+  }
+  $("#connect").addEventListener("click", function () { connect(false); });
+  $("#logout").addEventListener("click", function () { try { localStorage.removeItem(STORE_KEY); sessionStorage.removeItem(STORE_KEY); } catch (e) {} location.reload(); });
+  var saved = loadCfg();
+  if (saved) { $("#repo").value = saved.repo; $("#branch").value = saved.branch; $("#token").value = saved.token; $("#remember").checked = !!localStorage.getItem(STORE_KEY); connect(true); }
+
+  /* ---------- navigation ---------- */
+  function show(tab) {
+    $$("#p-home,#p-software,#p-blog,#p-release,#p-help").forEach(function (s) { s.classList.add("hidden"); });
+    $("#p-" + tab).classList.remove("hidden");
+    $$(".tab").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.tab === tab ? "true" : "false"); });
+    window.scrollTo(0, 0);
+  }
+  $$(".tab").forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.tab); }); });
+  $$("[data-go]").forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.go); }); });
+
+  function refresh() {
+    return Promise.all([loadApps(), loadPosts(), loadRun()]);
+  }
+  function loadRun() {
+    return gh("/actions/runs?per_page=1&branch=" + S.branch).then(function (j) {
+      var r = (j.workflow_runs || [])[0]; var el = $("#n-run");
+      if (!r) { el.textContent = "-"; return; }
+      el.textContent = r.status !== "completed" ? "Building..." : (r.conclusion === "success" ? "OK" : "Failed");
+      el.style.color = r.status !== "completed" ? "" : (r.conclusion === "success" ? "var(--ok)" : "var(--err)");
+    }).catch(function () { $("#n-run").textContent = "?"; });
+  }
+  $("#redeploy").addEventListener("click", function () {
+    gh("/actions/workflows/pages.yml/dispatches", { method: "POST", body: { ref: S.branch } }).then(function () { toast("Website rebuild started. Ready in about 2 minutes.", "ok"); setTimeout(loadRun, 4000); })
+      .catch(function (e) { toast("Could not start the build: " + e.message + " (token needs Actions: Read and write)", "er"); });
+  });
+
+  /* ================= SOFTWARE ================= */
+  function loadApps() {
+    return getFile("site/data/apps.json").then(function (f) { S.apps = JSON.parse(f.text || "[]") || []; S.appsSha = f.sha; }, function (e) { if (e.status === 404) { S.apps = []; S.appsSha = null; } else throw e; })
+      .then(renderApps).catch(function (e) { toast("Could not load software list: " + e.message, "er"); });
+  }
+  function renderApps() {
+    $("#n-apps").textContent = S.apps.length;
+    $("#app-list").innerHTML = S.apps.length ? S.apps.map(function (a, i) {
+      return '<div class="item"><div><b>' + esc(a.name) + '</b> <span class="pill ' + ((a.status || "live") === "live" ? "ok" : "wn") + '">' + esc(a.status || "live") + '</span><div class="muted">' + esc(a.tagline_en || "") + ' · v' + esc(a.version || "-") + '</div></div>' +
+        '<button class="btn" data-edit-app="' + i + '">Edit</button></div>';
+    }).join("") : '<p class="muted">No software yet. Press "Add software".</p>';
+    $$("[data-edit-app]").forEach(function (b) { b.addEventListener("click", function () { openApp(+b.dataset.editApp); }); });
+  }
+  var appF = $("#app-form"), AE = appF.elements;
+  function openApp(i) {
+    S.cur = i; var a = i == null ? { status: "live", platform: "Windows" } : S.apps[i];
+    $("#app-form-card").classList.remove("hidden"); $("#app-form-title").textContent = i == null ? "Add software" : "Edit: " + a.name;
+    ["name", "id", "tagline_en", "tagline_bn", "desc_en", "desc_bn", "version", "platform", "url", "status", "category"].forEach(function (k) { if (AE[k]) AE[k].value = a[k] || (k === "category" ? "UtilitiesApplication" : ""); });
+    AE.id.readOnly = i != null; AE.logo_file.value = "";
+    var lp = $("#logo-prev"); if (a.logo) { lp.src = "../" + a.logo; lp.classList.remove("hidden"); } else lp.classList.add("hidden");
+    $("#app-del").classList.toggle("hidden", i == null);
+    $("#app-form-card").scrollIntoView({ behavior: "smooth" });
+  }
+  $("#app-new").addEventListener("click", function () { openApp(null); });
+  $("#app-cancel").addEventListener("click", function () { $("#app-form-card").classList.add("hidden"); });
+  AE.name.addEventListener("input", function () { if (S.cur == null && !AE.id.dataset.touched) AE.id.value = slugify(AE.name.value); });
+  AE.id.addEventListener("input", function () { AE.id.dataset.touched = "1"; });
+
+  function writeApps(msg) { return putText("site/data/apps.json", JSON.stringify(S.apps, null, 2) + "\n", msg, S.appsSha).then(function (r) { S.appsSha = r.content.sha; }); }
+  appF.addEventListener("submit", function (e) {
+    e.preventDefault(); var btn = $("#app-save"); busy(btn, true);
+    var f = AE, id = slugify(f.id.value), item = {
+      id: id, name: f.name.value.trim(), tagline: f.tagline_en.value.trim(), tagline_en: f.tagline_en.value.trim(), tagline_bn: f.tagline_bn.value.trim(),
+      desc_en: f.desc_en.value.trim(), desc_bn: f.desc_bn.value.trim(), version: f.version.value.trim(), badge: f.version.value.trim(), platform: f.platform.value.trim() || "Windows",
+      url: f.url.value.trim(), status: f.status.value, category: f.category.value, updated: today()
+    };
+    if (item.url && !/^https:\/\//.test(item.url)) { toast("Download link must start with https://", "er"); busy(btn, false); return; }
+    if (S.cur != null && S.apps[S.cur].logo) item.logo = S.apps[S.cur].logo;
+    if (S.cur == null && S.apps.some(function (a) { return a.id === id; })) { toast("That page address is already used.", "er"); busy(btn, false); return; }
+    var file = f.logo_file.files[0], chain = Promise.resolve();
+    if (file) {
+      if (file.size > 500 * 1024) { toast("Logo is over 500 KB.", "er"); busy(btn, false); return; }
+      var ext = file.type === "image/png" ? "png" : "jpg", path = "site/assets/apps/" + id + "." + ext;
+      chain = Promise.all([fileToB64(file), exists(path)]).then(function (x) { return putRaw(path, x[0], "Admin: logo for " + item.name, x[1]); }).then(function () { item.logo = "assets/apps/" + id + "." + ext; });
+    }
+    chain.then(function () {
+      if (S.cur == null) S.apps.push(item); else S.apps[S.cur] = item;
+      return writeApps((S.cur == null ? "Admin: add software " : "Admin: update software ") + item.name);
+    }).then(function () { toast("Saved. The website updates in about 2 minutes.", "ok"); $("#app-form-card").classList.add("hidden"); renderApps(); setTimeout(loadRun, 5000); })
+      .catch(function (err) { toast("Could not save: " + err.message + (err.status === 409 ? " (someone changed it, reload and retry)" : ""), "er"); loadApps(); })
+      .then(function () { busy(btn, false); });
+  });
+  $("#app-del").addEventListener("click", function () {
+    if (S.cur == null || !confirm("Delete \"" + S.apps[S.cur].name + "\" from the website?")) return;
+    var n = S.apps[S.cur].name; S.apps.splice(S.cur, 1);
+    writeApps("Admin: remove software " + n).then(function () { toast("Removed. The page disappears after the next build.", "ok"); $("#app-form-card").classList.add("hidden"); renderApps(); })
+      .catch(function (err) { toast("Could not delete: " + err.message, "er"); loadApps(); });
+  });
+
+  /* ================= BLOG ================= */
+  function loadPosts() {
+    return gh("/contents/content/blog?ref=" + S.branch).then(function (l) { return l.filter(function (x) { return /\.md$/.test(x.name); }); }, function (e) { if (e.status === 404) return []; throw e; })
+      .then(function (files) { return Promise.all(files.map(function (f) { return getFile(f.path).then(function (c) { var m = parseMd(c.text); return { path: f.path, sha: c.sha, slug: f.name.replace(/\.md$/, ""), meta: m.meta, body: m.body }; }); })); })
+      .then(function (ps) { S.posts = ps.sort(function (a, b) { return (b.meta.date || "").localeCompare(a.meta.date || ""); }); renderPosts(); })
+      .catch(function (e) { toast("Could not load posts: " + e.message, "er"); });
+  }
+  function parseMd(raw) {
+    raw = raw.replace(/\r\n/g, "\n"); var meta = {}, body = raw;
+    if (raw.indexOf("---\n") === 0) { var end = raw.indexOf("\n---", 4); if (end > 0) { raw.slice(4, end).split("\n").forEach(function (l) { var i = l.indexOf(":"); if (i > 0) meta[l.slice(0, i).trim().toLowerCase()] = l.slice(i + 1).trim().replace(/^["']|["']$/g, ""); }); body = raw.slice(end + 4).replace(/^\n+/, ""); } }
+    return { meta: meta, body: body };
+  }
+  function renderPosts() {
+    $("#n-posts").textContent = S.posts.length;
+    $("#post-list").innerHTML = S.posts.length ? S.posts.map(function (p, i) {
+      return '<div class="item"><div><b>' + esc(p.meta.title || p.slug) + '</b> <span class="pill ' + (/^(1|true|yes)$/i.test(p.meta.draft || "") ? "wn" : "ok") + '">' + (/^(1|true|yes)$/i.test(p.meta.draft || "") ? "draft" : "published") + '</span> <span class="pill">' + esc(p.meta.lang || "en") + '</span><div class="muted">' + esc(p.meta.date || "") + ' · /blog/' + esc(p.slug) + '.html</div></div><button class="btn" data-edit-post="' + i + '">Edit</button></div>';
+    }).join("") : '<p class="muted">No posts yet. Press "New post".</p>';
+    $$("[data-edit-post]").forEach(function (b) { b.addEventListener("click", function () { openPost(+b.dataset.editPost); }); });
+  }
+  var postF = $("#post-form"), PE = postF.elements;
+  function counters() {
+    var t = PE.title.value.length, d = PE.description.value.length;
+    var ct = $("#c-title"), cd = $("#c-desc");
+    ct.textContent = t + "/60"; ct.className = "cnt " + (t === 0 ? "" : t <= 60 ? "good" : "bad");
+    cd.textContent = d + "/155"; cd.className = "cnt " + (d === 0 ? "" : d >= 70 && d <= 155 ? "good" : "bad");
+  }
+  function openPost(i) {
+    S.cur = i; var p = i == null ? { meta: { date: today(), lang: "en" }, body: "", slug: "" } : S.posts[i];
+    $("#post-form-card").classList.remove("hidden"); $("#post-form-title").textContent = i == null ? "New post" : "Edit post";
+    PE.title.value = p.meta.title || ""; PE.slug.value = p.slug || ""; PE.slug.readOnly = i != null; PE.lang.value = p.meta.lang || "en";
+    PE.date.value = p.meta.date || today(); PE.description.value = p.meta.description || ""; PE.tags.value = p.meta.tags || "";
+    PE.body.value = p.body; PE.draft.checked = /^(1|true|yes)$/i.test(p.meta.draft || ""); PE.cover_file.value = "";
+    postF.dataset.cover = p.meta.cover || ""; postF.dataset.updated = p.meta.updated || "";
+    $("#post-del").classList.toggle("hidden", i == null); counters(); preview();
+    $("#post-form-card").scrollIntoView({ behavior: "smooth" });
+  }
+  $("#post-new").addEventListener("click", function () { openPost(null); });
+  $("#post-cancel").addEventListener("click", function () { $("#post-form-card").classList.add("hidden"); });
+  PE.title.addEventListener("input", function () { if (S.cur == null && !PE.slug.dataset.touched) PE.slug.value = slugify(PE.title.value); counters(); });
+  PE.slug.addEventListener("input", function () { PE.slug.dataset.touched = "1"; });
+  PE.description.addEventListener("input", counters);
+  PE.body.addEventListener("input", preview);
+  $$("[data-md]").forEach(function (b) { b.addEventListener("click", function () {
+    var ta = PE.body, s = ta.selectionStart, e = ta.selectionEnd, sel = ta.value.slice(s, e), parts = b.dataset.md.split("|");
+    ta.value = ta.value.slice(0, s) + parts[0] + sel + parts[1] + ta.value.slice(e); ta.focus(); ta.selectionStart = s + parts[0].length; ta.selectionEnd = s + parts[0].length + sel.length; preview();
+  }); });
+  function inline(s) { return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\*([^*]+)\*/g, "<i>$1</i>").replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>'); }
+  function preview() {
+    var out = [], list = null;
+    function close() { if (list) { out.push("</" + list + ">"); list = null; } }
+    PE.body.value.replace(/\r\n/g, "\n").split("\n").forEach(function (l) {
+      var m;
+      if ((m = /^(#{2,3})\s+(.*)/.exec(l))) { close(); out.push("<h" + m[1].length + ">" + inline(m[2]) + "</h" + m[1].length + ">"); }
+      else if ((m = /^[-*]\s+(.*)/.exec(l))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else if ((m = /^\d+\.\s+(.*)/.exec(l))) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else if (!l.trim()) close(); else { close(); out.push("<p>" + inline(l) + "</p>"); }
+    });
+    close(); $("#post-preview").innerHTML = out.join("");
+  }
+  postF.addEventListener("submit", function (e) {
+    e.preventDefault(); var btn = $("#post-save"); busy(btn, true);
+    var f = PE, slug = slugify(f.slug.value); if (!slug) { toast("Page address is required.", "er"); busy(btn, false); return; }
+    var path = "content/blog/" + slug + ".md", file = f.cover_file.files[0], cover = postF.dataset.cover || "", chain = Promise.resolve();
+    if (S.cur == null && S.posts.some(function (p) { return p.slug === slug; })) { toast("That page address is already used.", "er"); busy(btn, false); return; }
+    if (file) {
+      if (file.size > 800 * 1024) { toast("Cover image is over 800 KB. Please compress it.", "er"); busy(btn, false); return; }
+      var ext = file.type === "image/png" ? "png" : "jpg", ip = "site/assets/blog/" + slug + "." + ext;
+      chain = Promise.all([fileToB64(file), exists(ip)]).then(function (x) { return putRaw(ip, x[0], "Admin: cover for " + slug, x[1]); }).then(function () { cover = "assets/blog/" + slug + "." + ext; });
+    }
+    chain.then(function () {
+      var fm = ["---", "title: " + f.title.value.trim(), "description: " + f.description.value.trim().replace(/\n/g, " "), "date: " + f.date.value, "updated: " + today(), "lang: " + f.lang.value];
+      if (f.tags.value.trim()) fm.push("tags: " + f.tags.value.trim()); if (cover) fm.push("cover: " + cover); if (f.draft.checked) fm.push("draft: true"); fm.push("---", "");
+      var sha = S.cur == null ? null : S.posts[S.cur].sha;
+      return putText(path, fm.join("\n") + "\n" + f.body.value.replace(/\s+$/, "") + "\n", (S.cur == null ? "Admin: new post " : "Admin: update post ") + slug, sha);
+    }).then(function () { toast(f.draft.checked ? "Saved as draft (not public)." : "Published. The post appears in about 2 minutes.", "ok"); $("#post-form-card").classList.add("hidden"); setTimeout(loadRun, 5000); return loadPosts(); })
+      .catch(function (err) { toast("Could not save: " + err.message, "er"); })
+      .then(function () { busy(btn, false); });
+  });
+  $("#post-del").addEventListener("click", function () {
+    var p = S.posts[S.cur]; if (!p || !confirm("Delete this post? It will disappear from the website.")) return;
+    delFile(p.path, p.sha, "Admin: delete post " + p.slug).then(function () { toast("Deleted.", "ok"); $("#post-form-card").classList.add("hidden"); return loadPosts(); })
+      .catch(function (err) { toast("Could not delete: " + err.message, "er"); });
+  });
+
+  /* ================= RELEASE ================= */
+  $("#rel-go").addEventListener("click", function () {
+    var v = $("#rel-ver").value.trim().replace(/^v/i, "");
+    if (!/^\d+\.\d+\.\d+$/.test(v)) { toast("Version must look like 4.5.0", "er"); return; }
+    window.open("https://github.com/" + (S.repo || "theruhulaamin/shunchi_repo_github") + "/releases/new?tag=v" + v + "&title=" + encodeURIComponent("SHUNCHi " + v), "_blank", "noopener");
+  });
+})();
+</script>
+</body>
+</html>
