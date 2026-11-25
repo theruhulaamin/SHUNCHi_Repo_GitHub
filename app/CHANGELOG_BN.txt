@@ -1,4 +1,4 @@
-SHUNCHi 5.0.0 — Account in the dashboard corner, professional Official SHUNCHi page
+SHUNCHi 5.0.1 — Account in the dashboard corner, professional Official SHUNCHi page
 ==================================================================================
 
 1. Dashboard: a Log in / Sign up button now sits in the top-right corner. After login it shows your name;

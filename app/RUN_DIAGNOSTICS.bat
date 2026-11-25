@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-echo SHUNCHi 5.0.0 Diagnostics
+echo SHUNCHi 5.0.1 Diagnostics
 echo ==========================
 echo Python launcher:
 where py

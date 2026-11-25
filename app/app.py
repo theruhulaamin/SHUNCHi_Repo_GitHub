@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "SHUNCHi"
-APP_VERSION = "5.0.0"
+APP_VERSION = "5.0.1"
 APP_VENDOR = "RUHUL"
 KEYRING_SERVICE = "SHUNCHi"
 KEYRING_USERNAME = "gemini_api_key"
