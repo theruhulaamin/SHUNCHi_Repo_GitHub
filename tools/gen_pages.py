@@ -51,7 +51,7 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <link rel="icon" type="image/png" href="{P}assets/favicon.png"><link rel="apple-touch-icon" href="{P}assets/apple-touch-icon.png">
 {FONTS}
 <link rel="manifest" href="{P}manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SHUNCHi">
-<link rel="stylesheet" href="{P}assets/site.css?v=15">
+<link rel="stylesheet" href="{P}assets/site.css?v=16">
 {extra}{ldtxt}</head>
 <body>
 <a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
@@ -126,6 +126,7 @@ def tabbar(P):
       + t(f"{P}index.html", "home", "Home", "হোম", '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>')
       + t(f"{P}index.html#setup", "setup", "Setup", "সেটআপ", '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>')
       + t(f"{P}apps/index.html", "apps", "Apps", "অ্যাপ", '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>')
+      + t(f"{P}blog/index.html", "blog", "Blog", "ব্লগ", '<path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h8M8 17h5"/>')
       + t(f"{P}index.html#faq", "faq", "FAQ", "প্রশ্ন", '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.01"/>')
       + t(f"{P}index.html#developer", "dev", "Dev. Info", "ডেভ ইনফো", '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/>')
       + t(f"{P}download/index.html", "download", "Download", "ডাউনলোড", '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>')
@@ -434,8 +435,8 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/catalog.js?v=15" data-base=""></script>
-<script src="assets/site.js?v=15"></script>
+''' + footer("") + '''<script src="assets/catalog.js?v=16" data-base=""></script>
+<script src="assets/site.js?v=16"></script>
 <script>
 (function () {
   function drawApps() { renderApps(document.getElementById("app-list"), 4); }
@@ -483,8 +484,8 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 </div></section>
 <section><div class="wrap">''' + SUGGEST_FORM + '''</div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/catalog.js?v=15" data-base="../"></script>
-<script src="../assets/site.js?v=15"></script>
+''' + footer("../") + '''<script src="../assets/catalog.js?v=16" data-base="../"></script>
+<script src="../assets/site.js?v=16"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
@@ -524,7 +525,7 @@ tmpl = head("../", "Tool name | SHUNCHi", "One sentence about the tool.", "apps/
   <div class="dl-card" id="tool-area"><p><span class="en">Build the tool here.</span><span class="bn">টুলটি এখানে বানান।</span></p></div>
 </div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=15"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=16"></script>
 </body>
 </html>
 '''
@@ -557,7 +558,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   </div>
 </div>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=15"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=16"></script>
 <script>
 (function () {
   if (!window.fetch) return;
@@ -617,7 +618,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/site.js?v=15"></script>
+''' + footer("") + '''<script src="assets/site.js?v=16"></script>
 </body>
 </html>
 '''
@@ -630,7 +631,7 @@ nf = head("/", "Page not found | SHUNCHi", "This page does not exist.", "404.htm
   <p><span class="en">The link may be old or mistyped.</span><span class="bn">লিংকটি পুরনো বা ভুল হতে পারে।</span></p>
   <p style="margin-top:22px"><a class="btn btn-primary" href="/index.html"><span class="en">Back to home</span><span class="bn">হোমে ফিরুন</span></a></p>
 </div></main>
-''' + footer("/") + '<script src="/assets/site.js?v=15"></script>\n</body>\n</html>\n'
+''' + footer("/") + '<script src="/assets/site.js?v=16"></script>\n</body>\n</html>\n'
 write("404.html", nf)
 print("pages written")
 
@@ -675,7 +676,7 @@ for p in POSTS:
 </article>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=15"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=16"></script>\n</body>\n</html>\n'
     write(url, page)
 
 reg("blog/", "0.8", "weekly", POSTS[0]["date"] if POSTS else TODAY)
@@ -694,7 +695,7 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
 </div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=15"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=16"></script>\n</body>\n</html>\n'
 write("blog/index.html", blog_index)
 
 # RSS feed
@@ -735,7 +736,7 @@ for a in APPS_JSON:
     {dlbtn}</div>
 </div>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=15"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=16"></script>\n</body>\n</html>\n'
     write(url, page)
 
 # ====================================================================== SITEMAP + ROBOTS

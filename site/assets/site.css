@@ -579,3 +579,13 @@ img{max-width:100%;height:auto}
 .post-head .crumbs{flex-wrap:nowrap;min-width:0}
 .post-head .crumbs li{min-width:0}
 .post-head .crumbs li[aria-current]{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:56vw}
+
+/* 7-tab bar: compact, never wraps or clips */
+@media (max-width:900px){
+  .tabbar{grid-template-columns:repeat(7,minmax(0,1fr));padding-left:2px;padding-right:2px}
+  .tabbar a{font-size:9.5px;letter-spacing:-.01em;padding:0;gap:2px;min-height:50px}
+  .tabbar svg{width:21px;height:21px}
+  .tabbar a[data-tab="download"]{margin:0 1px;border-radius:12px}
+  .tabbar a span{max-width:100%;overflow:hidden;text-overflow:clip}
+}
+@media (max-width:360px){.tabbar a{font-size:8.8px}.tabbar svg{width:19px;height:19px}}

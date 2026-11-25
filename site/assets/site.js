@@ -38,6 +38,7 @@
   function mark(key) { tabs.forEach(function (a) { a.classList.toggle("on", a.getAttribute("data-tab") === key); }); }
   if (/\/apps\/?/.test(path)) return mark("apps");
   if (/\/download\/?/.test(path)) return mark("download");
+  if (/\/blog\//.test(path)) return mark("blog");
   var home = /\/(privacy\.html)?$/.test(path) && !/privacy/.test(path);
   if (!home || !("IntersectionObserver" in window)) return mark(home ? "home" : "");
   var map = { setup: "setup", apps: "apps", faq: "faq", developer: "dev" }, current = "home";
