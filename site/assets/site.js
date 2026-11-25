@@ -98,3 +98,29 @@
       }).then(function () { btn.disabled = false; });
   });
 })();
+
+/* Site-wide scroll animations. Elements fade up as they enter the screen. No JS or reduced motion = everything just shows. */
+(function () {
+  var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (calm || !("IntersectionObserver" in window)) return;
+  function run() {
+    var sel = [
+      "main section .head", ".page-head > *", ".stats > *", ".toolbar",
+      ".rules li", ".setup .head", ".steps > li", ".note", ".keys > *", ".pills .pill",
+      ".app-row", ".faq details", ".dev > *", ".official", ".idea-box", ".cat-head", ".cat-desc",
+      ".dl-card", ".dl-steps li", ".privacy-body > *", "main .alt .wrap > p"
+    ].join(",");
+    var els = document.querySelectorAll(sel), groups = new Map();
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -6% 0px", threshold: 0.06 });
+    document.documentElement.classList.add("js-anim");
+    els.forEach(function (el) {
+      if (el.closest(".tool,.hero,.site-header,.tabbar")) return;
+      var p = el.parentElement, i = groups.get(p) || 0; groups.set(p, i + 1);
+      el.classList.add("rvx"); el.style.setProperty("--d", Math.min(i, 6) * 70 + "ms");
+      io.observe(el);
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();

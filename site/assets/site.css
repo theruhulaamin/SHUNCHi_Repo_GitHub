@@ -449,3 +449,49 @@ html[lang="bn"] .official-title{text-transform:none;letter-spacing:0;font-size:1
   .suggest-form{grid-template-columns:1fr}
   .suggest-act .btn{width:100%}
 }
+
+/* ---------- site-wide animation ---------- */
+.js-anim .rvx{opacity:0;transform:translateY(20px)}
+.js-anim .rvx.in{opacity:1;transform:none;transition:opacity .6s ease var(--d,0ms),transform .6s cubic-bezier(.2,.7,.2,1) var(--d,0ms)}
+/* page load: header drops in, hero builds up */
+@keyframes dropIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+@keyframes riseIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes popIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.site-header{animation:dropIn .5s ease both}
+.hero-grid>div:first-child>*{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both}
+.hero-grid>div:first-child>*:nth-child(1){animation-delay:.05s}
+.hero-grid>div:first-child>*:nth-child(2){animation-delay:.15s}
+.hero-grid>div:first-child>*:nth-child(3){animation-delay:.25s}
+.hero-grid>div:first-child>*:nth-child(4){animation-delay:.35s}
+.hero-grid>div:first-child>*:nth-child(5){animation-delay:.45s}
+.hero-grid>div:first-child>*:nth-child(n+6){animation-delay:.55s}
+.hero-grid>div:last-child{animation:popIn .8s cubic-bezier(.2,.7,.2,1) .3s both}
+.page-head{animation:riseIn .6s ease both}
+/* accent words shimmer */
+.hero h1 em{background:linear-gradient(100deg,var(--accent) 30%,#7db0ff 50%,var(--accent) 70%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 4.5s ease-in-out infinite}
+@keyframes shimmer{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+/* buttons and chips */
+.btn{transition:transform .2s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease,color .2s ease}
+@media (hover:hover){.btn:hover{transform:translateY(-2px)}.btn-primary:hover{box-shadow:0 8px 22px rgba(31,98,232,.35)}.pill:hover,.chip:hover{transform:translateY(-2px)}}
+.btn:active,.pill:active{transform:scale(.97)}
+.pill,.chip,.rules li,.app-row,.keys>*{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease,background .25s ease}
+@media (hover:hover){.rules li:hover,.app-row:hover{transform:translateY(-3px)}}
+/* soft pulse on the main download button */
+.btn-primary.btn-sm{position:relative}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(31,98,232,.45)}70%,100%{box-shadow:0 0 0 12px rgba(31,98,232,0)}}
+.hero .btn-primary{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) .25s both,ring 2.6s ease-out 1.4s infinite}
+/* key caps tap */
+.keys kbd,.key{transition:transform .2s ease}
+@media (hover:hover){.keys kbd:hover,.key:hover{transform:translateY(-2px)}}
+/* tab bar icon pop on active */
+.tabbar a.on svg{animation:popIn .35s ease}
+/* FAQ open */
+.faq details[open]>*:not(summary){animation:riseIn .35s ease both}
+/* theme icon spin */
+.theme-btn svg{transition:transform .4s ease}
+.theme-btn:active svg{transform:rotate(90deg) scale(.9)}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .js-anim .rvx{opacity:1!important;transform:none!important}
+  .hero h1 em{-webkit-text-fill-color:var(--accent);background:none}
+}
