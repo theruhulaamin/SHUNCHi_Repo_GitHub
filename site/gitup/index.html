@@ -2257,7 +2257,11 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       var actOk = false, tries = 0;
       while (tries++ < 45) {
         await sleep(6000);
-        var runs = await gh("/actions/runs?event=release&per_page=5").then(function (j) { return j.workflow_runs || []; }, function () { return []; });
+        var runs = await gh("/actions/runs?event=release&per_page=10").then(function (j) { return j.workflow_runs || []; }, function () { return []; });
+        /* Do not depend on the token being allowed to read Actions: if the website already serves the new version, the data step is finished. */
+        var mu = R.target === "shunchi" ? "../update.json" : "../updates/" + R.target + ".json";
+        var seen = await fetch(mu + "?cb=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { return !!(j && j.latest_version === R.ver); }, function () { return false; });
+        if (seen) { actOk = true; break; }
         /* Only the "Release update" workflow counts. Other workflows also start on a release (e.g. Download stats) and must not decide success or failure here. */
         var run = runs.filter(function (r) { return ((r.path || "").indexOf("release.yml") >= 0 || r.name === "Release update") && (r.head_branch === myTag || new Date(r.created_at).getTime() >= pubAt - 60000); })[0];
         if (run) { if (run.status === "completed") { if (run.conclusion !== "success") throw Object.assign(new Error(T("The GitHub Action failed. Open Actions on GitHub to see why (usually a missing file).", "GitHub Action ব্যর্থ হয়েছে। কারণ দেখতে GitHub Actions খুলুন (সাধারণত ফাইল কম)।")), { stop: true, actions: true }); actOk = true; break; } ph("act", "run", T("Running…", "চলছে…")); }
