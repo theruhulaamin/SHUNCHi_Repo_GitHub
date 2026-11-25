@@ -5,7 +5,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
-    function isAdmin() { return signedIn() && request.auth.token.email == 'ruhulaaminn@gmail.com' && request.auth.token.email_verified == true; }
+    function isAdmin() { return signedIn() && request.auth.token.email in ['voice.shunchi@gmail.com', 'ruhulaaminn@gmail.com'] && request.auth.token.email_verified == true; }
     function me() { return /databases/$(database)/documents/users/$(request.auth.uid); }
     function notBlocked() { return !exists(me()) || get(me()).data.get('status', 'active') != 'blocked'; }
 
