@@ -36,7 +36,7 @@ var APPS = [
   { name: "SHUNCHi", en: "AI voice typing for Bangla and English, in every Windows app.",
     bn: "প্রতিটি উইন্ডোজ অ্যাপে বাংলা ও ইংরেজি এআই ভয়েস টাইপিং।",
     url: "download/index.html", more: "index.html", badge: "v4", s: "live", logo: "assets/shunchi-icon.png" },
-  { name: "My next app / software", en: "Submit your idea in the form below.",
+  { name: "My next app / software", nb: "আমার পরবর্তী অ্যাপ / সফটওয়্যার", en: "Submit your idea in the form below.",
     bn: "আপনার আইডিয়া নিচের ফর্মে জমা দিন।", url: "", badge: "", s: "soon", logo: "", idea: true }
 ];
 
@@ -337,7 +337,7 @@ var TOOLS = [
     if (a.logo) { var img = document.createElement("img"); img.src = BASE + a.logo; img.alt = ""; tile.appendChild(img); }
     else tile.textContent = (a.name || "?").charAt(0).toUpperCase();
     var body = el("div", "app-body");
-    var h = el("h3", "", a.name); if (a.badge) h.appendChild(el("span", "ver", a.badge));
+    var h = el("h3"); if (a.nb) h.appendChild(bi(a.name, a.nb)); else h.textContent = a.name; if (a.badge) h.appendChild(el("span", "ver", a.badge));
     var p = el("p"); p.appendChild(bi(a.en || "", a.bn || a.en || ""));
     body.appendChild(h); body.appendChild(p);
     var act = el("div", "app-act");

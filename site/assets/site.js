@@ -124,3 +124,18 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();
+
+/* Scroll progress bar + header shadow once the page moves. */
+(function () {
+  var bar = document.createElement("div"); bar.className = "progress"; bar.setAttribute("aria-hidden", "true");
+  document.body.appendChild(bar);
+  var hdr = document.querySelector(".site-header"), tick = false;
+  function upd() {
+    tick = false;
+    var h = document.documentElement, max = h.scrollHeight - h.clientHeight, y = window.scrollY || h.scrollTop;
+    bar.style.transform = "scaleX(" + (max > 0 ? Math.min(1, y / max) : 0) + ")";
+    if (hdr) hdr.classList.toggle("scrolled", y > 8);
+  }
+  window.addEventListener("scroll", function () { if (!tick) { tick = true; requestAnimationFrame(upd); } }, { passive: true });
+  upd();
+})();

@@ -498,3 +498,31 @@ html[lang="bn"] .official-title{text-transform:none;letter-spacing:0;font-size:1
 /* official card: sits under the contact pills, same left edge, not stretched */
 .dev .official{width:fit-content;max-width:100%}
 @media (max-width:900px){.dev .official{width:100%}}
+
+/* ---------- final polish ---------- */
+::selection{background:var(--accent);color:#fff}
+html{color-scheme:light dark}
+:root[data-theme="light"]{color-scheme:light}:root[data-theme="dark"]{color-scheme:dark}
+body{transition:background-color .3s ease,color .3s ease}
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:100;background:linear-gradient(90deg,var(--accent),#7db0ff);transform-origin:0 50%;transform:scaleX(0);pointer-events:none}
+.site-header{transition:box-shadow .3s ease,background-color .3s ease}
+.site-header.scrolled{box-shadow:0 6px 24px rgba(10,18,34,.08)}
+/* hero depth: soft glow behind the content, floating product mock-up */
+.hero{position:relative;isolation:isolate}
+.hero::before{content:"";position:absolute;z-index:-1;inset:-40px -10% auto auto;width:min(720px,90vw);height:520px;background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 20%,transparent),transparent 70%);filter:blur(10px);pointer-events:none}
+.hero::after{content:"";position:absolute;z-index:-1;left:-8%;bottom:-60px;width:min(520px,70vw);height:380px;background:radial-gradient(closest-side,color-mix(in srgb,#7db0ff 16%,transparent),transparent 70%);pointer-events:none}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.hero-grid>div:last-child>*{animation:bob 6s ease-in-out 1.2s infinite}
+/* cards: crisper edges and depth */
+.rules li,.app-row,.tool,.idea-box,.official{box-shadow:0 1px 0 rgba(10,18,34,.02)}
+.app-tile img{border-radius:14px}
+/* tab bar: active indicator */
+.tabbar a{position:relative}
+.tabbar a.on:not([data-tab="download"])::before{content:"";position:absolute;top:2px;left:50%;width:22px;height:3px;margin-left:-11px;border-radius:0 0 4px 4px;background:var(--accent)}
+.tabbar{box-shadow:0 -8px 24px rgba(10,18,34,.06)}
+/* inputs on iOS: no zoom, no inner shadow */
+input,select,textarea{-webkit-appearance:none;appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:36px}
+/* images never overflow */
+img{max-width:100%;height:auto}
+@media (prefers-reduced-motion:reduce){.hero-grid>div:last-child>*{animation:none!important}.progress{display:none}}
