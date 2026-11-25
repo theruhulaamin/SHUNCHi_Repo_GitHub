@@ -50,7 +50,12 @@ jobs:
         run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
           git add site; git diff --cached --quiet || git commit -m "Update manifest for ${{ env.RESOLVED_TAG }}"
-          git push origin main
+          # main may have moved meanwhile (admin edits, download-count bot): rebase and retry instead of failing
+          for i in 1 2 3 4; do
+            git pull --rebase origin main && git push origin main && exit 0
+            sleep 5
+          done
+          echo "Could not push the manifest after 4 tries" && exit 1
   deploy:
     needs: manifest
     runs-on: ubuntu-latest
