@@ -11,6 +11,7 @@
 AppId={{B7A2F1D4-3C58-4E0B-9A61-5D2E8C4F7A10}
 AppName=SHUNCHi
 AppVersion={#StubVersion}
+AppVerName=SHUNCHi
 AppPublisher=Ruhul Amin
 AppPublisherURL=https://shunchiai.com
 CreateAppDir=no
@@ -129,7 +130,10 @@ begin
         RaiseException('Could not prepare the installer in the temporary folder.');
       if not Exec(TmpCopy, '', '', SW_SHOWNORMAL, ewNoWait, ResultCode) then
         RaiseException('Could not start the installer.');
-      Result := True;  // nothing left for this small setup to do, it closes by itself
+      // Nothing is left for this small setup to do: close it now, so no extra "Ready to Install" window shows up.
+      WizardForm.Hide;
+      Result := True;
+      Terminate;
     except
       if DownloadPage.AbortedByUser then
         Log('Download cancelled by the user.')

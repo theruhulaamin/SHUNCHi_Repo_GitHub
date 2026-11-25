@@ -24,12 +24,12 @@ import pyperclip
 import keyring
 
 from PySide6.QtCore import (
-    Qt, Signal, QObject, QTimer, QSettings, QElapsedTimer, QUrl, QRectF, QPointF, QPoint, QSize,
-    QPropertyAnimation, QEasingCurve
+    Qt, Signal, QObject, QTimer, QSettings, QElapsedTimer, QUrl, QRectF, QRect, QPointF, QPoint, QSize,
+    QPropertyAnimation, QEasingCurve, QEvent
 )
 from PySide6.QtGui import (
     QIcon, QAction, QPixmap, QPainter, QPen, QColor, QPainterPath, QFont,
-    QDesktopServices, QCursor, QLinearGradient, QBrush
+    QDesktopServices, QCursor, QLinearGradient, QBrush, QFontMetrics
 )
 from PySide6.QtWidgets import (
     QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
@@ -40,7 +40,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "SHUNCHi"
-APP_VERSION = "4.6.0"
+APP_VERSION = "4.6.1"
 APP_VENDOR = "RUHUL"
 KEYRING_SERVICE = "SHUNCHi"
 KEYRING_USERNAME = "gemini_api_key"
@@ -57,6 +57,7 @@ NOTICES_URL = WEBSITE_URL + "/data/notices.json"      # pop-up messages written 
 APPS_PAGE_URL = WEBSITE_URL + "/apps/index.html"
 IDEA_ENDPOINT = "https://formsubmit.co/ajax/ruhulaaminn@gmail.com"   # where the "app or tool idea" form is delivered
 READY_TEXT = "Ready · Win + Left Ctrl = Bangla · Win + Left Shift = English"
+READY_TEXT_KEY = READY_TEXT
 UPDATE_CHECK_HOURS = 3
 IDEA_FALLBACK_URL = APPS_PAGE_URL + "#suggest"
 APP_OWNER = {}      # set by ShunchiApp so the window can ask it to shut down cleanly
@@ -407,7 +408,7 @@ def parse_update_manifest(data):
 
 def fetch_update_manifest(timeout=8):
     request = urllib.request.Request(
-        UPDATE_URL, headers={"User-Agent": f"SHUNCHi/{APP_VERSION}", "Cache-Control": "no-cache"})
+        UPDATE_URL + "?t=" + str(int(time.time() // 60)), headers={"User-Agent": f"SHUNCHi/{APP_VERSION}", "Cache-Control": "no-cache"})
     with urllib.request.urlopen(request, timeout=timeout) as response:
         raw = response.read(65536)
     return parse_update_manifest(json.loads(raw.decode("utf-8")))
@@ -526,6 +527,74 @@ def clear_history():
 # ----------------------------------------------------------------------------------------------
 # Signals, microphone scan, Gemini client, workers, global hotkeys
 # ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
+# Dashboard language (English / Bangla)
+# ----------------------------------------------------------------------------------------------
+UI_BN = True
+BN = {
+    "Dashboard": "ড্যাশবোর্ড",
+    "Voice History": "ভয়েস হিস্টোরি",
+    "Settings": "সেটিংস",
+    "How to use": "কীভাবে ব্যবহার করবেন",
+    "More Apps": "আরও অ্যাপ",
+    "Developer": "ডেভেলপার",
+    "AI voice typing · by RUHUL": "এআই ভয়েস টাইপিং · RUHUL",
+    "Speak in Bangla or English. SHUNCHi types it wherever your cursor is.":
+        "বাংলা বা ইংরেজিতে বলুন। আপনার কার্সর যেখানে আছে, শুনছি সেখানেই লিখে দেবে।",
+    "Open Settings": "সেটিংস খুলুন",
+    "Update now": "এখনই আপডেট করুন",
+    "Bangla Dictation": "বাংলা টাইপিং",
+    "English Dictation": "ইংরেজি টাইপিং",
+    "Speak in Bangla (English words are fine too)": "বাংলায় বলুন (ইংরেজি শব্দও চলবে)",
+    "Speak in English": "ইংরেজিতে বলুন",
+    "Try it here": "এখানে চেষ্টা করুন",
+    "Click inside the box, press a shortcut and speak. Pause when you finish; the text appears here.":
+        "বক্সের ভেতরে ক্লিক করুন, শর্টকাট চাপুন আর বলুন। বলা শেষ করে একটু থামুন, লেখাটি এখানে আসবে।",
+    "Your dictated text will be typed here…": "আপনার বলা লেখা এখানে টাইপ হবে…",
+    "Before you start": "শুরুর আগে জেনে নিন",
+    "Add your Gemini API key in Settings to start voice typing.": "ভয়েস টাইপিং শুরু করতে সেটিংসে আপনার Gemini API key দিন।",
+    "Add your Gemini API key in Settings first.": "আগে সেটিংসে আপনার Gemini API key দিন।",
+    "Ready · press Win + Left Ctrl (Bangla) or Win + Left Shift (English).":
+        "প্রস্তুত · Win + Left Ctrl (বাংলা) বা Win + Left Shift (ইংরেজি) চাপুন।",
+    "Testing your Gemini connection…": "Gemini সংযোগ পরীক্ষা হচ্ছে…",
+    "Connected · voice typing is ready.": "সংযুক্ত · ভয়েস টাইপিং প্রস্তুত।",
+    "Connected · voice typing is working.": "সংযুক্ত · ভয়েস টাইপিং কাজ করছে।",
+    "Windows Credential Manager is unavailable. Check your Windows account permissions.":
+        "Windows Credential Manager পাওয়া যাচ্ছে না। আপনার Windows অ্যাকাউন্টের অনুমতি দেখুন।",
+    READY_TEXT_KEY: "প্রস্তুত · Win + Left Ctrl = বাংলা · Win + Left Shift = ইংরেজি",
+    "Took too long. Please try again.": "অনেক সময় লাগছে। আবার চেষ্টা করুন।",
+    "Update cancelled.": "আপডেট বাতিল হয়েছে।",
+    "Installer started. SHUNCHi will close so the update can finish.": "ইনস্টলার চালু হয়েছে। আপডেট শেষ করতে শুনছি বন্ধ হবে।",
+    "No microphone detected · check Windows microphone permissions.": "কোনো মাইক্রোফোন পাওয়া যায়নি · Windows-এর মাইক্রোফোন অনুমতি দেখুন।",
+}
+NOTES_EN = (
+    "<b>A Gemini API key is required.</b> Without your own free key SHUNCHi cannot type for you. Add it once in Settings.",
+    "Your writing runs on the <b>free limit of your own Gemini key</b>, so everyday messages and normal work "
+    "should go through on the free version.",
+    "If you need a much higher limit, a <b>Pro subscription with extended limits</b> is planned for the future.",
+)
+NOTES_BN = (
+    "<b>Gemini API key আবশ্যক।</b> আপনার নিজের ফ্রি key ছাড়া শুনছি লিখতে পারবে না। সেটিংসে একবারই যোগ করুন।",
+    "আপনার লেখা চলে <b>আপনার নিজের Gemini key-এর ফ্রি লিমিটে</b>, তাই সাধারণ মেসেজ ও নিয়মিত কাজ ফ্রি ভার্সনেই হয়ে যাওয়ার কথা।",
+    "অনেক বেশি লিমিট লাগলে ভবিষ্যতে <b>বাড়তি লিমিটের Pro সাবস্ক্রিপশন</b> আনার পরিকল্পনা আছে।",
+)
+
+
+def T(text):
+    """Translate a known interface text for the Bangla dashboard; anything unknown stays as it is."""
+    text = str(text)
+    if not UI_BN:
+        return text
+    if text in BN:
+        return BN[text]
+    m = re.fullmatch(r"Typed (\d+) characters\.", text)
+    if m:
+        return f"{m.group(1)}টি অক্ষর টাইপ হয়েছে।"
+    if text.startswith("Microphone active · "):
+        return "মাইক্রোফোন চালু · " + text[len("Microphone active · "):]
+    return text
+
+
 class AppSignals(QObject):
     hotkey = Signal(str)
     hotkey_error = Signal(str)
@@ -1233,6 +1302,43 @@ def open_website(path=""):
     QDesktopServices.openUrl(QUrl(WEBSITE_URL + path))
 
 
+class _WrapFix(QObject):
+    """Word-wrapped labels inside scroll areas sometimes keep a too-small height (text overlaps the next
+    block, or is cut off). This gives each one the height its text needs at its current width."""
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Resize:
+            fit_label(obj)
+        return False
+
+
+_WRAP_FIX = None
+
+
+def fit_label(label):
+    try:
+        width = label.width()
+        if width > 20:
+            height = label.heightForWidth(width)
+            if height > 0 and label.minimumHeight() != height:
+                label.setMinimumHeight(height)
+    except Exception:
+        pass
+
+
+def harden_labels(root):
+    """Call after building a page and after its texts change."""
+    global _WRAP_FIX
+    if _WRAP_FIX is None:
+        _WRAP_FIX = _WrapFix()
+    for label in root.findChildren(QLabel):
+        if label.wordWrap():
+            if not label.property("wrapFixed"):
+                label.setProperty("wrapFixed", True)
+                label.installEventFilter(_WRAP_FIX)
+            label.setMinimumHeight(0)
+            fit_label(label)
+
+
 def make_card(layout_margins=(20, 18, 20, 18), spacing=10):
     frame = QFrame()
     frame.setObjectName("card")
@@ -1280,7 +1386,7 @@ class WaveformWidget(QWidget):
         self.setMaximumHeight(44)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.animator = QTimer(self)
-        self.animator.setInterval(30)
+        self.animator.setInterval(16)
         self.animator.timeout.connect(self._animate)
 
     def showEvent(self, event):
@@ -1306,18 +1412,19 @@ class WaveformWidget(QWidget):
 
     def _animate(self):
         import math
-        self.phase += 0.12
+        self.phase += 0.07
         for i in range(self.BARS):
             if self.mode == "processing":
                 target = 0.20 + 0.14 * (1 + math.sin(self.phase * 1.5 - i * 0.30))
             else:
                 target = self.targets[i]
-            self.display[i] += (target - self.display[i]) * 0.40
+            self.display[i] += (target - self.display[i]) * 0.30
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.fillRect(self.rect(), QColor("#FFFFFF"))      # opaque: no trails on the see-through popup
         painter.setPen(Qt.NoPen)
         count, gap = self.BARS, 3.0
         bar_width = max(2.0, min(4.0, (self.width() - gap * (count - 1)) / count))
@@ -1356,7 +1463,7 @@ class MicOrb(QWidget):
         self.smooth = 0.0
         self.angle = 0
         self.timer = QTimer(self)
-        self.timer.setInterval(30)
+        self.timer.setInterval(16)
         self.timer.timeout.connect(self._tick)
 
     def showEvent(self, event):
@@ -1375,14 +1482,15 @@ class MicOrb(QWidget):
         self.level = max(self.level, float(value))
 
     def _tick(self):
-        self.smooth += (self.level - self.smooth) * 0.35
-        self.level *= 0.90
-        self.angle = (self.angle + 9) % 360
+        self.smooth += (self.level - self.smooth) * 0.22
+        self.level *= 0.94
+        self.angle = (self.angle + 5) % 360
         self.update()
 
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
+        p.fillRect(self.rect(), QColor("#FFFFFF"))            # opaque: no trails on the see-through popup
         centre = QPointF(23, 23)
         top, bottom = self.PALETTE.get(self.state, self.PALETTE["listening"])
         p.setPen(Qt.NoPen)
@@ -1436,15 +1544,22 @@ class MicOrb(QWidget):
 
 class MicPopup(QWidget):
     """Compact floating voice indicator. It never takes keyboard focus and never shows the transcript:
-    when you finish speaking, the polished text is typed where your cursor is."""
+    when you finish speaking, the polished text is typed where your cursor is.
+
+    Every piece of text is painted by this one widget (no child labels), and the animated children paint an
+    opaque background. On a see-through Windows window that is what keeps old pixels from showing through."""
+    W, H = 424, 124
 
     def __init__(self):
         super().__init__()
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowDoesNotAcceptFocus)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
-        self.setFixedSize(424, 124)
+        self.setFixedSize(self.W, self.H)
         self._leaving = False
+        self.state = "listening"
+        self.title, self.lang, self.detail, self.clock = "Listening", "", "", "00:00"
+        self.detail_color = C_MUTED
         self.elapsed = QElapsedTimer()
         self.timer = QTimer(self)
         self.timer.setInterval(250)
@@ -1455,65 +1570,98 @@ class MicPopup(QWidget):
         self.fade = QPropertyAnimation(self, b"windowOpacity", self)
         self.slide = QPropertyAnimation(self, b"pos", self)
         self.slide.setEasingCurve(QEasingCurve.OutCubic)
+        self.orb = MicOrb(self)
+        self.wave = WaveformWidget(self)
+        self.panel = QRectF(12, 6, self.W - 24, self.H - 22)          # the white card (room around it for the shadow)
+        x0, y0 = int(self.panel.left()) + 16, int(self.panel.top()) + 12
+        self.orb.move(x0, y0)
+        self.wave.setGeometry(x0 + 58, y0 + 3, int(self.panel.width()) - 16 - 16 - 58 - 70, 40)
+        self.text_y = y0 + 46 + 10
+        self.x0 = x0
 
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(12, 6, 12, 16)
-        panel = QFrame()
-        panel.setObjectName("panel")
-        panel.setStyleSheet(
-            "QFrame#panel{background:rgba(255,255,255,0.99);border:1px solid #E1E8F3;border-radius:20px;}"
-            "QLabel{border:0;}")
-        shadow = QGraphicsDropShadowEffect(panel)
-        shadow.setBlurRadius(32)
-        shadow.setOffset(0, 8)
-        shadow.setColor(QColor(15, 23, 42, 58))
-        panel.setGraphicsEffect(shadow)
-        outer.addWidget(panel)
+    # ---- painting
+    def paintEvent(self, event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.TextAntialiasing)
+        p.setCompositionMode(QPainter.CompositionMode_Source)
+        p.fillRect(self.rect(), Qt.transparent)                        # wipe everything first: no ghosts
+        p.setCompositionMode(QPainter.CompositionMode_SourceOver)
+        p.setPen(Qt.NoPen)
+        for i in range(9):                                             # soft shadow
+            grow = 9 - i
+            p.setBrush(QColor(15, 23, 42, 5 + i))
+            p.drawRoundedRect(self.panel.adjusted(-grow * 0.7, -grow * 0.4, grow * 0.7, grow * 1.1), 20 + grow * 0.6, 20 + grow * 0.6)
+        p.setBrush(QColor("#FFFFFF"))
+        p.setPen(QPen(QColor("#E1E8F3"), 1))
+        p.drawRoundedRect(self.panel, 20, 20)
+        p.setPen(Qt.NoPen)
 
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(16, 12, 16, 11)
-        layout.setSpacing(7)
+        # clock chip (right of the first row)
+        font = QFont(self.font())
+        font.setPixelSize(13)
+        font.setBold(True)
+        p.setFont(font)
+        chip_w = max(58, QFontMetrics(font).horizontalAdvance(self.clock) + 22)
+        chip = QRectF(self.panel.right() - 16 - chip_w, self.panel.top() + 12 + 12, chip_w, 22)
+        p.setBrush(QColor(C_PRIMARY_SOFT))
+        p.drawRoundedRect(chip, 11, 11)
+        p.setPen(QColor(C_PRIMARY_DARK))
+        p.drawText(chip, Qt.AlignCenter, self.clock)
 
-        row = QHBoxLayout()
-        row.setSpacing(12)
-        self.orb = MicOrb()
-        self.wave = WaveformWidget()
-        self.time_label = QLabel("00:00")
-        self.time_label.setMinimumWidth(52)
-        self.time_label.setAlignment(Qt.AlignCenter)
-        self.time_label.setStyleSheet(
-            f"font-size:13px;font-weight:700;color:{C_PRIMARY_DARK};background:{C_PRIMARY_SOFT};"
-            "border-radius:11px;padding:4px 9px;")
-        row.addWidget(self.orb)
-        row.addWidget(self.wave, 1)
-        row.addWidget(self.time_label)
-        layout.addLayout(row)
+        # second row: title, language chip, detail
+        color = {"listening": C_PRIMARY_DARK, "processing": C_WARN, "done": C_OK, "error": C_ERR}.get(self.state, C_TEXT)
+        tf = QFont(self.font())
+        tf.setPixelSize(14)
+        tf.setBold(True)
+        p.setFont(tf)
+        p.setPen(QColor(color))
+        tm = QFontMetrics(tf)
+        x = float(self.x0)
+        row = QRectF(0, self.text_y, 0, 22)
+        tw = tm.horizontalAdvance(self.title)
+        p.drawText(QRectF(x, self.text_y, tw + 4, 22), Qt.AlignVCenter | Qt.AlignLeft, self.title)
+        x += tw + 10
+        if self.lang:
+            lf = QFont(self.font())
+            lf.setPixelSize(11)
+            lf.setBold(True)
+            lw = QFontMetrics(lf).horizontalAdvance(self.lang) + 20
+            lrect = QRectF(x, self.text_y + 2, lw, 18)
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(C_PRIMARY_SOFT))
+            p.drawRoundedRect(lrect, 9, 9)
+            p.setFont(lf)
+            p.setPen(QColor(C_PRIMARY_DARK))
+            p.drawText(lrect, Qt.AlignCenter, self.lang)
+            x += lw + 10
+        df = QFont(self.font())
+        df.setPixelSize(12)
+        p.setFont(df)
+        p.setPen(QColor(self.detail_color))
+        room = self.panel.right() - 16 - x
+        text = QFontMetrics(df).elidedText(self.detail, Qt.ElideRight, int(max(40, room)))
+        p.drawText(QRectF(x, self.text_y, max(40, room), 22), Qt.AlignVCenter | Qt.AlignLeft, text)
 
-        info = QHBoxLayout()
-        info.setSpacing(8)
-        self.title_label = QLabel("Listening")
-        self.lang_label = QLabel("")
-        self.lang_label.setStyleSheet(
-            f"font-size:11px;font-weight:700;color:{C_PRIMARY_DARK};background:{C_PRIMARY_SOFT};"
-            "border-radius:9px;padding:2px 9px;")
-        self.detail_label = QLabel("")
-        info.addWidget(self.title_label)
-        info.addWidget(self.lang_label)
-        info.addWidget(self.detail_label, 1)
-        layout.addLayout(info)
-        self._style_texts("listening")
-
-    def _style_texts(self, state, detail_color=None):
-        color = {"listening": C_PRIMARY_DARK, "processing": C_WARN, "done": C_OK, "error": C_ERR}.get(state, C_TEXT)
-        # Solid white label backgrounds: on this see-through window a transparent label would keep the old
-        # text underneath the new one ("ghost" text) every time the state changes.
-        self.title_label.setStyleSheet(f"font-size:14px;font-weight:700;color:{color};background:#FFFFFF;")
-        self.detail_label.setStyleSheet(f"font-size:12px;color:{detail_color or C_MUTED};background:#FFFFFF;")
+    def _set(self, state=None, title=None, lang=None, detail=None, detail_color=None):
+        if state is not None:
+            self.state = state
+        if title is not None:
+            self.title = title
+        if lang is not None:
+            self.lang = lang
+        if detail is not None:
+            self.detail = detail
+        self.detail_color = detail_color or C_MUTED
+        self.update()
 
     # ---- helpers
     def _tick(self):
         seconds = self.elapsed.elapsed() // 1000
-        self.time_label.setText(f"{seconds // 60:02d}:{seconds % 60:02d}")
+        clock = f"{seconds // 60:02d}:{seconds % 60:02d}"
+        if clock != self.clock:
+            self.clock = clock
+            self.update(QRect(int(self.panel.right()) - 100, int(self.panel.top()) + 16, 100, 30))
 
     def place_on_active_screen(self):
         screen = QApplication.screenAt(QCursor.pos()) or QApplication.primaryScreen()
@@ -1579,13 +1727,8 @@ class MicPopup(QWidget):
         self.wave.reset()
         self.wave.set_mode("listening")
         self.orb.set_state("listening")
-        self._style_texts("listening")
-        self.title_label.setText("Listening")
-        self.lang_label.setText("বাংলা" if language == "bn-BD" else "English")
-        self.lang_label.setVisible(True)
-        self.detail_label.setText("pause when you finish")
-        self.detail_label.setToolTip("")
-        self.time_label.setText("00:00")
+        self.clock = "00:00"
+        self._set("listening", "Listening", "বাংলা" if language == "bn-BD" else "English", "pause when you finish")
         self.elapsed.start()
         self.timer.start()
         self._present()
@@ -1595,36 +1738,27 @@ class MicPopup(QWidget):
         self.orb.set_level(level)
 
     def mark_speech(self):
-        self.title_label.setText("Listening")
+        pass
 
     def set_processing(self):
         self.timer.stop()
         self.wave.set_mode("processing")
         self.orb.set_state("processing")
-        self._style_texts("processing")
-        self.title_label.setText("Writing")
-        self.lang_label.setVisible(False)
-        self.detail_label.setText("Typing your text…")
+        self._set("processing", "Writing", "", "Typing your text…")
 
     def finish(self):
         self.timer.stop()
         self.wave.set_mode("idle")
         self.orb.set_state("done")
-        self._style_texts("done")
-        self.title_label.setText("Done")
-        self.lang_label.setVisible(False)
-        self.detail_label.setText("Inserted at your cursor")
+        self._set("done", "Done", "", "Inserted at your cursor")
         self.hide_timer.start(450)
 
     def show_error(self, message):
         self.timer.stop()
         self.wave.set_mode("idle")
         self.orb.set_state("error")
-        self._style_texts("error", C_ERR)
-        self.title_label.setText("Notice")
-        self.lang_label.setVisible(False)
-        self.detail_label.setText(str(message)[:80])
-        self.detail_label.setToolTip(str(message))
+        self._set("error", "Notice", "", str(message)[:80], C_ERR)
+        self.setToolTip(str(message))
         self._present()
         self.hide_timer.start(3800)
 
@@ -1653,13 +1787,31 @@ class DashboardPage(QWidget):
         "error": (C_ERR, C_ERR_SOFT, "#F7CACA"),
     }
 
-    def __init__(self, open_settings):
+    def __init__(self, open_settings, on_language=None):
         super().__init__()
+        self._api = ("missing", "Add your Gemini API key in Settings to start voice typing.")
+        self._act = ""
+        self._upd = None
         root = QVBoxLayout(self)
-        root.setContentsMargins(30, 28, 30, 20)
-        root.setSpacing(16)
+        root.setContentsMargins(30, 26, 30, 20)
+        root.setSpacing(14)
         head = QHBoxLayout()
-        head.addLayout(page_header("Dashboard", "Speak in Bangla or English. SHUNCHi types it wherever your cursor is."), 1)
+        head.setSpacing(10)
+        titles = QVBoxLayout()
+        titles.setSpacing(3)
+        self.title_lbl = QLabel("Dashboard")
+        self.title_lbl.setObjectName("pageTitle")
+        self.sub_lbl = QLabel("")
+        self.sub_lbl.setObjectName("pageSubtitle")
+        self.sub_lbl.setWordWrap(True)
+        titles.addWidget(self.title_lbl)
+        titles.addWidget(self.sub_lbl)
+        head.addLayout(titles, 1)
+        self.lang_switch = SegmentedControl([("EN", False), ("বাংলা", True)])
+        self.lang_switch.set_value(UI_BN)
+        if on_language is not None:
+            self.lang_switch.valueChanged.connect(on_language)
+        head.addWidget(self.lang_switch, 0, Qt.AlignTop)
         site_chip = QPushButton(f"{WEBSITE_LABEL}  ↗")
         site_chip.setObjectName("chip")
         site_chip.setCursor(Qt.PointingHandCursor)
@@ -1703,52 +1855,58 @@ class DashboardPage(QWidget):
 
         row = QHBoxLayout()
         row.setSpacing(14)
-        row.addWidget(self._shortcut_card("বাংলা Dictation", "Win", "Left Ctrl", "Speak in Bangla (English words are fine too)"))
-        row.addWidget(self._shortcut_card("English Dictation", "Win", "Left Shift", "Speak in English"))
+        self.card_bn = self._shortcut_card("Win", "Left Ctrl")
+        self.card_en = self._shortcut_card("Win", "Left Shift")
+        row.addWidget(self.card_bn[0])
+        row.addWidget(self.card_en[0])
         root.addLayout(row)
 
         card, layout = make_card((20, 16, 20, 18), 8)
-        title = QLabel("Try it here")
-        title.setObjectName("cardTitle")
-        hint = QLabel("Click inside the box, press a shortcut and speak. Pause when you finish; the text appears here.")
-        hint.setObjectName("cardText")
-        hint.setWordWrap(True)
+        self.try_title = QLabel("Try it here")
+        self.try_title.setObjectName("cardTitle")
+        self.try_hint = QLabel("")
+        self.try_hint.setObjectName("cardText")
+        self.try_hint.setWordWrap(True)
         self.practice = QPlainTextEdit()
-        self.practice.setPlaceholderText("Your dictated text will be typed here…")
-        self.practice.setFixedHeight(100)
-        layout.addWidget(title)
-        layout.addWidget(hint)
+        self.practice.setMinimumHeight(96)
+        self.practice.setMaximumHeight(140)
+        layout.addWidget(self.try_title)
+        layout.addWidget(self.try_hint)
         layout.addWidget(self.practice)
         root.addWidget(card)
 
-        notes, notes_layout = make_card((20, 16, 20, 16), 8)
-        notes_title = QLabel("Before you start")
-        notes_title.setObjectName("cardTitle")
-        notes_layout.addWidget(notes_title)
-        for text in (
-            "<b>A Gemini API key is required.</b> Without your own free key SHUNCHi cannot type for you. "
-            "Add it once in Settings.",
-            "Your writing runs on the <b>free limit of your own Gemini key</b>, so everyday messages and normal work "
-            "should go through on the free version.",
-            "If you need a much higher limit, a <b>Pro subscription with extended limits</b> is planned for the future.",
-        ):
-            line = QLabel("•  " + text)
-            line.setObjectName("cardText")
+        # "Before you start" is the one thing every new user must read, so it is red.
+        self.notes = QFrame()
+        self.notes.setObjectName("notes")
+        self.notes.setStyleSheet(
+            f"QFrame#notes{{background:{C_ERR_SOFT};border:1px solid #F3B8B8;border-radius:14px;}}"
+            "QFrame#notes QLabel{background:transparent;border:0;}")
+        notes_layout = QVBoxLayout(self.notes)
+        notes_layout.setContentsMargins(20, 16, 20, 16)
+        notes_layout.setSpacing(8)
+        self.notes_title = QLabel("Before you start")
+        self.notes_title.setStyleSheet(f"font-size:15px;font-weight:700;color:{C_ERR};")
+        notes_layout.addWidget(self.notes_title)
+        self.note_lines = []
+        for _ in NOTES_EN:
+            line = QLabel("")
             line.setWordWrap(True)
             line.setTextFormat(Qt.RichText)
+            line.setStyleSheet("font-size:13px;color:#7F1D1D;")
             notes_layout.addWidget(line)
-        root.addWidget(notes)
+            self.note_lines.append(line)
+        root.addWidget(self.notes)
 
         self.activity = QLabel("")
         self.activity.setObjectName("muted")
         self.activity.setWordWrap(True)
         root.addWidget(self.activity)
         root.addStretch()
-        self.set_api_state("missing", "Add your Gemini API key in Settings to start voice typing.")
+        self.retranslate()
 
-    def _shortcut_card(self, title, key_a, key_b, hint):
+    def _shortcut_card(self, key_a, key_b):
         card, layout = make_card((20, 16, 20, 16), 10)
-        t = QLabel(title)
+        t = QLabel("")
         t.setObjectName("cardTitle")
         caps = QHBoxLayout()
         caps.setSpacing(8)
@@ -1758,35 +1916,70 @@ class DashboardPage(QWidget):
         caps.addWidget(plus)
         caps.addWidget(key_cap(key_b))
         caps.addStretch()
-        h = QLabel(hint)
+        h = QLabel("")
         h.setObjectName("cardText")
         h.setWordWrap(True)
         layout.addWidget(t)
         layout.addLayout(caps)
         layout.addWidget(h)
-        return card
+        return card, t, h
+
+    def retranslate(self):
+        """Re-writes every dashboard text in the chosen language."""
+        self.title_lbl.setText(T("Dashboard"))
+        self.sub_lbl.setText(T("Speak in Bangla or English. SHUNCHi types it wherever your cursor is."))
+        self.banner_button.setText(T("Open Settings"))
+        self.update_button.setText(T("Update now"))
+        self.card_bn[1].setText(T("Bangla Dictation"))
+        self.card_bn[2].setText(T("Speak in Bangla (English words are fine too)"))
+        self.card_en[1].setText(T("English Dictation"))
+        self.card_en[2].setText(T("Speak in English"))
+        self.try_title.setText(T("Try it here"))
+        self.try_hint.setText(T("Click inside the box, press a shortcut and speak. Pause when you finish; the text appears here."))
+        self.practice.setPlaceholderText(T("Your dictated text will be typed here…"))
+        self.notes_title.setText(T("Before you start"))
+        for line, text in zip(self.note_lines, NOTES_BN if UI_BN else NOTES_EN):
+            line.setText("•  " + text)
+        self.set_api_state(*self._api)
+        self.set_activity(self._act)
+        if self._upd:
+            self.show_update(*self._upd)
+        self.lang_switch.set_value(UI_BN)
+        harden_labels(self)
 
     def set_api_state(self, state, text):
+        self._api = (state, text)
         color, bg, border = self.BANNER_STYLES.get(state, self.BANNER_STYLES["pending"])
         self.banner.setObjectName("banner")
         self.banner.setStyleSheet(f"QFrame#banner{{background:{bg};border:1px solid {border};border-radius:12px;}}")
         self.banner_dot.setStyleSheet(f"color:{color};font-size:12px;")
         self.banner_text.setStyleSheet(f"color:{color};font-size:13px;font-weight:600;")
-        self.banner_text.setText(text)
+        self.banner_text.setText(T(text))
+        self.banner_text.setMinimumHeight(0)
+        QTimer.singleShot(0, lambda: fit_label(self.banner_text))
         self.banner_button.setVisible(state != "ok")
 
     def set_activity(self, text):
-        self.activity.setText(text)
+        self._act = text
+        self.activity.setText(T(text))
+        self.activity.setMinimumHeight(0)
+        QTimer.singleShot(0, lambda: fit_label(self.activity))
 
     def show_update(self, version, forced=False):
-        if forced:
+        self._upd = (version, forced)
+        if UI_BN:
+            self.update_text.setText(
+                f"SHUNCHi {version} আপডেট করা জরুরি। ভয়েস টাইপিং চালিয়ে যেতে আপডেট করুন." if forced
+                else f"SHUNCHi {version} এসেছে। নতুন উন্নতিগুলো পেতে আপডেট করুন।")
+        elif forced:
             self.update_text.setText(f"SHUNCHi {version} is required. Please update to keep using voice typing.")
         else:
             self.update_text.setText(f"SHUNCHi {version} is available. Update to get the latest improvements.")
-        self.update_button.setText("Update now")
+        self.update_button.setText(T("Update now"))
         self.update_banner.setVisible(True)
 
     def hide_update(self):
+        self._upd = None
         self.update_banner.setVisible(False)
 
 
@@ -2593,6 +2786,7 @@ class MainWindow(QMainWindow):
         self.update_downloader = None
         self.update_progress_dialog = None
         self.update_dialog_open = False
+        self.update_prompted_for = ""
         self.force_min = str(self.settings.value("force_min_version", "") or "")
         self.spec_token = 0
         self.spec_state = "none"        # none | running | done | failed
@@ -2627,6 +2821,8 @@ class MainWindow(QMainWindow):
         self.hotkeys = HotkeyManager(self.signals)
         self.popup = MicPopup()
 
+        global UI_BN
+        UI_BN = self.settings.value("ui_bangla", True, type=bool)
         self._build_ui()
         self.settings_page.load_values(self.smart_mode, self.silence_seconds, self.max_minutes,
                                        startup_enabled() if os.name == "nt" else False, self.auto_update,
@@ -2678,8 +2874,9 @@ class MainWindow(QMainWindow):
         else:
             logo.setText("SHUNCHi")
             logo.setStyleSheet(f"font-size:24px;font-weight:800;color:{C_TEXT};")
-        tagline = QLabel("AI voice typing · by RUHUL")
+        tagline = QLabel(T("AI voice typing · by RUHUL"))
         tagline.setObjectName("muted")
+        self.tagline = tagline
         side.addWidget(logo)
         side.addWidget(tagline)
         side.addSpacing(18)
@@ -2687,7 +2884,7 @@ class MainWindow(QMainWindow):
         self.nav_buttons = []
         self.nav_icons = []
         for index, (label, kind) in enumerate(self.NAV):
-            button = QPushButton("  " + label)
+            button = QPushButton("  " + T(label))
             button.setObjectName("nav")
             button.setCheckable(True)
             button.setCursor(Qt.PointingHandCursor)
@@ -2711,7 +2908,7 @@ class MainWindow(QMainWindow):
         right = QVBoxLayout()
         right.setContentsMargins(0, 0, 0, 0)
         right.setSpacing(0)
-        self.dashboard_page = DashboardPage(lambda: self.switch_page(2))
+        self.dashboard_page = DashboardPage(lambda: self.switch_page(2), self.set_ui_language)
         self.history_page = HistoryPage()
         self.settings_page = SettingsPage(self)
         self.help_page = HelpPage()
@@ -2743,7 +2940,18 @@ class MainWindow(QMainWindow):
         footer_layout.addWidget(version)
         right.addWidget(footer)
         outer.addLayout(right, 1)
+        harden_labels(self)
         self.switch_page(0)
+
+    def set_ui_language(self, bangla):
+        """Dashboard language switch (English / বাংলা). Remembered for the next start."""
+        global UI_BN
+        UI_BN = bool(bangla)
+        self.settings.setValue("ui_bangla", UI_BN)
+        for button, (label, _kind) in zip(self.nav_buttons, self.NAV):
+            button.setText("  " + T(label))
+        self.tagline.setText(T("AI voice typing · by RUHUL"))
+        self.dashboard_page.retranslate()
 
     def switch_page(self, index):
         self.stack.setCurrentIndex(index)
@@ -2753,6 +2961,7 @@ class MainWindow(QMainWindow):
             button.setIcon(self.nav_icons[i][1 if active else 0])
         if index == 1:
             self.history_page.refresh()
+        QTimer.singleShot(0, lambda: harden_labels(self.stack.currentWidget()))
 
     def show_status(self, text):
         """Shows one line under the dashboard and returns to the ready text a few seconds later,
@@ -2857,6 +3066,17 @@ class MainWindow(QMainWindow):
             NoticeDialog(self, notice, self.settings.value("ui_bangla", True, type=bool)).exec()
             break
 
+    def showEvent(self, event):
+        """Opening the window from the tray (or after a quiet start) is the moment to tell about a waiting update."""
+        super().showEvent(event)
+        info = getattr(self, "latest_info", None)
+        if not info:
+            return
+        if self.update_is_forced():
+            QTimer.singleShot(400, self.show_forced_update)
+        elif self.update_prompted_for != info.get("latest"):
+            QTimer.singleShot(900, lambda: self.notify_update(info) if self.isVisible() else None)
+
     def update_is_forced(self):
         """True while this version is older than the minimum version the developer requires."""
         return bool(self.force_min) and parse_version(APP_VERSION) < parse_version(self.force_min)
@@ -2883,8 +3103,7 @@ class MainWindow(QMainWindow):
             self.settings_page.set_update_status(f"Version {info['latest']} is available.", "ok")
             if self.update_is_forced():
                 self.show_forced_update()
-            elif manual or self.settings.value("update_notified", "") != info["latest"]:
-                self.settings.setValue("update_notified", info["latest"])
+            elif manual or self.update_prompted_for != info["latest"]:
                 self.notify_update(info)
         else:
             self.latest_info = None
@@ -2906,6 +3125,7 @@ class MainWindow(QMainWindow):
             return
         if self.update_dialog_open or self.update_busy():
             return
+        self.update_prompted_for = info["latest"]      # once per start; it comes back next time SHUNCHi opens
         self.update_dialog_open = True
         try:
             box = QMessageBox(self)

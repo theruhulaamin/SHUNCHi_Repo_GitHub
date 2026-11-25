@@ -1,3 +1,18 @@
+SHUNCHi 4.6.1 — Dashboard in Bangla/English, smoother pop-up, update prompt, installer version
+==============================================================================================
+
+1. Dashboard: English | বাংলা switch (top right). Sidebar and dashboard follow it and it is remembered.
+   "Before you start" is now a red box so nobody misses the API key note.
+   Text blocks no longer overlap or get cut off (word-wrapped labels are re-measured).
+2. Typing pop-up: painted as one piece (no stacked labels), opaque animated parts, 60 fps animation,
+   smoother wave and orb. Ghost / overlapping text cannot happen.
+3. Updates: when a new version exists, SHUNCHi now asks every time it is opened (also when it was
+   started quietly in the tray and you open it later). "Later" asks again on the next start.
+4. Installer: the window shows the exact version ("Update: 4.6.0 to 4.6.1" / "Version 4.6.1"); the small
+   web installer no longer shows "version 1.0.0" or an extra "Ready to Install" window.
+5. Ideas: sent straight into your private GitHub inbox (no mail service needed); fallback kept.
+6. Everything from 4.6.0 and earlier is kept.
+
 SHUNCHi 4.6.0 — Faster typing, In-app Update, History switch
 ============================================================
 
