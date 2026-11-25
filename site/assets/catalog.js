@@ -36,8 +36,8 @@ var APPS = [
   { name: "SHUNCHi", en: "AI voice typing for Bangla and English, in every Windows app.",
     bn: "প্রতিটি উইন্ডোজ অ্যাপে বাংলা ও ইংরেজি এআই ভয়েস টাইপিং।",
     url: "download/index.html", more: "index.html", badge: "v4", s: "live", logo: "assets/shunchi-icon.png" },
-  { name: "Your next app", en: "More free software from the developer is on the way.",
-    bn: "ডেভেলপারের আরও ফ্রি সফটওয়্যার আসছে।", url: "", badge: "", s: "soon", logo: "" }
+  { name: "My next app / software", en: "Submit your idea in the form below.",
+    bn: "আপনার আইডিয়া নিচের ফর্মে জমা দিন।", url: "", badge: "", s: "soon", logo: "", idea: true }
 ];
 
 var TOOLS = [
@@ -346,6 +346,9 @@ var TOOLS = [
       go.appendChild(bi(a.s === "live" && a.name === "SHUNCHi" ? "Download" : "Open", a.name === "SHUNCHi" ? "ডাউনলোড" : "খুলুন"));
       act.appendChild(go);
       if (a.more) { var m = el("a", "btn btn-ghost btn-sm"); m.href = BASE + a.more; m.appendChild(bi("Details", "বিস্তারিত")); act.appendChild(m); }
+    } else if (a.idea) {
+      var ib = el("a", "btn btn-primary btn-sm"); ib.href = "#suggest";
+      ib.appendChild(bi("Submit idea", "আইডিয়া দিন")); act.appendChild(ib);
     } else act.appendChild(statusBadge("soon"));
     node.appendChild(tile); node.appendChild(body); node.appendChild(act);
     return node;
