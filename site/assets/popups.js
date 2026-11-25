@@ -57,6 +57,27 @@
       if (e.shiftKey && d.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && d.activeElement === z) { e.preventDefault(); a.focus(); }
     }
   }
+  function clean(h) {
+    h = String(h || ""); if (!/<[a-z][\s\S]*>/i.test(h)) return esc(h).replace(/\n/g, "<br>");
+    var t = d.createElement("template"); t.innerHTML = h; var out = d.createElement("div");
+    (function walk(src, dst) {
+      [].forEach.call(src.childNodes, function (n) {
+        if (n.nodeType === 3) { dst.appendChild(d.createTextNode(n.nodeValue)); return; }
+        if (n.nodeType !== 1) return; var tg = n.tagName, el = null;
+        if (tg === "B" || tg === "STRONG") el = d.createElement("b");
+        else if (tg === "I" || tg === "EM") el = d.createElement("i");
+        else if (tg === "U") el = d.createElement("u");
+        else if (tg === "BR") { dst.appendChild(d.createElement("br")); return; }
+        else if (tg === "UL" || tg === "LI") el = d.createElement(tg.toLowerCase());
+        else if (tg === "DIV" || tg === "P") el = d.createElement("div");
+        else if (tg === "A") { var hr = n.getAttribute("href") || ""; if (/^https:\/\//i.test(hr)) { el = d.createElement("a"); el.setAttribute("href", hr); el.setAttribute("rel", "noopener noreferrer"); } }
+        else if (tg === "SPAN") { var cl = n.className; if (cl === "sp-s1" || cl === "sp-s3" || cl === "sp-s4") { el = d.createElement("span"); el.className = cl; } }
+        else if (tg === "SCRIPT" || tg === "STYLE") return;
+        if (el) { dst.appendChild(el); walk(n, el); } else walk(n, dst);
+      });
+    })(t.content, out);
+    return out.innerHTML;
+  }
   function show(p) {
     shown++; record(p, false); lastFocus = d.activeElement;
     var title = pick(p.title_en, p.title_bn), body = pick(p.body_en, p.body_bn), btn = pick(p.button_en, p.button_bn);
@@ -65,7 +86,7 @@
     var times = +p.times || 1, left = times - (load()[p.id] || { n: 0 }).n;
     el.innerHTML = '<div class="sp-box" data-style="' + esc(p.style || "info") + '"><button type="button" class="sp-x" aria-label="' + (bn() ? "বন্ধ করুন" : "Close") + '">×</button>' +
       '<div class="sp-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6zM10 19a2 2 0 0 0 4 0"/></svg></div>' +
-      (title ? '<h2>' + esc(title) + '</h2>' : '') + (body ? '<p>' + esc(body).replace(/\n/g, "<br>") + '</p>' : '') +
+      (title ? '<h2>' + esc(title) + '</h2>' : '') + (body ? '<div class="sp-body">' + clean(body) + '</div>' : '') +
       '<div class="sp-act">' + (url && btn ? '<a class="btn btn-primary sp-go" href="' + esc(url) + '">' + esc(btn) + '</a>' : '') + '<button type="button" class="btn btn-ghost sp-skip">' + (bn() ? "বন্ধ করুন" : "Close") + '</button></div>' +
       (times > 1 && left > 0 ? '<button type="button" class="sp-never">' + (bn() ? "আর দেখাবেন না" : "Don't show again") + '</button>' : '') + '</div>';
     d.body.appendChild(el); openEl = el; d.body.classList.add("sp-open");

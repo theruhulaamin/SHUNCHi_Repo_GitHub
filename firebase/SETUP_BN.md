@@ -34,3 +34,14 @@ Email/password app-e ager step-eii cholbe. App-e **Google** bhalo korte:
 
 ## Block ki kore kaj kore
 `Blocked` hole user login korte pare, kintu rules-er karone comment/idea/data save korte pare na (website ar app duitei). Firebase Auth-er login account-i disable korte Firebase console lage; seta admin panel theke hoy na.
+
+## Admin panel login (gitup)
+
+Admin panel-e ager hard-coded username/password nei. Login ekhon Firebase Authentication diye:
+
+1. Firebase -> Authentication -> Sign-in method -> **Email/Password** chalu thakte hobe.
+2. `/gitup/` kholo -> **First time? Create account** -> admin email (firestore.rules-er list-er ekta) + nijer pochonder password (10+ akkhor) dao.
+3. Email-e ashe verification link-e click koro -> "I have verified" chapo.
+4. Ekhon theke sudhu Sign in. Password bhule gele **Forgot password?**.
+
+Session shudhu ei browser tab/window-er jonno thake; 30 min idle hole auto logout. Asol lock holo `firestore.rules`-er admin email list + GitHub token.
