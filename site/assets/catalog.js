@@ -43,8 +43,8 @@ var APPS = [
 var TOOLS = [
   // ---- Career & jobs
   { id: "build-cv", c: "career", s: "next", t: "CV Builder", tb: "সিভি বিল্ডার",
-    d: "A clean, ATS-friendly CV from 15 templates and 24 colour themes. No sign-up.",
-    db: "১৫টি টেমপ্লেট ও ২৪টি রঙের থিমে পরিচ্ছন্ন, ATS-বান্ধব সিভি। সাইন আপ লাগে না।" },
+    d: "A clean, ATS-friendly CV from 15 templates and 24 colour themes.",
+    db: "১৫টি টেমপ্লেট ও ২৪টি রঙের থিমে পরিচ্ছন্ন, ATS-বান্ধব সিভি।" },
   { id: "cover-letter", c: "career", s: "soon", t: "Cover Letter Builder", tb: "কভার লেটার বিল্ডার",
     d: "Write a polished cover letter with ready presets and a live letterhead preview.",
     db: "তৈরি প্রিসেট ও লাইভ লেটারহেড প্রিভিউ দিয়ে গোছানো কভার লেটার লিখুন।" },

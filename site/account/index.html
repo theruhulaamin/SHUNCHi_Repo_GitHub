@@ -20,7 +20,7 @@
 <link rel="icon" type="image/png" href="../assets/favicon.png"><link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="../manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SHUNCHi">
-<link rel="stylesheet" href="../assets/site.css?v=c566c812">
+<link rel="stylesheet" href="../assets/site.css?v=d001903e">
 </head>
 <body>
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRFV2RXP" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -49,6 +49,17 @@
     <ul class="ag-list"><li><span class="en">Track every idea step by step</span><span class="bn">প্রতিটি আইডিয়া ধাপে ধাপে ট্র্যাক করুন</span></li><li><span class="en">Comment on blog posts</span><span class="bn">ব্লগে মন্তব্য করুন</span></li><li><span class="en">Autofill your details in forms</span><span class="bn">ফর্মে তথ্য অটো-ফিল করুন</span></li></ul>
     <div class="ag-act"><button type="button" class="btn btn-primary" data-open-auth="login"><span class="en">Log in</span><span class="bn">লগইন</span></button><button type="button" class="btn btn-ghost" data-open-auth="signup"><span class="en">Create account</span><span class="bn">অ্যাকাউন্ট খুলুন</span></button></div>
   </div></div>
+
+  <div class="pc-modal" id="pc-modal" role="dialog" aria-modal="true" aria-labelledby="pc-h" hidden><div class="pc-box">
+    <h2 id="pc-h"><span class="en">Complete your profile</span><span class="bn">প্রোফাইল সম্পূর্ণ করুন</span></h2>
+    <p class="muted"><span class="en">A few details are missing. They fill your idea forms automatically and stay private.</span><span class="bn">কিছু তথ্য বাকি আছে। এগুলো আইডিয়া ফর্মে নিজে থেকে বসবে এবং গোপন থাকবে।</span></p>
+    <form id="pc-form" novalidate>
+      <label data-f="name"><span><span class="en">Full name</span><span class="bn">পুরো নাম</span></span><input name="name" maxlength="60" autocomplete="name"></label>
+      <label data-f="phone"><span><span class="en">Phone</span><span class="bn">ফোন</span></span><input name="phone" type="tel" maxlength="30" autocomplete="tel" placeholder="01XXXXXXXXX"></label>
+      <label data-f="address"><span><span class="en">Address</span><span class="bn">ঠিকানা</span></span><input name="address" maxlength="160" autocomplete="street-address"></label>
+      <p class="auth-msg" id="pc-msg" role="status"></p>
+      <div class="c-act"><button class="btn btn-primary" type="submit"><span class="en">Save</span><span class="bn">সেভ করুন</span></button><button class="btn btn-ghost" type="button" id="pc-later"><span class="en">Later</span><span class="bn">পরে করব</span></button></div>
+    </form></div></div>
 
   <div id="acct-body" hidden>
     <div class="ac-verify" id="ac-verify" hidden><div><b><span class="en">Verify your email</span><span class="bn">ইমেইল ভেরিফাই করুন</span></b><span class="muted"><span class="en">We sent a link to your inbox. You need it to comment.</span><span class="bn">ইনবক্সে একটি লিংক পাঠানো হয়েছে। মন্তব্য করতে এটি লাগবে।</span></span></div>
@@ -116,7 +127,6 @@
               <label><span><span class="en">Confirm password</span><span class="bn">পাসওয়ার্ড আবার দিন</span></span><input name="pw2" type="password" minlength="6" maxlength="100" autocomplete="new-password"></label>
               <div class="c-act"><button class="btn btn-primary" type="submit" id="pw-go"></button><span class="auth-msg" id="pw-msg" role="status"></span></div></form></div>
           <div class="acct-card"><h2><span class="en">Your data</span><span class="bn">আপনার ডেটা</span></h2><div class="row"><button type="button" class="btn btn-ghost btn-sm" id="ac-export"><span class="en">Download my data</span><span class="bn">আমার ডেটা ডাউনলোড</span></button></div></div>
-          <div class="acct-card danger-zone"><h2><span class="en">Delete account</span><span class="bn">অ্যাকাউন্ট ডিলিট</span></h2><p class="muted"><span class="en">Removes your profile, ideas, saved data and comments for good.</span><span class="bn">প্রোফাইল, আইডিয়া, সেভ ডেটা ও মন্তব্য চিরতরে মুছে যাবে।</span></p><div class="row"><button type="button" class="btn btn-ghost btn-sm danger" id="ac-del"><span class="en">Delete my account</span><span class="bn">অ্যাকাউন্ট ডিলিট করুন</span></button></div></div>
         </section>
       </div>
     </div>
@@ -134,7 +144,7 @@
       <span><span class="en">Made in Bangladesh</span><span class="bn">বাংলাদেশে তৈরি</span></span></div>
   </div>
 </footer>
-<nav class="tabbar" aria-label="App navigation"><a href="../index.html" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span class="en">Home</span><span class="bn">হোম</span></a><a href="../index.html#setup" data-tab="setup"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span class="en">Setup</span><span class="bn">সেটআপ</span></a><a href="../apps/index.html" data-tab="apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span class="en">Apps</span><span class="bn">অ্যাপ</span></a><a href="../blog/index.html" data-tab="blog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h8M8 17h5"/></svg><span class="en">Blog</span><span class="bn">ব্লগ</span></a><a href="../index.html#developer" data-tab="dev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg><span class="en">Dev. Info</span><span class="bn">ডেভ ইনফো</span></a><a href="../account/index.html" data-tab="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg><span class="en">Profile</span><span class="bn">প্রোফাইল</span></a><a href="../download/index.html" data-tab="download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg><span class="en">Download</span><span class="bn">ডাউনলোড</span></a></nav>
-<script src="../assets/site.js?v=77f9db46"></script><script src="../assets/auth.js?v=4ec411f9" defer></script>
+<nav class="tabbar" aria-label="App navigation"><a href="../index.html" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span class="en">Home</span><span class="bn">হোম</span></a><a href="../index.html#setup" data-tab="setup"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg><span class="en">Setup</span><span class="bn">সেটআপ</span></a><a href="../apps/index.html" data-tab="apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg><span class="en">Tools</span><span class="bn">টুলস</span></a><a href="../blog/index.html" data-tab="blog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h8M8 17h5"/></svg><span class="en">Blog</span><span class="bn">ব্লগ</span></a><a href="../index.html#developer" data-tab="dev"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg><span class="en">Dev. Info</span><span class="bn">ডেভ ইনফো</span></a><a href="../account/index.html" data-tab="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg><span class="en">Profile</span><span class="bn">প্রোফাইল</span></a><a href="../download/index.html" data-tab="download"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg><span class="en">Download</span><span class="bn">ডাউনলোড</span></a></nav>
+<script src="../assets/site.js?v=77f9db46"></script><script src="../assets/auth.js?v=49a8c61e" defer></script><script src="../assets/popups.js?v=4a4b146f" defer></script>
 </body>
 </html>

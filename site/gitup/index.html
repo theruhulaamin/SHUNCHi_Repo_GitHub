@@ -189,6 +189,16 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 .idea h3{font-size:16.5px}
 .idea .body{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
 .idea .mt{display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:13px}
+.dsec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 0 10px}.dsec h2{font-size:17px;margin:0;color:var(--ink)}
+.attn{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}.attn .at{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:14px;cursor:pointer;box-shadow:var(--sh)}
+.attn .at b{font-size:17px;color:var(--ink)}.attn .at.wn{border-color:#f3d28a;background:#fffbeb}.attn .at.er{border-color:#f0b9b9;background:#fef2f2}.attn .at:hover{border-color:var(--accent)}
+.pipe{display:grid;gap:10px}.pipe .pr{display:grid;grid-template-columns:110px 1fr 38px;gap:10px;align-items:center;font-size:13.5px}.pipe .pr .bar{height:10px;border-radius:99px;background:var(--bg);overflow:hidden}.pipe .pr .bar i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.pipe .pr.ok .bar i{background:#16a34a}.pipe .pr.er .bar i{background:#dc2626}.pipe .pr.wn .bar i{background:#f59e0b}.pipe .pr b{text-align:right;color:var(--ink)}
+.usplit{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.spark i{position:relative}
+.item .av{width:34px;height:34px;border-radius:50%;background:var(--accent-soft,#e8f0ff);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:1000px){.g3{grid-template-columns:1fr}}
 .spark{display:flex;align-items:flex-end;gap:3px;height:56px}.spark i{flex:1;background:linear-gradient(180deg,var(--accent),#6aa5ff);border-radius:4px 4px 0 0;min-height:2px;opacity:.9}
 
 /* ---------- responsive ---------- */
@@ -290,6 +300,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       <button type="button" data-tab="users"><svg class="i"><use href="#i-user"/></svg><span class="tx" data-bn="ইউজার">Users</span></button>
       <button type="button" data-tab="software"><svg class="i"><use href="#i-box"/></svg><span class="tx" data-bn="সফটওয়্যার">Software</span></button>
       <button type="button" data-tab="popups"><svg class="i"><use href="#i-bell"/></svg><span class="tx" data-bn="অ্যাপ পপ-আপ">App pop-ups</span></button>
+      <button type="button" data-tab="spop"><svg class="i"><use href="#i-bell"/></svg><span class="tx" data-bn="সাইট পপ-আপ">Site pop-ups</span></button>
       <button type="button" data-tab="videos"><svg class="i"><use href="#i-play"/></svg><span class="tx" data-bn="ভিডিও">Videos</span></button>
       <button type="button" data-tab="blog"><svg class="i"><use href="#i-pen"/></svg><span class="tx" data-bn="ব্লগ">Blog</span></button>
       <button type="button" data-tab="release"><svg class="i"><use href="#i-rocket"/></svg><span class="tx" data-bn="রিলিজ">Release</span></button>
@@ -328,6 +339,26 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
           <div class="stat"><div class="k"><svg class="i s"><use href="#i-eye"/></svg><span data-bn="রিপো ভিউ (১৪ দিন)">Repo views (14 days)</span></div><div class="v" id="s-views">-</div><div class="s" id="s-views-s"></div></div>
           <div class="stat"><div class="k"><svg class="i s"><use href="#i-star"/></svg><span data-bn="GitHub স্টার">GitHub stars</span></div><div class="v" id="s-stars">-</div><div class="s" id="s-stars-s"></div></div>
         </div>
+        <div id="d-attn" class="attn hidden"></div>
+        <div class="dsec"><h2 data-bn="কমিউনিটি ও অ্যাকাউন্ট">Community &amp; accounts</h2><span class="muted" id="d-fbnote"></span></div>
+        <div id="d-fbconnect" class="card hidden" style="margin-bottom:14px"><div class="row" style="flex-wrap:wrap"><div style="flex:1;min-width:220px"><b data-bn="ইউজার ও মন্তব্যের তথ্য দেখতে অ্যাডমিন সাইন ইন করুন">Sign in as admin to see users and comments</b><div class="muted" data-bn="একবার সাইন ইন করলে ড্যাশবোর্ডে ইউজার, নতুন সাইনআপ ও মন্তব্য দেখাবে।">Once signed in, the dashboard shows users, new signups and comments.</div></div><button class="btn p" id="d-fbgo" type="button" data-bn="Users ট্যাবে যান">Go to Users</button></div></div>
+        <div class="grid g4" style="margin-bottom:14px" id="d-comm">
+          <div class="stat"><div class="k"><svg class="i s"><use href="#i-user"/></svg><span data-bn="মোট ইউজার">Total users</span></div><div class="v" id="c-users">-</div><div class="s" id="c-users-s"></div></div>
+          <div class="stat"><div class="k"><svg class="i s"><use href="#i-plus"/></svg><span data-bn="নতুন (৭ দিন)">New (7 days)</span></div><div class="v" id="c-new">-</div><div class="s" id="c-new-s"></div></div>
+          <div class="stat"><div class="k"><svg class="i s"><use href="#i-pen"/></svg><span data-bn="মন্তব্য">Comments</span></div><div class="v" id="c-cm">-</div><div class="s" id="c-cm-s"></div></div>
+          <div class="stat"><div class="k"><svg class="i s"><use href="#i-bell"/></svg><span data-bn="পপ-আপ চলছে">Pop-ups running</span></div><div class="v" id="c-pop">-</div><div class="s" id="c-pop-s"></div></div>
+        </div>
+        <div class="grid g2" style="margin-bottom:14px">
+          <div class="card"><div class="card-h"><h2 data-bn="আইডিয়ার অবস্থা">Idea pipeline</h2><button class="btn sm" data-go="ideas" type="button" data-bn="সব দেখুন">View all</button></div><div id="d-pipe" class="muted">…</div></div>
+          <div class="card"><div class="card-h"><h2 data-bn="নতুন সাইনআপ (১৪ দিন)">Signups (14 days)</h2><button class="btn sm" data-go="users" type="button" data-bn="ইউজার">Users</button></div><div id="d-signups" class="muted">…</div><div id="d-ustat" class="usplit"></div></div>
+        </div>
+        <div class="grid g3" style="margin-bottom:16px">
+          <div class="card"><div class="card-h"><h2 data-bn="সাম্প্রতিক আইডিয়া">Latest ideas</h2></div><div class="list" id="d-ideas"></div></div>
+          <div class="card"><div class="card-h"><h2 data-bn="নতুন ইউজার">Newest users</h2></div><div class="list" id="d-users"></div></div>
+          <div class="card"><div class="card-h"><h2 data-bn="সাম্প্রতিক মন্তব্য">Latest comments</h2></div><div class="list" id="d-comments"></div></div>
+        </div>
+        <div class="card" style="margin-bottom:16px"><div class="card-h"><h2 data-bn="পপ-আপ">Pop-ups</h2><span class="row" style="gap:6px"><button class="btn sm" data-go="spop" type="button" data-bn="সাইট পপ-আপ">Site pop-ups</button><button class="btn sm" data-go="popups" type="button" data-bn="অ্যাপ পপ-আপ">App pop-ups</button></span></div><div class="list" id="d-pops"></div></div>
+        <div class="dsec"><h2 data-bn="ডাউনলোড ও ওয়েবসাইট">Downloads &amp; website</h2></div>
         <div class="card">
           <div class="card-h"><h2 data-bn="রিলিজ অনুযায়ী ডাউনলোড">Downloads by release</h2><span class="muted" data-bn="GitHub-এর হিসাব। ছোট ইনস্টলার পুরো ফাইলও নামায়, তাই একবার করে গোনা হয়।">From GitHub. The small installer also fetches the full file, so each install is counted once.</span></div>
           <div class="tw" id="dl-table"><div class="empty"><span class="sk" style="width:200px"></span></div></div>
@@ -482,6 +513,49 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
             </div>
             <label class="chk" style="margin-top:14px"><input name="active" type="checkbox" checked> <span data-bn="চালু আছে">Active</span></label>
             <div class="row" style="margin-top:16px"><button class="btn p" type="submit" id="pop-save" data-bn="সেভ ও পাবলিশ">Save and publish</button><button class="btn d hidden" type="button" id="pop-del" data-bn="ডিলিট">Delete</button></div>
+          </div></form>
+        </div>
+      </section>
+      <section id="p-spop" class="sec hidden">
+        <div id="sp-listview">
+          <div class="page-h"><div><h1 data-bn="সাইট পপ-আপ">Site pop-ups</h1><p data-bn="ওয়েবসাইটে ভিজিটরদের দেখানো পপ-আপ। একসাথে সর্বোচ্চ ৪টি চালু রাখা যায়; একটির পর একটি আসে।">Pop-ups shown to website visitors. Up to 4 can run at once; they appear one after another.</p></div>
+            <button class="btn p" id="sp-new" type="button"><svg class="i s"><use href="#i-plus"/></svg><span data-bn="নতুন পপ-আপ">New pop-up</span></button></div>
+          <div class="card"><div id="sp-warn" class="muted" style="margin-bottom:10px"></div><div class="list" id="sp-list"></div>
+            <p class="muted" style="margin-top:12px" data-bn="প্রতিটি ভিজিটর একই পপ-আপ নির্দিষ্ট বারের বেশি দেখে না। এক ভিজিটে সর্বোচ্চ ৪টি পপ-আপ আসে। পরিবর্তন সাইটে আসতে কয়েক মিনিট লাগতে পারে।">Each visitor sees a pop-up only up to the set number of times. At most 4 pop-ups appear per visit. Changes can take a few minutes to reach the site.</p></div>
+        </div>
+        <div id="sp-formview" class="hidden">
+          <div class="page-h"><div><h1 id="sp-form-title">New pop-up</h1></div><button class="btn" id="sp-cancel" type="button"><svg class="i s"><use href="#i-back"/></svg><span data-bn="ফিরে যান">Back</span></button></div>
+          <form id="sp-form" autocomplete="off"><div class="card">
+            <div class="grid g2">
+              <label><span data-bn="শিরোনাম (বাংলা)">Title (Bangla)</span><input name="title_bn" maxlength="90"></label>
+              <label><span data-bn="শিরোনাম (English)">Title (English)</span><input name="title_en" maxlength="90"></label>
+            </div>
+            <div class="grid g2" style="margin-top:14px">
+              <label><span data-bn="বার্তা (বাংলা)">Message (Bangla)</span><textarea name="body_bn" rows="5" maxlength="500"></textarea></label>
+              <label><span data-bn="বার্তা (English)">Message (English)</span><textarea name="body_en" rows="5" maxlength="500"></textarea></label>
+            </div>
+            <div class="grid g2" style="margin-top:14px">
+              <label><span data-bn="বোতামের লেখা (বাংলা)">Button text (Bangla)</span><input name="button_bn" maxlength="40" placeholder="বিস্তারিত দেখুন"></label>
+              <label><span data-bn="বোতামের লেখা (English)">Button text (English)</span><input name="button_en" maxlength="40" placeholder="Learn more"></label>
+            </div>
+            <label style="margin-top:14px"><span data-bn="বোতামের লিংক (ঐচ্ছিক)">Button link (optional)</span> <small data-bn="https://shunchiai.com/... দিয়ে শুরু হতে হবে">must start with https://shunchiai.com/</small><input name="button_url" maxlength="200" placeholder="https://shunchiai.com/download/"></label>
+            <h4 style="margin:18px 0 4px" data-bn="কখন ও কতদিন">When and how long</h4>
+            <div class="grid g3">
+              <label><span data-bn="শুরুর তারিখ">Start date</span><input name="start" type="date" required></label>
+              <label><span data-bn="কত দিন চলবে">Runs for how many days</span><input name="days" type="number" min="1" max="365" value="3" required></label>
+              <label><span data-bn="পেজ লোডের কত সেকেন্ড পর">Delay after page load (seconds)</span><input name="delay" type="number" min="0" max="60" value="4"></label>
+            </div>
+            <h4 style="margin:18px 0 4px" data-bn="কতবার ও কীভাবে দেখাবে">How many times and how often</h4>
+            <div class="grid g3">
+              <label><span data-bn="প্রতি ভিজিটর মোট কতবার">Times per visitor (total)</span><input name="times" type="number" min="1" max="50" value="1" required></label>
+              <label><span data-bn="কত ঘন ঘন">How often</span><select name="every"><option value="visit" data-bn="প্রতি ভিজিটে">Every visit</option><option value="session" data-bn="সেশনে একবার">Once per session</option><option value="day" data-bn="দিনে একবার">Once per day</option></select></label>
+              <label><span data-bn="কাদের দেখাবে">Audience</span><select name="audience"><option value="all" data-bn="সবাই">Everyone</option><option value="guests" data-bn="লগইন ছাড়া ভিজিটর">Visitors not logged in</option><option value="members" data-bn="লগইন করা ইউজার">Logged-in users</option></select></label>
+            </div>
+            <div class="grid g3" style="margin-top:14px">
+              <label><span data-bn="কোন পেজে">Which pages</span><select name="pages"><option value="all" data-bn="সব পেজ">All pages</option><option value="home" data-bn="শুধু হোম">Home only</option><option value="blog" data-bn="শুধু ব্লগ">Blog only</option><option value="apps" data-bn="শুধু আরও অ্যাপ">More Apps only</option><option value="download" data-bn="শুধু ডাউনলোড">Download only</option><option value="setup" data-bn="শুধু সেটআপ">Setup only</option></select></label>
+            </div>
+            <label class="chk" style="margin-top:14px"><input name="active" type="checkbox" checked> <span data-bn="চালু আছে">Active</span></label>
+            <div class="row" style="margin-top:16px"><button class="btn p" type="submit" id="sp-save" data-bn="সেভ ও পাবলিশ">Save and publish</button><button class="btn d hidden" type="button" id="sp-del" data-bn="ডিলিট">Delete</button></div>
           </div></form>
         </div>
       </section>
@@ -778,7 +852,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       saveCfg($("#remember").checked); S.info = r;
       $("#who").textContent = r.full_name; $("#connect").classList.add("hidden"); $("#app").classList.remove("hidden");
       $("#actions-link").href = "https://github.com/" + S.repo + "/actions";
-      var h = (location.hash || "").slice(1); go(["dash", "ideas", "software", "popups", "videos", "blog", "release", "help"].indexOf(h) >= 0 ? h : "dash", true);
+      var h = (location.hash || "").slice(1); go(["dash", "ideas", "software", "popups", "spop", "videos", "blog", "release", "help"].indexOf(h) >= 0 ? h : "dash", true);
       refreshAll();
     }).catch(function (e) { toast(e.status === 404 ? T("Repository not found, or the token has no access to it.", "রিপোজিটরি পাওয়া যায়নি, বা টোকেনের অ্যাক্সেস নেই।") : errText(e), "er"); })
       .then(function () { busy(btn, false); });
@@ -789,7 +863,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   ["logout", "logout2", "logout3"].forEach(function (id) { $("#" + id).addEventListener("click", disconnect); });
 
   /* ---------- navigation ---------- */
-  var TABS = ["dash", "ideas", "users", "software", "popups", "videos", "blog", "release", "help"];
+  var TABS = ["dash", "ideas", "users", "software", "popups", "spop", "videos", "blog", "release", "help"];
   function go(tab, silent) {
     if (!silent && S.tab === "blog" && S.editing && tab !== "blog" && S.dirty) { if (!window.confirm(T("You have unsaved changes in the editor. Leave anyway?", "এডিটরে সেভ না করা পরিবর্তন আছে। তবুও ছাড়বেন?"))) return; S.dirty = false; }
     S.tab = tab; TABS.forEach(function (t) { $("#p-" + t).classList.toggle("hidden", t !== tab); });
@@ -806,7 +880,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 
   function refreshAll() {
     $("#refresh").disabled = true;
-    return Promise.all([loadApps(), loadVideos(), loadPopups(), loadPosts(), loadReleases(), loadInfo(), loadRuns(), loadLive(), loadIdeas(false), loadTraffic()]).then(function () { $("#refresh").disabled = false; S.loaded = true; });
+    return Promise.all([loadApps(), loadVideos(), loadPopups(), loadSitePops(), loadPosts(), loadReleases(), loadInfo(), loadRuns(), loadLive(), loadIdeas(false), loadTraffic()]).then(function () { try { renderCommunity(); S.dashUsers(); } catch (e) {} }).then(function () { $("#refresh").disabled = false; S.loaded = true; });
   }
   $("#refresh").addEventListener("click", function () { refreshAll().then(function () { toast(T("Updated.", "আপডেট হয়েছে।"), "ok"); }); });
   $("#redeploy").addEventListener("click", function () {
@@ -1015,6 +1089,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   function ideaMail(x) { var c = String(x.email || x.contact || ""); var m = /[^\s@]+@[^\s@]+\.[^\s@]+/.exec(c); return m ? "mailto:" + m[0] + "?subject=" + encodeURIComponent("Re: " + x.title) : ""; }
   function newCount() { var seen = 0; try { seen = +localStorage.getItem(SEEN) || 0; } catch (e) {} return S.ideas ? Math.max(0, S.ideas.length - seen) : 0; }
   function updateIdeaBadge() {
+    try { renderCommunity(); } catch (e) {}
     var n = newCount(), b = $("#b-ideas"); b.textContent = n; b.classList.toggle("hidden", !n || S.tab === "ideas");
     setStat("s-ideas", S.ideas ? nf(S.ideas.length) : "-", (n ? n + T(" new", " টি নতুন") : T("all seen", "সব দেখা")) + (S.ideas ? " · " + S.ideas.filter(function (x) { return x.status === "pending"; }).length + T(" pending", " পেন্ডিং") : ""));
   }
@@ -1164,7 +1239,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       UCOMM = []; r[1].forEach(function (x) { var v = x.data(); v.id = x.id; UCOMM.push(v); });
       UIDEAS = []; r[2].forEach(function (x) { var v = x.data(); v.uid = x.ref.parent.parent.id; UIDEAS.push(v); });
       USERS.sort(function (a, b) { return tsm(b.createdAt) - tsm(a.createdAt); }); UCOMM.sort(function (a, b) { return tsm(b.createdAt) - tsm(a.createdAt); });
-      $("#u-main").classList.remove("hidden"); renderUsers();
+      $("#u-main").classList.remove("hidden"); renderUsers(); try { renderCommunity(); } catch (e) {}
     }, function (e) { $("#u-main").classList.add("hidden"); usersConn(e.code === "permission-denied" ? T("This Google account is not the admin in the Firestore rules, or the rules are not published.", "এই Google অ্যাকাউন্ট Firestore rules-এ অ্যাডমিন নয়, অথবা rules পাবলিশ করা হয়নি।") : (e.code || e.message)); });
   }
   function cnt(arr, uid) { return arr.filter(function (x) { return x.uid === uid; }).length; }
@@ -1358,7 +1433,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   S.pops = []; S.popsSha = null; S.curPop = null;
   function loadPopups() {
     return getFile("site/data/notices.json").then(function (f) { var d = JSON.parse(f.text || "[]"); S.pops = Array.isArray(d) ? d : []; S.popsSha = f.sha; }, function (e) { if (e.status === 404) { S.pops = []; S.popsSha = null; } else throw e; })
-      .then(renderPopups).catch(function (e) { toast(T("Could not load pop-ups: ", "পপ-আপ লোড হয়নি: ") + errText(e), "er"); });
+      .then(function () { renderPopups(); try { renderCommunity(); } catch (e) {} }).catch(function (e) { toast(T("Could not load pop-ups: ", "পপ-আপ লোড হয়নি: ") + errText(e), "er"); });
   }
   function popEnd(p) { var d = new Date(p.start + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + (+p.days || 1) - 1); return d.toISOString().slice(0, 10); }
   function popState(p) {
@@ -1405,6 +1480,116 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       writePops("Admin: remove app pop-up").then(function () { toast(T("Removed.", "সরানো হয়েছে।"), "ok"); $("#pop-cancel").click(); renderPopups(); }).catch(function (err) { toast(errText(err), "er"); loadPopups(); });
     });
   });
+
+  /* ================= SITE POP-UPS ================= */
+  S.spops = []; S.spopsSha = null; S.curSp = null;
+  function loadSitePops() {
+    return getFile("site/data/site-popups.json").then(function (f) { var d = JSON.parse(f.text || "[]"); S.spops = Array.isArray(d) ? d : []; S.spopsSha = f.sha; }, function (e) { if (e.status === 404) { S.spops = []; S.spopsSha = null; } else throw e; })
+      .then(function () { renderSitePops(); try { renderCommunity(); } catch (e) {} }).catch(function (e) { toast(T("Could not load site pop-ups: ", "সাইট পপ-আপ লোড হয়নি: ") + errText(e), "er"); });
+  }
+  var EVERY = { visit: ["every visit", "প্রতি ভিজিটে"], session: ["once per session", "সেশনে একবার"], day: ["once per day", "দিনে একবার"] }, AUD = { all: ["everyone", "সবাই"], guests: ["not logged in", "লগইন ছাড়া"], members: ["logged in", "লগইন করা"] };
+  function renderSitePops() {
+    var el = $("#sp-list"); if (!el) return; var running = 0;
+    el.innerHTML = S.spops.length ? S.spops.map(function (p, i) {
+      var st = popState(p); if (st[0] === "ok") running++;
+      var title = (LANG === "bn" ? (p.title_bn || p.title_en) : (p.title_en || p.title_bn)) || (p.body_bn || p.body_en || p.id), ev = EVERY[p.every || "visit"] || EVERY.visit, au = AUD[p.audience || "all"] || AUD.all;
+      return '<div class="item"><div class="meta"><b>' + esc(title) + '</b> <span class="pill ' + st[0] + '">' + st[1] + '</span><div class="muted">' + esc(p.start) + " → " + esc(popEnd(p)) + " · " + (+p.times || 1) + T(" time(s) per visitor, ", " বার প্রতি ভিজিটর, ") + T(ev[0], ev[1]) + " · " + T(au[0], au[1]) + " · " + esc(p.pages && p.pages !== "all" ? p.pages : T("all pages", "সব পেজ")) + '</div></div>' +
+        '<div class="acts"><button class="btn sm p" data-edit-sp="' + i + '" type="button">' + T("Edit", "এডিট") + '</button></div></div>';
+    }).join("") : '<div class="empty"><b>' + T("No site pop-ups yet", "এখনো কোনো সাইট পপ-আপ নেই") + '</b>' + T("Add one to show a message to website visitors.", "ওয়েবসাইট ভিজিটরদের বার্তা দেখাতে যোগ করুন।") + '</div>';
+    var w = $("#sp-warn"); if (w) { w.innerHTML = running > 4 ? '<span class="pill wn">' + T("More than 4 are running. Only the first 4 appear on each visit.", "৪টির বেশি চলছে। প্রতি ভিজিটে প্রথম ৪টি আসবে।") + '</span>' : (S.spops.length ? T("Running now: ", "এখন চলছে: ") + running + " / 4" : ""); }
+    $$("[data-edit-sp]", el).forEach(function (b) { b.onclick = function () { openSp(+b.dataset.editSp); }; });
+  }
+  REND.push(renderSitePops);
+  function writeSp(msg) { return putText("site/data/site-popups.json", JSON.stringify(S.spops, null, 2) + "\n", msg, S.spopsSha).then(function (r) { S.spopsSha = r.content.sha; }); }
+  var spF = $("#sp-form"), SPF = spF.elements;
+  function openSp(i) {
+    S.curSp = i; var p = i == null ? { active: true, start: today(), days: 3, times: 1, delay: 4, every: "visit", audience: "all", pages: "all" } : S.spops[i];
+    $("#sp-listview").classList.add("hidden"); $("#sp-formview").classList.remove("hidden");
+    $("#sp-form-title").textContent = i == null ? T("New pop-up", "নতুন পপ-আপ") : T("Edit pop-up", "পপ-আপ এডিট");
+    ["title_bn", "title_en", "body_bn", "body_en", "button_bn", "button_en", "button_url"].forEach(function (k) { SPF[k].value = p[k] || ""; });
+    SPF.start.value = p.start || today(); SPF.days.value = p.days || 3; SPF.times.value = p.times || 1; SPF.delay.value = p.delay == null ? 4 : p.delay;
+    SPF.every.value = p.every || "visit"; SPF.audience.value = p.audience || "all"; SPF.pages.value = p.pages || "all"; SPF.active.checked = p.active !== false;
+    $("#sp-del").classList.toggle("hidden", i == null); window.scrollTo(0, 0);
+  }
+  $("#sp-new").addEventListener("click", function () { openSp(null); });
+  $("#sp-cancel").addEventListener("click", function () { $("#sp-formview").classList.add("hidden"); $("#sp-listview").classList.remove("hidden"); });
+  spF.addEventListener("submit", function (e) {
+    e.preventDefault(); var btn = $("#sp-save"), g = function (k) { return SPF[k].value.trim(); };
+    if (!g("title_bn") && !g("title_en") && !g("body_bn") && !g("body_en")) { toast(T("Write a title or a message.", "শিরোনাম বা বার্তা লিখুন।"), "er"); return; }
+    var url = g("button_url"); if (url && !/^https:\/\/(www\.)?shunchiai\.com(\/|$)/i.test(url)) { toast(T("The button link must start with https://shunchiai.com/", "লিংক https://shunchiai.com/ দিয়ে শুরু হতে হবে।"), "er"); return; }
+    if (url && !g("button_bn") && !g("button_en")) { toast(T("Add the button text, or clear the link.", "বোতামের লেখা দিন, নয়তো লিংক মুছুন।"), "er"); return; }
+    var n = function (k, lo, hi, def) { var v = parseInt(SPF[k].value, 10); return isNaN(v) ? def : Math.max(lo, Math.min(hi, v)); };
+    var id = S.curSp == null ? "s" + Date.now().toString(36) : S.spops[S.curSp].id;
+    var item = { id: id, active: SPF.active.checked, title_bn: g("title_bn"), title_en: g("title_en"), body_bn: g("body_bn"), body_en: g("body_en"), button_bn: g("button_bn"), button_en: g("button_en"), button_url: url,
+      start: SPF.start.value || today(), days: n("days", 1, 365, 3), times: n("times", 1, 50, 1), delay: n("delay", 0, 60, 4), every: SPF.every.value, audience: SPF.audience.value, pages: SPF.pages.value };
+    busy(btn, true); if (S.curSp == null) S.spops.unshift(item); else S.spops[S.curSp] = item;
+    writeSp((S.curSp == null ? "Admin: add site pop-up " : "Admin: update site pop-up ") + id).then(function () { toast(T("Saved. It reaches the website within a few minutes.", "সেভ হয়েছে। কয়েক মিনিটের মধ্যে ওয়েবসাইটে আসবে।"), "ok"); $("#sp-cancel").click(); renderSitePops(); })
+      .catch(function (err) { toast(T("Could not save: ", "সেভ হয়নি: ") + errText(err), "er"); loadSitePops(); }).then(function () { busy(btn, false); });
+  });
+  $("#sp-del").addEventListener("click", function () {
+    if (S.curSp == null) return;
+    confirmBox(T("Remove this pop-up?", "এই পপ-আপ সরাবেন?"), T("It stops showing on the website.", "ওয়েবসাইটে আর আসবে না।"), T("Remove", "সরান")).then(function (ok) {
+      if (!ok) return; S.spops.splice(S.curSp, 1);
+      writeSp("Admin: remove site pop-up").then(function () { toast(T("Removed.", "সরানো হয়েছে।"), "ok"); $("#sp-cancel").click(); renderSitePops(); }).catch(function (err) { toast(errText(err), "er"); loadSitePops(); });
+    });
+  });
+
+  /* ================= DASHBOARD: community, ideas, pop-ups ================= */
+  function popRunning(a) { return a.filter(function (p) { return popState(p)[0] === "ok"; }).length; }
+  function initials2(n) { n = String(n || "?").trim(); var w = n.split(/\s+/); return ((w[0] || "?")[0] + (w[1] ? w[1][0] : "")).toUpperCase(); }
+  function renderCommunity() {
+    // ---- attention strip
+    var at = [], pend = (S.ideas || []).filter(function (x) { return x.status === "pending"; }).length;
+    if (pend) at.push(["wn", pend, T("ideas waiting for review", "আইডিয়া রিভিউয়ের অপেক্ষায়"), "ideas"]);
+    var bl = USERS.filter(function (u) { return u.status === "blocked"; }).length; if (bl) at.push(["", bl, T("blocked users", "ব্লক করা ইউজার"), "users"]);
+    var r0 = S.runs && S.runs[0]; if (r0 && r0.status === "completed" && r0.conclusion && r0.conclusion !== "success") at.push(["er", "!", T("last website build failed", "শেষ ওয়েবসাইট বিল্ড ব্যর্থ"), "dash"]);
+    var spr = popRunning(S.spops || []); if ((S.spops || []).length && !spr) at.push(["wn", 0, T("no site pop-up running", "কোনো সাইট পপ-আপ চলছে না"), "spop"]);
+    if (spr > 4) at.push(["wn", spr, T("site pop-ups running (only 4 show)", "সাইট পপ-আপ চলছে (৪টি দেখায়)"), "spop"]);
+    var A = $("#d-attn"); A.classList.toggle("hidden", !at.length);
+    A.innerHTML = at.map(function (x) { return '<div class="at ' + x[0] + '" data-go="' + x[3] + '" role="button" tabindex="0"><b>' + x[1] + '</b><span>' + esc(x[2]) + '</span></div>'; }).join("");
+    $$("[data-go]", A).forEach(function (b) { b.onclick = function () { go(b.dataset.go); }; });
+    // ---- pop-ups
+    var sp = S.spops || [], ap = S.pops || [];
+    $("#c-pop").textContent = popRunning(sp) + popRunning(ap); $("#c-pop-s").textContent = T("site ", "সাইট ") + popRunning(sp) + " · " + T("app ", "অ্যাপ ") + popRunning(ap);
+    var pl = sp.map(function (p) { return ["site", p]; }).concat(ap.map(function (p) { return ["app", p]; }));
+    $("#d-pops").innerHTML = pl.length ? pl.map(function (x) { var p = x[1], st = popState(p), t = (LANG === "bn" ? (p.title_bn || p.title_en) : (p.title_en || p.title_bn)) || p.body_en || p.body_bn || p.id;
+      return '<div class="item"><div class="meta"><b>' + esc(t) + '</b> <span class="pill">' + (x[0] === "site" ? T("site", "সাইট") : T("app", "অ্যাপ")) + '</span> <span class="pill ' + st[0] + '">' + st[1] + '</span><div class="muted">' + esc(p.start) + " → " + esc(popEnd(p)) + " · " + (+p.times || 1) + T(" time(s)", " বার") + '</div></div></div>'; }).join("")
+      : '<div class="empty"><b>' + T("No pop-ups yet", "এখনো কোনো পপ-আপ নেই") + '</b></div>';
+    // ---- ideas pipeline (from the ideas inbox)
+    var P = $("#d-pipe");
+    if (!S.ideas) { P.innerHTML = '<p class="muted">' + T("Open the Ideas tab and connect to see the pipeline.", "পাইপলাইন দেখতে Ideas ট্যাবে কানেক্ট করুন।") + '</p>'; $("#d-ideas").innerHTML = '<div class="empty"><b>' + T("Ideas not connected", "আইডিয়া কানেক্ট করা নেই") + '</b></div>'; }
+    else {
+      var c = ideaCounts(), tot = Math.max(1, c[""]);
+      P.className = "pipe"; P.innerHTML = [["pending", "wn"], ["analysis", ""], ["approved", "ok"], ["rejected", "er"]].map(function (k) { return '<div class="pr ' + k[1] + '"><span>' + esc(statName(k[0])) + '</span><div class="bar"><i style="width:' + Math.round((c[k[0]] || 0) / tot * 100) + '%"></i></div><b>' + (c[k[0]] || 0) + '</b></div>'; }).join("") +
+        '<div class="muted" style="margin-top:2px">' + T("Total received: ", "মোট এসেছে: ") + c[""] + (c.deleted ? " · " + c.deleted + T(" deleted", " ডিলিটেড") : "") + '</div>';
+      var L5 = S.ideas.filter(function (x) { return x.status !== "deleted"; }).slice(0, 5);
+      $("#d-ideas").innerHTML = L5.length ? L5.map(function (x) { return '<div class="item"><div class="meta"><b>' + esc(x.title || "-") + '</b> ' + statPill(x.status) + '<div class="muted">' + esc(x.name || "-") + " · " + esc(ago(x.at)) + '</div></div></div>'; }).join("") : '<div class="empty"><b>' + T("No ideas yet", "এখনো আইডিয়া নেই") + '</b></div>';
+    }
+    // ---- accounts (needs the admin Firebase sign-in)
+    var ok = !!(FB.user && USERS);
+    $("#d-fbconnect").classList.toggle("hidden", ok || !FB.cfgOk);
+    $("#d-fbnote").textContent = ok ? T("Live from Firebase", "Firebase থেকে লাইভ") : "";
+    $("#d-fbgo").onclick = function () { go("users"); };
+    if (!ok) { ["c-users", "c-new", "c-cm"].forEach(function (id) { $("#" + id).textContent = "-"; $("#" + id + "-s").textContent = ""; }); $("#d-signups").innerHTML = '<p class="muted">' + T("Sign in on the Users tab to see signups.", "সাইনআপ দেখতে Users ট্যাবে সাইন ইন করুন।") + '</p>'; $("#d-users").innerHTML = $("#d-comments").innerHTML = '<div class="empty"><b>-</b></div>'; $("#d-ustat").innerHTML = ""; return; }
+    var cnt = { active: 0, inactive: 0, blocked: 0 }, wk = 0, prev = 0, now = Date.now();
+    USERS.forEach(function (u) { cnt[uEff(u)]++; var a = now - tsm(u.createdAt); if (a < 7 * 864e5) wk++; else if (a < 14 * 864e5) prev++; });
+    $("#c-users").textContent = nf(USERS.length); $("#c-users-s").textContent = cnt.active + T(" active · ", " অ্যাকটিভ · ") + cnt.inactive + T(" inactive", " ইনঅ্যাকটিভ");
+    $("#c-new").textContent = nf(wk); $("#c-new-s").textContent = (wk >= prev ? "▲ " : "▼ ") + T("vs ", "আগের সপ্তাহ ") + prev + T(" last week", "");
+    $("#c-cm").textContent = nf(UCOMM.length); $("#c-cm-s").textContent = UIDEAS.length + T(" ideas from members", " আইডিয়া মেম্বারদের");
+    var days = []; for (var i = 13; i >= 0; i--) { var dd = new Date(now - i * 864e5).toISOString().slice(0, 10); days.push({ d: dd, n: 0 }); }
+    USERS.forEach(function (u) { var k = dstr(u.createdAt); days.forEach(function (x) { if (x.d === k) x.n++; }); });
+    var mx = Math.max.apply(null, days.map(function (x) { return x.n; }).concat([1]));
+    $("#d-signups").className = ""; $("#d-signups").innerHTML = '<div class="spark">' + days.map(function (x) { return '<i title="' + x.d + ': ' + x.n + '" style="height:' + Math.max(4, Math.round(x.n / mx * 100)) + '%"></i>'; }).join("") + '</div>';
+    $("#d-ustat").innerHTML = uPill("active") + ' <b>' + cnt.active + '</b> ' + uPill("inactive") + ' <b>' + cnt.inactive + '</b> ' + uPill("blocked") + ' <b>' + cnt.blocked + '</b>';
+    $("#d-users").innerHTML = USERS.slice(0, 5).map(function (u) { return '<div class="item"><i class="av">' + esc(initials2(u.name || u.email)) + '</i><div class="meta"><b>' + esc(u.name || T("No name", "নাম নেই")) + '</b> ' + uPill(uEff(u)) + '<div class="muted">' + esc(u.email || "-") + " · " + dstr(u.createdAt) + '</div></div></div>'; }).join("") || '<div class="empty"><b>' + T("No users yet", "এখনো কোনো ইউজার নেই") + '</b></div>';
+    $("#d-comments").innerHTML = UCOMM.slice(0, 5).map(function (c) { return '<div class="item"><div class="meta"><b>' + esc(c.name || "-") + '</b> <span class="muted">' + dstr(c.createdAt) + '</span><div class="muted" style="overflow-wrap:anywhere">' + esc(String(c.text || "").slice(0, 90)) + '</div></div></div>'; }).join("") || '<div class="empty"><b>' + T("No comments yet", "এখনো কোনো মন্তব্য নেই") + '</b></div>';
+  }
+  REND.push(renderCommunity);
+  // when the admin was signed in before, load users quietly for the dashboard
+  function dashUsers() {
+    fbLoad().then(function () { FB.cfgOk = true; if (FB.user && !USERS.length) return loadUsers(); }, function () { FB.cfgOk = false; }).then(function () { renderCommunity(); }, function () { renderCommunity(); });
+  }
+  S.dashUsers = dashUsers;
 
   /* ================= BLOG ================= */
   function parseMd(raw) {

@@ -164,7 +164,7 @@ def tabbar(P):
     return ('<nav class="tabbar" aria-label="App navigation">'
       + t(f"{P}index.html", "home", "Home", "হোম", '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>')
       + t(f"{P}index.html#setup", "setup", "Setup", "সেটআপ", '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>')
-      + t(f"{P}apps/index.html", "apps", "Apps", "অ্যাপ", '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>')
+      + t(f"{P}apps/index.html", "apps", "Tools", "টুলস", '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>')
       + t(f"{P}blog/index.html", "blog", "Blog", "ব্লগ", '<path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h8M8 17h5"/>')
       + t(f"{P}index.html#developer", "dev", "Dev. Info", "ডেভ ইনফো", '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>')
       + t(f"{P}account/index.html", "profile", "Profile", "প্রোফাইল", '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/>')
@@ -302,7 +302,7 @@ def post_card(p, P):
 def write(path, text):
     full = os.path.join(SITE, path)
     os.makedirs(os.path.dirname(full), exist_ok=True)
-    text = re.sub(r'(<script src="([^"]*)assets/site\.js\?v=\d+"></script>)', lambda m: m.group(1) + '<script src="' + m.group(2) + 'assets/auth.js?v=1" defer></script>', text)
+    text = re.sub(r'(<script src="([^"]*)assets/site\.js\?v=\d+"></script>)', lambda m: m.group(1) + '<script src="' + m.group(2) + 'assets/auth.js?v=1" defer></script><script src="' + m.group(2) + 'assets/popups.js?v=1" defer></script>', text)
     open(full, "w", encoding="utf-8").write(text)
 
 
@@ -552,14 +552,14 @@ write("index.html", home)
 # ====================================================================== APPS HUB
 reg("apps/", "0.8", "weekly")
 hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHUNCHi",
-           "Free apps and tools from the maker of SHUNCHi: CV and invoice makers, budget and tour calculators, Bangla text tools. Free, no sign-up.",
+           "Free apps and tools from the maker of SHUNCHi: CV and invoice makers, budget and tour calculators, Bangla text tools. Free and private.",
            "apps/", ld=[crumbs_ld([("Home", ""), ("More Apps", "apps/")]), {"@context": "https://schema.org", "@type": "CollectionPage", "name": "SHUNCHi apps and free tools", "url": DOMAIN + "/apps/",
              "mainEntity": {"@type": "ItemList", "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": t["t"], "description": t["d"]} for i, t in enumerate(TOOLS)]}}]) + header("../", "apps") + '''
 <main id="main">
 <div class="wrap page-head">
   <ol class="crumbs"><li><a href="../index.html"><span class="en">Home</span><span class="bn">হোম</span></a></li><li aria-current="page"><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></li></ol>
   <h1><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></h1>
-  <p><span class="en">Software and free everyday tools from the maker of SHUNCHi, all in one place. Private, free and without sign-up. New tools go live as soon as they are ready.</span><span class="bn">SHUNCHi-র নির্মাতার সফটওয়্যার ও দৈনন্দিন কাজের ফ্রি টুল, সবকিছু এক জায়গায়। প্রাইভেট, ফ্রি এবং সাইন আপ ছাড়া। নতুন টুল তৈরি হওয়ামাত্র চালু হবে।</span></p>
+  <p><span class="en">Software and free everyday tools from the maker of SHUNCHi, all in one place. Private and free. New tools go live as soon as they are ready.</span><span class="bn">SHUNCHi-র নির্মাতার সফটওয়্যার ও দৈনন্দিন কাজের ফ্রি টুল, সবকিছু এক জায়গায়। প্রাইভেট ও ফ্রি। নতুন টুল তৈরি হওয়ামাত্র চালু হবে।</span></p>
   <div class="stats" id="stats" aria-live="polite"></div>
 </div>
 
@@ -723,6 +723,17 @@ acc = head("../", "My account | SHUNCHi", "Your SHUNCHi profile, ideas and saved
     <div class="ag-act"><button type="button" class="btn btn-primary" data-open-auth="login"><span class="en">Log in</span><span class="bn">লগইন</span></button><button type="button" class="btn btn-ghost" data-open-auth="signup"><span class="en">Create account</span><span class="bn">অ্যাকাউন্ট খুলুন</span></button></div>
   </div></div>
 
+  <div class="pc-modal" id="pc-modal" role="dialog" aria-modal="true" aria-labelledby="pc-h" hidden><div class="pc-box">
+    <h2 id="pc-h"><span class="en">Complete your profile</span><span class="bn">প্রোফাইল সম্পূর্ণ করুন</span></h2>
+    <p class="muted"><span class="en">A few details are missing. They fill your idea forms automatically and stay private.</span><span class="bn">কিছু তথ্য বাকি আছে। এগুলো আইডিয়া ফর্মে নিজে থেকে বসবে এবং গোপন থাকবে।</span></p>
+    <form id="pc-form" novalidate>
+      <label data-f="name"><span><span class="en">Full name</span><span class="bn">পুরো নাম</span></span><input name="name" maxlength="60" autocomplete="name"></label>
+      <label data-f="phone"><span><span class="en">Phone</span><span class="bn">ফোন</span></span><input name="phone" type="tel" maxlength="30" autocomplete="tel" placeholder="01XXXXXXXXX"></label>
+      <label data-f="address"><span><span class="en">Address</span><span class="bn">ঠিকানা</span></span><input name="address" maxlength="160" autocomplete="street-address"></label>
+      <p class="auth-msg" id="pc-msg" role="status"></p>
+      <div class="c-act"><button class="btn btn-primary" type="submit"><span class="en">Save</span><span class="bn">সেভ করুন</span></button><button class="btn btn-ghost" type="button" id="pc-later"><span class="en">Later</span><span class="bn">পরে করব</span></button></div>
+    </form></div></div>
+
   <div id="acct-body" hidden>
     <div class="ac-verify" id="ac-verify" hidden><div><b><span class="en">Verify your email</span><span class="bn">ইমেইল ভেরিফাই করুন</span></b><span class="muted"><span class="en">We sent a link to your inbox. You need it to comment.</span><span class="bn">ইনবক্সে একটি লিংক পাঠানো হয়েছে। মন্তব্য করতে এটি লাগবে।</span></span></div>
       <div class="row"><button type="button" class="btn btn-sm btn-primary" id="ac-ver"><span class="en">Resend link</span><span class="bn">আবার পাঠান</span></button><button type="button" class="btn btn-sm btn-ghost" id="ac-ver-chk"><span class="en">I have verified</span><span class="bn">ভেরিফাই করেছি</span></button></div></div>
@@ -789,7 +800,6 @@ acc = head("../", "My account | SHUNCHi", "Your SHUNCHi profile, ideas and saved
               <label><span><span class="en">Confirm password</span><span class="bn">পাসওয়ার্ড আবার দিন</span></span><input name="pw2" type="password" minlength="6" maxlength="100" autocomplete="new-password"></label>
               <div class="c-act"><button class="btn btn-primary" type="submit" id="pw-go"></button><span class="auth-msg" id="pw-msg" role="status"></span></div></form></div>
           <div class="acct-card"><h2><span class="en">Your data</span><span class="bn">আপনার ডেটা</span></h2><div class="row"><button type="button" class="btn btn-ghost btn-sm" id="ac-export"><span class="en">Download my data</span><span class="bn">আমার ডেটা ডাউনলোড</span></button></div></div>
-          <div class="acct-card danger-zone"><h2><span class="en">Delete account</span><span class="bn">অ্যাকাউন্ট ডিলিট</span></h2><p class="muted"><span class="en">Removes your profile, ideas, saved data and comments for good.</span><span class="bn">প্রোফাইল, আইডিয়া, সেভ ডেটা ও মন্তব্য চিরতরে মুছে যাবে।</span></p><div class="row"><button type="button" class="btn btn-ghost btn-sm danger" id="ac-del"><span class="en">Delete my account</span><span class="bn">অ্যাকাউন্ট ডিলিট করুন</span></button></div></div>
         </section>
       </div>
     </div>
@@ -816,7 +826,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
     <h2>Your API key</h2><p>Your key is stored in Windows Credential Manager on your computer. It is sent only to Google when you dictate or press “Save &amp; test”. It never goes to this website.</p>
     <h2>Your history</h2><p>The list of past dictations is kept on your computer only. You can clear it from the Voice History page.</p>
     <h2>This website and updates</h2><p>The app checks <code>shunchiai.com/update.json</code> to learn whether a new version exists. That request contains the app version in its user agent and nothing about you. The website does not use advertising trackers.</p>
-    <h2>Optional account</h2><p>An account is optional. If you create one (email and password, or Google), we store your name, email and the details you add (phone, address), your ideas, comments you post and data saved by upcoming tools. It is stored with Google Firebase. Only you and the site admin can see it. You can download or delete it from your account page, and an admin can block an account that breaks the rules. Voice recordings are never stored in your account.</p>
+    <h2>Optional account</h2><p>An account is optional. If you create one (email and password, or Google), we store your name, email and the details you add (phone, address), your ideas, comments you post and data saved by upcoming tools. It is stored with Google Firebase. Only you and the site admin can see it. You can download it from your account page, or email us to have your account and data deleted, and an admin can block an account that breaks the rules. Voice recordings are never stored in your account.</p>
         <h2>Contact</h2><p>Questions: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
   </div>
   <div class="bn">
@@ -825,7 +835,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
     <h2>আপনার API কী</h2><p>কী-টি আপনার কম্পিউটারের Windows Credential Manager-এ থাকে। ডিকটেশনের সময় বা “Save &amp; test” চাপলে এটি শুধু গুগলে যায়। এই ওয়েবসাইটে কখনও আসে না।</p>
     <h2>আপনার হিস্ট্রি</h2><p>আগের ডিকটেশনের তালিকা শুধু আপনার কম্পিউটারেই থাকে। Voice History পাতা থেকে আপনি তা মুছে ফেলতে পারেন।</p>
     <h2>এই ওয়েবসাইট ও আপডেট</h2><p>নতুন ভার্সন আছে কিনা জানতে অ্যাপটি <code>shunchiai.com/update.json</code> দেখে। এই অনুরোধে শুধু অ্যাপের ভার্সন থাকে, আপনার সম্পর্কে কিছু থাকে না। ওয়েবসাইটে বিজ্ঞাপনের ট্র্যাকার নেই।</p>
-    <h2>ঐচ্ছিক অ্যাকাউন্ট</h2><p>অ্যাকাউন্ট ঐচ্ছিক। খুললে আপনার নাম, ইমেইল, যোগ করা তথ্য (ফোন, ঠিকানা), আইডিয়া, মন্তব্য এবং আসন্ন টুলের সেভ করা ডেটা Google Firebase-এ থাকে। শুধু আপনি ও সাইটের অ্যাডমিন দেখতে পারেন। অ্যাকাউন্ট পেজ থেকে ডেটা ডাউনলোড বা ডিলিট করা যায়, নিয়ম ভাঙলে অ্যাডমিন অ্যাকাউন্ট ব্লক করতে পারে। ভয়েস রেকর্ডিং অ্যাকাউন্টে কখনো সেভ হয় না।</p>
+    <h2>ঐচ্ছিক অ্যাকাউন্ট</h2><p>অ্যাকাউন্ট ঐচ্ছিক। খুললে আপনার নাম, ইমেইল, যোগ করা তথ্য (ফোন, ঠিকানা), আইডিয়া, মন্তব্য এবং আসন্ন টুলের সেভ করা ডেটা Google Firebase-এ থাকে। শুধু আপনি ও সাইটের অ্যাডমিন দেখতে পারেন। অ্যাকাউন্ট পেজ থেকে ডেটা ডাউনলোড করা যায়; অ্যাকাউন্ট ও ডেটা ডিলিট করতে আমাদের ইমেইল করুন। নিয়ম ভাঙলে অ্যাডমিন অ্যাকাউন্ট ব্লক করতে পারে। ভয়েস রেকর্ডিং অ্যাকাউন্টে কখনো সেভ হয় না।</p>
         <h2>যোগাযোগ</h2><p>প্রশ্ন থাকলে: <a href="mailto:voice.shunchi@gmail.com">voice.shunchi@gmail.com</a></p>
   </div>
 </div></section>
@@ -1002,8 +1012,8 @@ def _bust_assets():
     def h(name):
         try: return hashlib.md5(open(os.path.join(SITE, "assets", name), "rb").read()).hexdigest()[:8]
         except OSError: return "0"
-    vers = {n: h(n) for n in ("site.css", "site.js", "auth.js")}
-    pat = re.compile(r'(assets/(site\.css|site\.js|auth\.js))\?v=[0-9a-z]+')
+    vers = {n: h(n) for n in ("site.css", "site.js", "auth.js", "popups.js")}
+    pat = re.compile(r'(assets/(site\.css|site\.js|auth\.js|popups\.js))\?v=[0-9a-z]+')
     for f in glob.glob(os.path.join(SITE, "**", "*.html"), recursive=True):
         if os.sep + "gitup" + os.sep in f: continue
         t = open(f, encoding="utf-8").read()

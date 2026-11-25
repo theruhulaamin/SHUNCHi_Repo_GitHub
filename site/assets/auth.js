@@ -375,6 +375,7 @@
     var f = $("#ac-form"); if (d.activeElement && f.contains(d.activeElement) === false || !f._filled) { f.elements.name.value = p.name || u.name || ""; f.elements.phone.value = p.phone || ""; f.elements.address.value = p.address || ""; f._filled = true; }
     f.elements.email.value = u.email || "";
     fillSecurity();
+    profileNudge(p, u);
     if (!acctWired) {
       acctWired = true;
       showPane((location.hash || "").slice(1));
@@ -386,7 +387,6 @@
       $("#ac-ver").onclick = function () { var b = this; api.verifyEmail().then(function () { b.textContent = L("Link sent", "লিংক পাঠানো হয়েছে"); }, function (e) { alert(errMsg(e)); }); };
       $("#ac-ver-chk").onclick = function () { api.refreshUser().then(function () { if (!api.user.verified) alert(L("Not verified yet. Open the link in your email first.", "এখনো ভেরিফাই হয়নি। আগে ইমেইলের লিংকটি খুলুন।")); }); };
       $("#ac-export").onclick = function () { api.exportMine().then(function (x) { download("shunchi-my-data.json", x); }); };
-      $("#ac-del").onclick = function () { if (!confirm(L("Delete your account and all saved data? This cannot be undone.", "অ্যাকাউন্ট ও সব সেভ করা ডেটা ডিলিট করবেন? এটি আর ফেরানো যাবে না।"))) return; api.deleteAccount().then(function () { location.href = "../index.html"; }, function (e) { alert(errMsg(e)); }); };
       $("#ai-new").onclick = openIdeaForm; $("#ai-cancel").onclick = function () { $("#ai-form").hidden = true; };
       $("#ai-form").addEventListener("submit", function (e) {
         e.preventDefault(); var fm = e.target, m = $("#ai-msg"), pr = api.profile || {}, title = fm.elements.title.value.trim(), det = fm.elements.details.value.trim();
@@ -415,6 +415,35 @@
     var t = L("Your account is blocked, so you cannot comment or save data. Contact support if this is a mistake.", "আপনার অ্যাকাউন্ট ব্লক করা আছে, তাই মন্তব্য বা ডেটা সেভ করা যাবে না। ভুল হলে যোগাযোগ করুন।");
     d.querySelectorAll("#c-form,#acct-body .ac-hero").forEach(function (el) { var n = el.parentNode.querySelector(".blocked-note"); if (api.blocked) { if (!n) { n = d.createElement("p"); n.className = "blocked-note"; el.parentNode.insertBefore(n, el); } n.textContent = t; } else if (n) n.remove(); });
     var f = $("#c-form"); if (f && api.blocked) f.hidden = true;
+  }
+  /* ask for missing profile details when the profile page opens */
+  var pcWired = false;
+  function profileNudge(p, u) {
+    var m = $("#pc-modal"), fm = $("#pc-form"); if (!m || !fm) return;
+    var miss = []; if (!(p.name || u.name)) miss.push("name"); if (!p.phone) miss.push("phone"); if (!p.address) miss.push("address");
+    d.querySelectorAll("#ac-form label").forEach(function (l) { var i = l.querySelector("input"); l.classList.toggle("need", !!i && miss.indexOf(i.name) >= 0); });
+    var skipped = false; try { skipped = sessionStorage.getItem("shunchi_pc_skip") === "1"; } catch (e) {}
+    if (!pcWired) {
+      pcWired = true; d.body.appendChild(m);
+      $("#pc-later").onclick = function () { try { sessionStorage.setItem("shunchi_pc_skip", "1"); } catch (e) {} m.hidden = true; d.body.classList.remove("auth-open"); };
+      m.addEventListener("click", function (e) { if (e.target === m) $("#pc-later").click(); });
+      d.addEventListener("keydown", function (e) { if (e.key === "Escape" && !m.hidden) $("#pc-later").click(); });
+      fm.addEventListener("submit", function (e) {
+        e.preventDefault(); var msg = $("#pc-msg"), cur = api.profile || {}, E = fm.elements, bad = function (t) { msg.className = "auth-msg err"; msg.textContent = t; };
+        var nm = (fm.querySelector("[data-f=name]").hidden ? (cur.name || api.user.name) : E.name.value).trim(), ph = (fm.querySelector("[data-f=phone]").hidden ? cur.phone : E.phone.value) || "", ad = (fm.querySelector("[data-f=address]").hidden ? cur.address : E.address.value) || "";
+        ph = ph.trim(); ad = ad.trim();
+        if (!nm) return bad(L("Please enter your name.", "নাম লিখুন।"));
+        if (!/^[0-9+()\-\s]{6,30}$/.test(ph)) return bad(L("Enter a valid phone number.", "সঠিক ফোন নম্বর দিন।"));
+        if (ad.length < 5) return bad(L("Enter your address.", "ঠিকানা লিখুন।"));
+        var b = fm.querySelector("[type=submit]"); b.disabled = true; msg.textContent = "";
+        api.saveProfile({ name: nm, phone: ph, address: ad }).then(function () { m.hidden = true; d.body.classList.remove("auth-open"); $("#ac-form")._filled = false; toast(L("Profile saved.", "প্রোফাইল সেভ হয়েছে।")); }, function () { bad(L("Could not save. Try again.", "সেভ হয়নি। আবার চেষ্টা করুন।")); }).then(function () { b.disabled = false; });
+      });
+    }
+    if (miss.length && !skipped && m.hidden) {
+      fm.querySelectorAll("label[data-f]").forEach(function (l) { l.hidden = miss.indexOf(l.dataset.f) < 0; });
+      fm.elements.name.value = p.name || u.name || ""; fm.elements.phone.value = p.phone || ""; fm.elements.address.value = p.address || "";
+      m.hidden = false; d.body.classList.add("auth-open"); setTimeout(function () { var first = fm.querySelector("label[data-f]:not([hidden]) input"); first && first.focus(); }, 40);
+    } else if (!miss.length && !m.hidden) { m.hidden = true; d.body.classList.remove("auth-open"); }
   }
   function verifyHooks() {
     var rs = $("#c-resend"), rc = $("#c-recheck"); if (!rs || rs._w) return; rs._w = true;
