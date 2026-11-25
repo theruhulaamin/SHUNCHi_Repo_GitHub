@@ -15,6 +15,8 @@ exes = [a for a in assets if a.lower().endswith(".exe")]
 web = next((a for a in exes if name(a).lower() == "shunchi_setup.exe"), "")
 full = next((a for a in exes if a != web), "")
 def clean(t): return "\n".join(l.strip() for l in t.strip().splitlines() if l.strip())[:1500]
+force = bool(re.search(r"(?mi)^\s*\[force\]\s*$", body))      # a line with only [force] makes this update mandatory
+body = re.sub(r"(?mi)^\s*\[force\]\s*$", "", body)
 parts = re.split(r"(?m)^\s*-{3,}\s*$", body.replace("\r", ""), maxsplit=1)
 notes_en = clean(parts[0]); notes_bn = clean(parts[1]) if len(parts) > 1 else ""
 notes = notes_en
@@ -48,5 +50,10 @@ if slug:
     (site / "updates" / f"{slug}.json").write_text(json.dumps(data, indent=2, ensure_ascii=False))
 else:
     data["apps"] = json.loads((site / "data" / "apps.json").read_text() or "[]")
+    previous_min = ""
+    try: previous_min = str(json.loads((site / "update.json").read_text()).get("min_version") or "")
+    except Exception: pass
+    # mandatory update: this version becomes the minimum. Otherwise the old minimum stays (it can never be above the newest version).
+    data["min_version"] = ver if force else (previous_min if re.fullmatch(r"\d+(\.\d+){1,3}", previous_min) else "")
     (site / "update.json").write_text(json.dumps(data, indent=2, ensure_ascii=False))
 print("wrote", slug or "update.json", ver, full)

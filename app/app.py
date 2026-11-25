@@ -5,6 +5,7 @@ import time
 import wave
 import io
 import base64
+import hashlib
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -35,11 +36,11 @@ from PySide6.QtWidgets import (
     QPushButton, QComboBox, QCheckBox, QLineEdit, QMessageBox, QSystemTrayIcon,
     QMenu, QFrame, QStackedWidget, QTableWidget, QTableWidgetItem, QHeaderView,
     QSpinBox, QDoubleSpinBox, QPlainTextEdit, QSizePolicy, QScrollArea,
-    QGraphicsDropShadowEffect, QAbstractItemView, QButtonGroup, QDialog
+    QGraphicsDropShadowEffect, QAbstractItemView, QButtonGroup, QDialog, QProgressDialog
 )
 
 APP_NAME = "SHUNCHi"
-APP_VERSION = "4.5.0"
+APP_VERSION = "4.6.0"
 APP_VENDOR = "RUHUL"
 KEYRING_SERVICE = "SHUNCHi"
 KEYRING_USERNAME = "gemini_api_key"
@@ -56,7 +57,10 @@ NOTICES_URL = WEBSITE_URL + "/data/notices.json"      # pop-up messages written 
 APPS_PAGE_URL = WEBSITE_URL + "/apps/index.html"
 IDEA_ENDPOINT = "https://formsubmit.co/ajax/ruhulaaminn@gmail.com"   # where the "app or tool idea" form is delivered
 READY_TEXT = "Ready · Win + Left Ctrl = Bangla · Win + Left Shift = English"
-UPDATE_CHECK_HOURS = 6
+UPDATE_CHECK_HOURS = 3
+IDEA_FALLBACK_URL = APPS_PAGE_URL + "#suggest"
+APP_OWNER = {}      # set by ShunchiApp so the window can ask it to shut down cleanly
+INSTALLER_PREFIX = "/theruhulaamin/shunchi_repo_github/releases/download/"
 TARGET_RATE = 16000
 RUN_KEY_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
 RUN_VALUE_NAME = "SHUNCHi"
@@ -138,7 +142,7 @@ class VoiceActivityDetector:
         self.silence_seconds = float(silence_seconds)
         # A short pause (about half a second) is announced early with the "pause" event so the app can
         # start transcribing while it waits for the rest of the silence: the text arrives sooner.
-        self.pause_hint = max(0.3, min(0.5, self.silence_seconds - 0.2))
+        self.pause_hint = max(0.25, min(0.4, self.silence_seconds - 0.25))
         self.hint_sent = False
         self.no_speech_timeout = float(no_speech_timeout)
         self.max_seconds = float(max_seconds)
@@ -335,6 +339,16 @@ def parse_version(text):
     return tuple(numbers + [0] * (4 - len(numbers))) if numbers else (0, 0, 0, 0)
 
 
+def is_trusted_installer_url(url):
+    """The installer may only come from this project's GitHub releases (https), never from anywhere else."""
+    try:
+        parts = urllib.parse.urlparse(str(url))
+    except ValueError:
+        return False
+    return (parts.scheme == "https" and (parts.hostname or "").lower() == "github.com"
+            and parts.path.lower().startswith(INSTALLER_PREFIX) and parts.path.lower().endswith(".exe"))
+
+
 def is_trusted_url(url):
     """Downloads must come from https on the official website only."""
     try:
@@ -375,7 +389,18 @@ def parse_update_manifest(data):
             continue
         apps.append({"name": name, "tagline": str(item.get("tagline") or "").strip()[:120],
                      "url": url, "badge": str(item.get("badge") or "").strip()[:16]})
-    return {"latest": latest, "download_url": download,
+    installer_url = str(data.get("installer_url") or "").strip()
+    sha = str(data.get("installer_sha256") or "").strip().lower()
+    try:
+        size = int(data.get("installer_size") or 0)
+    except (TypeError, ValueError):
+        size = 0
+    if not (is_trusted_installer_url(installer_url) and re.fullmatch(r"[0-9a-f]{64}", sha) and 1_000_000 <= size <= 600_000_000):
+        installer_url, sha, size = "", "", 0          # no verified installer: the app only opens the download page
+    min_raw = str(data.get("min_version") or "").strip()
+    min_version = min_raw if re.fullmatch(r"\d+(\.\d+){1,3}", min_raw) else ""
+    return {"latest": latest, "download_url": download, "installer_url": installer_url,
+            "installer_sha256": sha, "installer_size": size, "min_version": min_version,
             "notes": str(data.get("release_notes") or "").strip()[:600],
             "released": str(data.get("released") or "").strip()[:20], "apps": apps}
 
@@ -517,6 +542,8 @@ class AppSignals(QObject):
     update_result = Signal(object)
     notices_ready = Signal(object)
     idea_result = Signal(bool, str)
+    update_progress = Signal(int)
+    update_downloaded = Signal(bool, str)
 
 
 class MicrophoneScanner(threading.Thread):
@@ -771,6 +798,61 @@ class NoticeChecker(threading.Thread):
             logging.info("Notices not available: %s", exc)
 
 
+class InstallerDownloader(threading.Thread):
+    """Downloads the installer, checks its size and SHA-256, and only then reports success."""
+    def __init__(self, signals, url, sha256, size, destination):
+        super().__init__(daemon=True, name="SHUNCHi-Installer-Download")
+        self.signals, self.url, self.sha256, self.size, self.destination = signals, url, sha256, int(size), str(destination)
+        self.cancel_event = threading.Event()
+
+    def cancel(self):
+        self.cancel_event.set()
+
+    def run(self):
+        part = self.destination + ".part"
+        try:
+            os.makedirs(os.path.dirname(self.destination), exist_ok=True)
+            request = urllib.request.Request(self.url, headers={"User-Agent": f"SHUNCHi/{APP_VERSION}"})
+            digest, done, last_percent = hashlib.sha256(), 0, -1
+            with urllib.request.urlopen(request, timeout=30) as response, open(part, "wb") as out:
+                total = int(response.headers.get("Content-Length") or self.size or 0)
+                while True:
+                    if self.cancel_event.is_set():
+                        raise InterruptedError("cancelled")
+                    chunk = response.read(256 * 1024)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    digest.update(chunk)
+                    done += len(chunk)
+                    percent = min(99, done * 100 // total) if total else 0
+                    if percent != last_percent:
+                        last_percent = percent
+                        self.signals.update_progress.emit(percent)
+            if self.size and done != self.size:
+                raise ValueError("the downloaded file has the wrong size")
+            if digest.hexdigest() != self.sha256:
+                raise ValueError("the downloaded file failed the safety check")
+            os.replace(part, self.destination)
+            self.signals.update_progress.emit(100)
+            self.signals.update_downloaded.emit(True, self.destination)
+        except InterruptedError:
+            self._cleanup(part)
+            self.signals.update_downloaded.emit(False, "cancelled")
+        except Exception as exc:
+            logging.info("Installer download failed: %s", exc)
+            self._cleanup(part)
+            self.signals.update_downloaded.emit(False, str(exc)[:160])
+
+    @staticmethod
+    def _cleanup(part):
+        try:
+            if os.path.exists(part):
+                os.remove(part)
+        except OSError:
+            pass
+
+
 class IdeaSender(threading.Thread):
     """Sends the 'app or tool idea' form to the developer. Never raises into the UI."""
     def __init__(self, signals, fields):
@@ -785,7 +867,8 @@ class IdeaSender(threading.Thread):
             request = urllib.request.Request(
                 IDEA_ENDPOINT, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"), method="POST",
                 headers={"Content-Type": "application/json", "Accept": "application/json",
-                         "User-Agent": f"SHUNCHi/{APP_VERSION}"})
+                         "Origin": WEBSITE_URL, "Referer": WEBSITE_URL + "/apps/index.html",
+                         "User-Agent": f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) SHUNCHi/{APP_VERSION}"})
             with urllib.request.urlopen(request, timeout=20) as response:
                 answer = json.loads(response.read(65536).decode("utf-8") or "{}")
             if str(answer.get("success", "true")).lower() == "false":
@@ -793,7 +876,7 @@ class IdeaSender(threading.Thread):
             self.signals.idea_result.emit(True, "Thank you! Your idea reached the developer.")
         except Exception as exc:
             logging.info("Idea form failed: %s", exc)
-            self.signals.idea_result.emit(False, "Could not send. Check your internet connection and try again.")
+            self.signals.idea_result.emit(False, "fallback")
 
 
 class HotkeyManager(threading.Thread):
@@ -806,7 +889,7 @@ class HotkeyManager(threading.Thread):
     def run(self):
         try:
             from pynput import keyboard as pk
-            pressed, latched = set(), set()
+            pressed, latched, down_since = set(), set(), {}
 
             def really_down(vk):
                 """Win+L, Alt+Tab and similar can swallow a key-release. Ask Windows what is truly held."""
@@ -818,9 +901,13 @@ class HotkeyManager(threading.Thread):
                     return True
 
             def drop_stale(current):
+                now = time.monotonic()
                 for held, vk in ((pk.Key.cmd_l, 0x5B), (pk.Key.ctrl_l, 0xA2), (pk.Key.shift_l, 0xA0)):
-                    if held in pressed and held != current and not really_down(vk):
+                    # Only a key that has been "held" for 2+ seconds AND that Windows says is up is stale
+                    # (a lost key-release). A genuinely held key is never dropped, so the shortcut stays reliable.
+                    if held in pressed and held != current and now - down_since.get(held, now) > 2.0 and not really_down(vk):
                         pressed.discard(held)
+                        down_since.pop(held, None)
                 if pk.Key.cmd_l not in pressed or pk.Key.ctrl_l not in pressed:
                     latched.discard("bangla")
                 if pk.Key.cmd_l not in pressed or pk.Key.shift_l not in pressed:
@@ -834,6 +921,8 @@ class HotkeyManager(threading.Thread):
             def on_press(key):
                 try:
                     drop_stale(key)
+                    if key not in pressed:
+                        down_since[key] = time.monotonic()
                     pressed.add(key)
                     win = pk.Key.cmd_l in pressed
                     if win and pk.Key.ctrl_l in pressed:
@@ -846,6 +935,7 @@ class HotkeyManager(threading.Thread):
             def on_release(key):
                 try:
                     pressed.discard(key)
+                    down_since.pop(key, None)
                     if pk.Key.cmd_l not in pressed or pk.Key.ctrl_l not in pressed:
                         latched.discard("bangla")
                     if pk.Key.cmd_l not in pressed or pk.Key.shift_l not in pressed:
@@ -1324,7 +1414,7 @@ class MicPopup(QWidget):
         self.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowDoesNotAcceptFocus)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_ShowWithoutActivating)
-        self.setFixedSize(404, 104)
+        self.setFixedSize(424, 124)
         self._leaving = False
         self.elapsed = QElapsedTimer()
         self.timer = QTimer(self)
@@ -1343,7 +1433,7 @@ class MicPopup(QWidget):
         panel.setObjectName("panel")
         panel.setStyleSheet(
             "QFrame#panel{background:rgba(255,255,255,0.99);border:1px solid #E1E8F3;border-radius:20px;}"
-            "QLabel{background:transparent;border:0;}")
+            "QLabel{border:0;}")
         shadow = QGraphicsDropShadowEffect(panel)
         shadow.setBlurRadius(32)
         shadow.setOffset(0, 8)
@@ -1386,8 +1476,10 @@ class MicPopup(QWidget):
 
     def _style_texts(self, state, detail_color=None):
         color = {"listening": C_PRIMARY_DARK, "processing": C_WARN, "done": C_OK, "error": C_ERR}.get(state, C_TEXT)
-        self.title_label.setStyleSheet(f"font-size:14px;font-weight:700;color:{color};")
-        self.detail_label.setStyleSheet(f"font-size:12px;color:{detail_color or C_MUTED};")
+        # Solid white label backgrounds: on this see-through window a transparent label would keep the old
+        # text underneath the new one ("ghost" text) every time the state changes.
+        self.title_label.setStyleSheet(f"font-size:14px;font-weight:700;color:{color};background:#FFFFFF;")
+        self.detail_label.setStyleSheet(f"font-size:12px;color:{detail_color or C_MUTED};background:#FFFFFF;")
 
     # ---- helpers
     def _tick(self):
@@ -1556,7 +1648,7 @@ class DashboardPage(QWidget):
         self.update_text = QLabel("")
         self.update_text.setWordWrap(True)
         self.update_text.setStyleSheet(f"color:{C_PRIMARY_DARK};font-size:13px;font-weight:600;")
-        self.update_button = QPushButton("Download update")
+        self.update_button = QPushButton("Update now")
         self.update_button.setObjectName("primary")
         self.update_button.setCursor(Qt.PointingHandCursor)
         update_layout.addWidget(self.update_text, 1)
@@ -1657,8 +1749,12 @@ class DashboardPage(QWidget):
     def set_activity(self, text):
         self.activity.setText(text)
 
-    def show_update(self, version):
-        self.update_text.setText(f"SHUNCHi {version} is available. Update to get the latest improvements.")
+    def show_update(self, version, forced=False):
+        if forced:
+            self.update_text.setText(f"SHUNCHi {version} is required. Please update to keep using voice typing.")
+        else:
+            self.update_text.setText(f"SHUNCHi {version} is available. Update to get the latest improvements.")
+        self.update_button.setText("Update now")
         self.update_banner.setVisible(True)
 
     def hide_update(self):
@@ -1707,11 +1803,19 @@ class HistoryPage(QWidget):
         self.table.cellDoubleClicked.connect(lambda *_: self.copy_selected())
         root.addWidget(self.table, 1)
 
+        self.off_note = QLabel("Voice history is turned off. New dictations are not saved. Turn it on in Settings.")
+        self.off_note.setObjectName("muted")
+        self.off_note.setWordWrap(True)
+        self.off_note.setVisible(False)
+        root.addWidget(self.off_note)
         self.empty = QLabel("No dictations yet. Press a shortcut and speak to get started.")
         self.empty.setObjectName("muted")
         self.empty.setAlignment(Qt.AlignCenter)
         root.addWidget(self.empty)
         self.refresh()
+
+    def set_recording(self, enabled):
+        self.off_note.setVisible(not enabled)
 
     def refresh(self, *_):
         needle = self.search.text().strip().casefold()
@@ -1872,6 +1976,7 @@ class SettingsPage(QWidget):
         dt.setObjectName("cardTitle")
         dict_layout.addWidget(dt)
         self.smart = ToggleSwitch()
+        self.history_on = ToggleSwitch()
         self.silence = SegmentedControl([("Quick", 0.7), ("Normal", 1.0), ("Relaxed", 1.6)])
         self.max_minutes = SegmentedControl([("2 min", 2), ("5 min", 5), ("10 min", 10)])
         self.microphone = NoWheelComboBox()
@@ -1885,6 +1990,9 @@ class SettingsPage(QWidget):
             self.silence))
         dict_layout.addWidget(divider())
         dict_layout.addWidget(setting_row("Longest recording", "A safety limit for one dictation.", self.max_minutes))
+        dict_layout.addWidget(divider())
+        dict_layout.addWidget(setting_row(
+            "Save voice history", "Keep a list of your dictations on this computer. Turn it off and nothing new is saved.", self.history_on))
         dict_layout.addWidget(divider())
         dict_layout.addWidget(setting_row("Microphone", "The input device used for voice typing.", self.microphone, stacked=True))
         root.addWidget(dict_card)
@@ -1935,21 +2043,23 @@ class SettingsPage(QWidget):
         root.addStretch()
 
         self.smart.toggled.connect(lambda _: self.window_ref.on_settings_changed())
+        self.history_on.toggled.connect(lambda _: self.window_ref.on_settings_changed())
         self.silence.valueChanged.connect(lambda _: self.window_ref.on_settings_changed())
         self.max_minutes.valueChanged.connect(lambda _: self.window_ref.on_settings_changed())
         self.microphone.currentIndexChanged.connect(lambda _: self.window_ref.on_settings_changed())
         self.startup.toggled.connect(self.window_ref.on_startup_toggled)
         self.auto_update.toggled.connect(self.window_ref.on_auto_update_toggled)
 
-    def load_values(self, smart, silence, max_minutes, startup, auto_update=True):
-        for widget in (self.smart, self.silence, self.max_minutes, self.startup, self.auto_update):
+    def load_values(self, smart, silence, max_minutes, startup, auto_update=True, history=True):
+        for widget in (self.smart, self.silence, self.max_minutes, self.startup, self.auto_update, self.history_on):
             widget.blockSignals(True)
+        self.history_on.setChecked(history)
         self.smart.setChecked(smart)
         self.silence.set_value(silence)
         self.max_minutes.set_value(max_minutes)
         self.startup.setChecked(startup)
         self.auto_update.setChecked(auto_update)
-        for widget in (self.smart, self.silence, self.max_minutes, self.startup, self.auto_update):
+        for widget in (self.smart, self.silence, self.max_minutes, self.startup, self.auto_update, self.history_on):
             widget.blockSignals(False)
 
     def set_update_status(self, text, kind=None):
@@ -2105,6 +2215,17 @@ class MoreAppsPage(QWidget):
 
     def _idea_done(self, ok, message):
         self.idea_button.setEnabled(True)
+        if not ok and message == "fallback":
+            # The direct send did not work (blocked network, service down). Never lose the idea: copy it and
+            # open the same form on the website.
+            try:
+                QApplication.clipboard().setText(self.idea_text.toPlainText().strip())
+            except Exception:
+                logging.exception("Could not copy the idea text")
+            QDesktopServices.openUrl(QUrl(IDEA_FALLBACK_URL))
+            self.idea_status.setStyleSheet(f"color:{C_WARN};font-size:12px;")
+            self.idea_status.setText("Could not send from the app. The website form opened and your text is copied: paste it there.")
+            return
         self.idea_status.setStyleSheet(f"color:{C_OK if ok else C_ERR};font-size:12px;")
         self.idea_status.setText(message)
         if ok:
@@ -2422,6 +2543,8 @@ class MainWindow(QMainWindow):
         self.signals.spec_done.connect(self.on_spec_done)
         self.signals.update_result.connect(self.on_update_result)
         self.signals.notices_ready.connect(self.on_notices)
+        self.signals.update_progress.connect(self.on_update_progress)
+        self.signals.update_downloaded.connect(self.on_update_downloaded)
 
         self.setWindowTitle("SHUNCHi by RUHUL")
         self.setWindowIcon(QIcon(resource_path("assets/shunchi.ico")))
@@ -2432,11 +2555,16 @@ class MainWindow(QMainWindow):
 
         self.settings = QSettings("RUHUL", "SHUNCHi")
         self.smart_mode = self.settings.value("smart_mode", True, type=bool)
-        self.silence_seconds = nearest_option(self.settings.value("silence_seconds", 1.0), (0.7, 1.0, 1.6))
+        self.silence_seconds = nearest_option(self.settings.value("silence_seconds", 0.7), (0.7, 1.0, 1.6))
         self.max_minutes = int(nearest_option(self.settings.value("max_minutes", 5), (2, 5, 10)))
         self.auto_update = self.settings.value("auto_update", True, type=bool)
+        self.save_history_enabled = self.settings.value("save_history", True, type=bool)
         self.latest_info = None
         self.update_thread = None
+        self.update_downloader = None
+        self.update_progress_dialog = None
+        self.update_dialog_open = False
+        self.force_min = str(self.settings.value("force_min_version", "") or "")
         self.spec_token = 0
         self.spec_state = "none"        # none | running | done | failed
         self.spec_text = ""
@@ -2472,9 +2600,11 @@ class MainWindow(QMainWindow):
 
         self._build_ui()
         self.settings_page.load_values(self.smart_mode, self.silence_seconds, self.max_minutes,
-                                       startup_enabled() if os.name == "nt" else False, self.auto_update)
+                                       startup_enabled() if os.name == "nt" else False, self.auto_update,
+                                       self.save_history_enabled)
+        self.history_page.set_recording(self.save_history_enabled)
         self.more_apps_page.set_apps(self.load_remote_apps())
-        self.dashboard_page.update_button.clicked.connect(self.open_download)
+        self.dashboard_page.update_button.clicked.connect(self.start_update_install)
         self.show_status(READY_TEXT)
         self.mic_scanner = MicrophoneScanner(self.signals)
         self.mic_scanner.start()
@@ -2488,6 +2618,8 @@ class MainWindow(QMainWindow):
         self.update_timer.timeout.connect(self.auto_update_check)
         self.update_timer.start()
         QTimer.singleShot(6000, self.auto_update_check)
+        if self.update_is_forced():
+            QTimer.singleShot(1500, self.show_forced_update)
         QTimer.singleShot(9000, lambda: NoticeChecker(self.signals).start())
 
     # ------------------------------------------------------------------ UI
@@ -2608,7 +2740,7 @@ class MainWindow(QMainWindow):
             self.dashboard_page.set_activity(READY_TEXT)
 
     def _arm_watchdog(self):
-        self.watchdog.start(60000)
+        self.watchdog.start(130000)
 
     def _unstick(self):
         """Safety net: if writing never finishes (network hang, lost signal) release the app so the next
@@ -2637,6 +2769,9 @@ class MainWindow(QMainWindow):
         if device >= 0:
             self.stream_device = device
             self.settings.setValue("input_device", device)
+        self.save_history_enabled = page.history_on.isChecked()
+        self.history_page.set_recording(self.save_history_enabled)
+        self.settings.setValue("save_history", self.save_history_enabled)
         self.settings.setValue("smart_mode", self.smart_mode)
         self.settings.setValue("silence_seconds", self.silence_seconds)
         self.settings.setValue("max_minutes", self.max_minutes)
@@ -2693,6 +2828,10 @@ class MainWindow(QMainWindow):
             NoticeDialog(self, notice, self.settings.value("ui_bangla", True, type=bool)).exec()
             break
 
+    def update_is_forced(self):
+        """True while this version is older than the minimum version the developer requires."""
+        return bool(self.force_min) and parse_version(APP_VERSION) < parse_version(self.force_min)
+
     def on_update_result(self, result):
         manual = bool(result.get("manual"))
         self.settings_page.set_checking(False)
@@ -2703,19 +2842,25 @@ class MainWindow(QMainWindow):
         info = result["info"]
         try:
             self.settings.setValue("remote_apps", json.dumps(info.get("apps", [])))
+            self.force_min = info.get("min_version", "") or ""
+            self.settings.setValue("force_min_version", self.force_min)
             self.settings.sync()
         except Exception:
             logging.exception("Could not cache the app list")
         self.more_apps_page.set_apps(info.get("apps", []))
         if parse_version(info["latest"]) > parse_version(APP_VERSION):
             self.latest_info = info
-            self.dashboard_page.show_update(info["latest"])
+            self.dashboard_page.show_update(info["latest"], self.update_is_forced())
             self.settings_page.set_update_status(f"Version {info['latest']} is available.", "ok")
-            if manual or self.settings.value("update_notified", "") != info["latest"]:
+            if self.update_is_forced():
+                self.show_forced_update()
+            elif manual or self.settings.value("update_notified", "") != info["latest"]:
                 self.settings.setValue("update_notified", info["latest"])
                 self.notify_update(info)
         else:
             self.latest_info = None
+            self.force_min = ""
+            self.settings.setValue("force_min_version", "")
             self.dashboard_page.hide_update()
             self.settings_page.set_update_status(f"You are up to date · SHUNCHi {APP_VERSION}.", "ok" if manual else None)
 
@@ -2727,24 +2872,142 @@ class MainWindow(QMainWindow):
                 tray.showMessage(f"SHUNCHi {info['latest']} is available",
                                  "Click here to open SHUNCHi and update.", QSystemTrayIcon.Information, 8000)
             return
-        box = QMessageBox(self)
-        box.setIcon(QMessageBox.Information)
-        box.setWindowTitle("SHUNCHi update")
-        box.setText(f"SHUNCHi {info['latest']} is available")
-        notes = info.get("notes") or "A newer version is ready to download."
-        box.setInformativeText(f"{notes}\n\nYou have {APP_VERSION}. Install the update now?")
-        download = box.addButton("Download update", QMessageBox.AcceptRole)
-        box.addButton("Later", QMessageBox.RejectRole)
-        box.setDefaultButton(download)
-        box.exec()
-        if box.clickedButton() is download:
+        if self.recording or self.processing:
+            QTimer.singleShot(20000, lambda: self.notify_update(info))
+            return
+        if self.update_dialog_open or self.update_busy():
+            return
+        self.update_dialog_open = True
+        try:
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Information)
+            box.setWindowTitle("SHUNCHi update")
+            box.setText(f"SHUNCHi {info['latest']} is available")
+            notes = info.get("notes") or "A newer version is ready."
+            box.setInformativeText(f"{notes}\n\nYou have {APP_VERSION}. Update now? It takes about a minute.")
+            now_button = box.addButton("Update now", QMessageBox.AcceptRole)
+            box.addButton("Later", QMessageBox.RejectRole)
+            box.setDefaultButton(now_button)
+            box.exec()
+            chosen = box.clickedButton() is now_button
+        finally:
+            self.update_dialog_open = False
+        if chosen:
+            self.start_update_install()
+
+    def show_forced_update(self):
+        """A required update: the window comes forward and the only ways on are updating or leaving."""
+        if not self.update_is_forced() or self.update_dialog_open or self.update_busy():
+            return
+        info = self.latest_info or {"latest": self.force_min, "notes": ""}
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+        self.update_dialog_open = True
+        try:
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Warning)
+            box.setWindowTitle("SHUNCHi update required")
+            box.setText(f"Please update to SHUNCHi {info.get('latest') or self.force_min}")
+            box.setInformativeText(
+                f"This version ({APP_VERSION}) is too old to keep working reliably.\n"
+                "The update is free and takes about a minute. Your settings and history stay.")
+            now_button = box.addButton("Update now", QMessageBox.AcceptRole)
+            page_button = box.addButton("Open download page", QMessageBox.ActionRole)
+            exit_button = box.addButton("Exit SHUNCHi", QMessageBox.RejectRole)
+            box.setDefaultButton(now_button)
+            box.exec()
+            clicked = box.clickedButton()
+        finally:
+            self.update_dialog_open = False
+        if clicked is now_button:
+            self.start_update_install()
+        elif clicked is page_button:
             self.open_download()
+        elif clicked is exit_button:
+            owner = APP_OWNER.get("app")
+            if owner is not None:
+                owner.quit()
+            else:
+                QApplication.quit()
+
+    def update_busy(self):
+        return self.update_downloader is not None and self.update_downloader.is_alive()
 
     def open_download(self):
         url = (self.latest_info or {}).get("download_url") or DOWNLOAD_URL_DEFAULT
         if not is_trusted_url(url):
             url = DOWNLOAD_URL_DEFAULT
         QDesktopServices.openUrl(QUrl(url))
+
+    def start_update_install(self):
+        """Download the new installer inside the app, verify it, then start it. Anything unexpected falls
+        back to opening the download page, so the user is never stuck."""
+        info = self.latest_info or {}
+        if os.name != "nt" or not info.get("installer_url") or not info.get("installer_sha256"):
+            self.open_download()
+            return
+        if self.update_busy():
+            return
+        if self.recording or self.processing:
+            QMessageBox.information(self, APP_NAME, "Finish your current dictation first, then update.")
+            return
+        folder = Path(os.getenv("TEMP", str(APPDATA))) / "SHUNCHi_Update"
+        name = "SHUNCHi_Setup_" + re.sub(r"[^0-9.]", "", str(info.get("latest", ""))) + ".exe"
+        destination = folder / name
+        dialog = QProgressDialog(f"Downloading SHUNCHi {info.get('latest', '')}…", "Cancel", 0, 100, self)
+        dialog.setWindowTitle("SHUNCHi update")
+        dialog.setWindowModality(Qt.WindowModal)
+        dialog.setMinimumDuration(0)
+        dialog.setAutoClose(False)
+        dialog.setAutoReset(False)
+        dialog.setValue(0)
+        self.update_progress_dialog = dialog
+        self.update_downloader = InstallerDownloader(
+            self.signals, info["installer_url"], info["installer_sha256"], info.get("installer_size", 0), destination)
+        dialog.canceled.connect(self.update_downloader.cancel)
+        self.update_downloader.start()
+        dialog.show()
+
+    def on_update_progress(self, percent):
+        dialog = self.update_progress_dialog
+        if dialog is not None:
+            dialog.setValue(int(percent))
+
+    def on_update_downloaded(self, ok, detail):
+        dialog, self.update_progress_dialog = self.update_progress_dialog, None
+        if dialog is not None:
+            try:
+                dialog.canceled.disconnect()
+            except Exception:
+                pass
+            dialog.close()
+            dialog.deleteLater()
+        if ok:
+            try:
+                os.startfile(detail)            # opens the installer like a double-click (Windows asks for permission itself)
+            except Exception as exc:
+                logging.exception("Could not start the installer")
+                QMessageBox.warning(self, APP_NAME, f"The update was downloaded but could not be started:\n{exc}\n\n"
+                                                    "The download page will open instead.")
+                self.open_download()
+                return
+            self.show_status("Installer started. SHUNCHi will close so the update can finish.")
+            QTimer.singleShot(1500, self._quit_for_update)
+            return
+        if detail == "cancelled":
+            self.show_status("Update cancelled.")
+            return
+        QMessageBox.warning(self, APP_NAME, f"The update could not be downloaded ({detail}).\n\n"
+                                            "The download page will open so you can update there.")
+        self.open_download()
+
+    def _quit_for_update(self):
+        owner = APP_OWNER.get("app")
+        if owner is not None:
+            owner.quit()
+        else:
+            QApplication.quit()
 
     def on_startup_toggled(self, checked):
         try:
@@ -2850,6 +3113,10 @@ class MainWindow(QMainWindow):
             self.start_dictation(language)
 
     def start_dictation(self, language):
+        if self.update_is_forced():
+            self.popup.show_error("Please update SHUNCHi first.")
+            QTimer.singleShot(0, self.show_forced_update)
+            return
         if not self.api_key:
             try:
                 self.api_key = keyring.get_password(KEYRING_SERVICE, KEYRING_USERNAME) or None
@@ -3025,10 +3292,11 @@ class MainWindow(QMainWindow):
             return
         self.popup.finish()
         self._paste_text(text)                  # type first, bookkeeping afterwards: the text appears sooner
-        try:
-            save_history(self.current_language, self.pending_duration, text)
-        except Exception:
-            logging.exception("Could not save history")
+        if self.save_history_enabled:
+            try:
+                save_history(self.current_language, self.pending_duration, text)
+            except Exception:
+                logging.exception("Could not save history")
         self.dashboard_page.set_api_state("ok", "Connected · voice typing is working.")
         self.show_status(f"Typed {len(text)} characters.")
 
@@ -3084,6 +3352,7 @@ class ShunchiApp:
         self.mutex = self.acquire_mutex()
         if self.mutex is False:
             raise SystemExit(0)
+        APP_OWNER["app"] = self
         self.qt = QApplication(sys.argv)
         self.qt.setApplicationName(APP_NAME)
         self.qt.setQuitOnLastWindowClosed(False)

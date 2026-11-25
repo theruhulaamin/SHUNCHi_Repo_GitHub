@@ -1,3 +1,14 @@
+SHUNCHi 4.6.0 — Faster typing, In-app Update, History switch
+============================================================
+
+1. Mic pop-up: overlapping text fixed (bigger, clean text area).
+2. Faster result: transcription starts on a short pause; default silence is Quick (0.7 s).
+3. Voice History: new On/Off switch in Settings (Off = nothing is saved).
+4. Updates: checked automatically every few hours; "Update now" downloads, verifies (SHA-256) and
+   starts the installer. Mandatory (force) updates block dictation until updated.
+5. More Apps idea form: sending fixed; if the network blocks it, text is copied and the website form opens.
+6. Hotkey: stale key-state cleanup no longer drops a key that is really held.
+
 SHUNCHi 4.5.0 — Pop-ups, Copy, Ideas and Stability
 ==================================================
 
