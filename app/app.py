@@ -35,8 +35,8 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QComboBox, QCheckBox, QLineEdit, QMessageBox, QSystemTrayIcon,
     QMenu, QFrame, QStackedWidget, QTableWidget, QTableWidgetItem, QHeaderView,
-    QSpinBox, QDoubleSpinBox, QPlainTextEdit, QSizePolicy, QScrollArea,
-    QGraphicsDropShadowEffect, QAbstractItemView, QButtonGroup, QDialog, QProgressDialog
+    QPlainTextEdit, QSizePolicy, QScrollArea,
+    QAbstractItemView, QButtonGroup, QDialog, QProgressDialog
 )
 
 APP_NAME = "SHUNCHi"
@@ -1619,7 +1619,6 @@ class MicPopup(QWidget):
         p.setPen(QColor(color))
         tm = QFontMetrics(tf)
         x = float(self.x0)
-        row = QRectF(0, self.text_y, 0, 22)
         tw = tm.horizontalAdvance(self.title)
         p.drawText(QRectF(x, self.text_y, tw + 4, 22), Qt.AlignVCenter | Qt.AlignLeft, self.title)
         x += tw + 10
