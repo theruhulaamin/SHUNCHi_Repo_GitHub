@@ -40,7 +40,7 @@
   if (/\/download\/?/.test(path)) return mark("download");
   var home = /\/(privacy\.html)?$/.test(path) && !/privacy/.test(path);
   if (!home || !("IntersectionObserver" in window)) return mark(home ? "home" : "");
-  var map = { setup: "setup", apps: "apps", faq: "faq" }, current = "home";
+  var map = { setup: "setup", apps: "apps", faq: "faq", developer: "dev" }, current = "home";
   mark("home");
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) { if (e.isIntersecting) { current = map[e.target.id]; mark(current); } });

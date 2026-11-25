@@ -364,3 +364,19 @@ html[lang="bn"] .foot-grid h4{text-transform:none;letter-spacing:0;font-size:14p
   .foot-links a{font-size:13.5px;min-height:34px}
 }
 @media (max-width:900px){.site-footer .legal{flex-direction:row;justify-content:space-between;gap:4px 12px}}
+
+/* ---------- mobile fixes: dev links, 6-tab bar, no sideways overflow ---------- */
+html{overflow-x:hidden}
+@media (max-width:900px){
+  .tabbar{grid-template-columns:repeat(6,minmax(0,1fr));padding-left:4px;padding-right:4px}
+  .tabbar a{font-size:10px;padding:0 1px;text-align:center;line-height:1.15;white-space:nowrap}
+  .tabbar a[data-tab="download"]{margin:0 1px}
+  .links-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .links-row .pill{min-width:0;justify-content:center;padding:0 10px;font-size:14px}
+  .links-row .pill:last-child{grid-column:1 / -1;font-size:13.5px;overflow-wrap:anywhere}
+  .foot-links{display:flex;flex-wrap:wrap;gap:0 14px}
+  .foot-links a{display:inline-flex}
+  .official{overflow-wrap:anywhere}
+}
+@media (max-width:360px){.tabbar a{font-size:9.5px}.tabbar svg{width:21px;height:21px}}
+@media (max-width:900px){.links-row .pill:nth-child(3){grid-column:1 / -1}}
