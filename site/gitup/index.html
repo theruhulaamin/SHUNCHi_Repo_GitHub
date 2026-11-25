@@ -562,7 +562,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
         <div class="stepper" id="stepper">
           <button type="button" data-step="1"><span class="n">1</span><span class="l" data-bn="প্রস্তুতি">Prepare</span></button>
           <button type="button" data-step="2"><span class="n">2</span><span class="l" data-bn="ভার্সন ও নোট">Version &amp; notes</span></button>
-          <button type="button" data-step="3"><span class="n">3</span><span class="l" data-bn="ফাইল">Files</span></button>
+          <button type="button" data-step="3"><span class="n">3</span><span class="l" data-bn="GitHub আপলোড">GitHub upload</span></button>
           <button type="button" data-step="4"><span class="n">4</span><span class="l" data-bn="পাবলিশ">Publish</span></button>
         </div>
 
@@ -603,17 +603,17 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
         </div>
 
         <div class="card hidden" id="rs3">
-          <h2 data-bn="ধাপ ৩: ফাইল যোগ করুন">Step 3: Add the files</h2>
+          <h2 data-bn="ধাপ ৩: GitHub-এ ফাইল আপলোড">Step 3: Upload the files on GitHub</h2>
           <p class="muted" style="margin-bottom:12px" id="rel-files-help"></p>
           <div class="grid g2" id="dz-wrap"></div>
-          <input type="file" id="dz-input" class="hidden">
-          <div class="row" style="margin-top:16px"><button class="btn" data-next="2" type="button" data-bn="পেছনে">Back</button><span class="sp"></span><button class="btn p" data-next="4" type="button" data-bn="পরের ধাপ">Next</button></div>
+          <div id="up-box" style="margin-top:14px"></div>
+          <div class="row" style="margin-top:16px" id="up-actions"></div>
         </div>
 
         <div class="card hidden" id="rs4">
           <h2 data-bn="ধাপ ৪: রিভিউ ও পাবলিশ">Step 4: Review &amp; publish</h2>
           <div id="rel-review" style="margin:12px 0"></div>
-          <div class="note wn" data-bn="পাবলিশ চাপলে প্রথমে ড্রাফট তৈরি হবে, তারপর GitHub-এ গিয়ে ফাইল attach করবেন। ফিরে এসে “আপলোড শেষ” চাপলে বাকি কাজ নিজে হবে।">Publish first creates a draft. You then attach the files on GitHub, come back, press “Upload complete” and the rest is automatic.</div>
+          <div class="note wn" data-bn="ফাইল মিলেছে। পাবলিশ চাপলে রিলিজ পাবলিক হবে, ওয়েবসাইট ও অ্যাপের আপডেট নিজে হবে। কাজ শেষ না হওয়া পর্যন্ত পেজ বন্ধ করবেন না।">Files matched. Publish makes the release public and the website and app update by themselves. Keep this page open until it finishes.</div>
           <div class="prog hidden" id="rel-prog" style="margin-top:14px"></div>
           <div class="row" style="margin-top:16px" id="rel-actions"><button class="btn" data-next="3" type="button" id="rel-back" data-bn="পেছনে">Back</button><span class="sp"></span>
             <button class="btn p" id="rel-publish" type="button"><svg class="i s"><use href="#i-rocket"/></svg><span data-bn="পাবলিশ">Publish</span></button></div>
@@ -1552,8 +1552,8 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     n.className = "note" + (warn ? " wn" : " ok"); n.innerHTML = T("Tag: <b>", "ট্যাগ: <b>") + esc(tagOf()) + "</b>" + (warn ? "<br>" + T("This is not higher than the last release (", "এটি সর্বশেষ রিলিজের (") + esc(last) + T("). Users will not get an update.", ") চেয়ে বড় নয়। ব্যবহারকারীরা আপডেট পাবে না।") : "");
     renderDz();
   }
-  $("#rel-ver").addEventListener("input", tagPrev);
-  $("#rel-target").addEventListener("change", function () { R.target = this.value; R.full = R.web = R.one = null; relTargetUi(); });
+  $("#rel-ver").addEventListener("input", function () { if (R.draft || R.matched) { R.draft = null; R.matched = null; } tagPrev(); });
+  $("#rel-target").addEventListener("change", function () { R.target = this.value; R.full = R.web = R.one = null; R.draft = null; R.matched = null; relTargetUi(); });
   function dzSpec() {
     var sh = R.target === "shunchi", v = R.ver || "X.Y.Z";
     return sh ? [{ k: "full", title: T("Full installer", "পুরো ইনস্টলার"), name: "SHUNCHi_Setup_" + v + ".exe", accept: ".exe" }, { k: "web", title: T("Small web installer", "ছোট ওয়েব ইনস্টলার"), name: "SHUNCHi_Setup.exe", accept: ".exe" }]
@@ -1561,7 +1561,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   }
   function renderDz() {
     var spec = dzSpec(), box = $("#dz-wrap");
-    $("#rel-files-help").textContent = R.target === "shunchi" ? T("You do not upload anything here. After you press Publish, the next step opens GitHub: attach these two files there, then come back and press “Upload complete”.", "এখানে কিছু আপলোড করতে হবে না। পাবলিশ চাপলে পরের ধাপে GitHub খুলবে: সেখানে এই দুটি ফাইল attach করুন, তারপর ফিরে এসে “আপলোড শেষ” চাপুন।") : T("You do not upload anything here. After you press Publish, GitHub opens: attach your file there, then come back and press “Upload complete”.", "এখানে কিছু আপলোড করতে হবে না। পাবলিশ চাপলে GitHub খুলবে: সেখানে আপনার ফাইল attach করুন, তারপর ফিরে এসে “আপলোড শেষ” চাপুন।");
+    $("#rel-files-help").textContent = T("Nothing is uploaded here. Press the button: a draft is created and GitHub opens. Attach these files there, press “Save draft”, then come back and press “Upload done”.", "এখানে কিছু আপলোড হয় না। বাটন চাপুন: ড্রাফট তৈরি হবে ও GitHub খুলবে। সেখানে এই ফাইলগুলো attach করে “Save draft” চাপুন, তারপর ফিরে এসে “Upload done” চাপুন।");
     box.innerHTML = spec.map(function (s) {
       return '<div class="dz ok" style="cursor:default">' + svg("up") + '<b>' + esc(s.title) + '</b>' + (s.name ? '<div class="muted"><code class="k">' + esc(s.name) + '</code></div>' : '<div class="muted">' + T("Any .exe or .zip", "যেকোনো .exe বা .zip") + '</div>') + '</div>';
     }).join("");
@@ -1570,6 +1570,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   function stepErr() {
     if (!VER_RE.test(R.ver)) return [2, T("Enter a version like 4.5.0.", "4.5.0-এর মতো ভার্সন দিন।")];
     if (false) { if (!R.full || !R.web) return [3, T("Add both installer files.", "দুটি ইনস্টলার ফাইলই দিন।")]; if (R.web.size > R.full.size) return [3, T("The two files look swapped: the web installer should be the smaller one.", "ফাইল দুটি উল্টে গেছে মনে হচ্ছে: ওয়েব ইনস্টলার ছোট হওয়ার কথা।")]; }
+    if (!R.matched) return [3, T("Upload the files on GitHub first, then press “Upload done”.", "আগে GitHub-এ ফাইল আপলোড করে “Upload done” চাপুন।")];
     return null;
   }
   function setStep(n, soft) {
@@ -1577,6 +1578,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     R.step = n; for (var i = 1; i <= 4; i++) $("#rs" + i).classList.toggle("hidden", i !== n);
     $$("#stepper button").forEach(function (b) { var s = +b.dataset.step; b.classList.toggle("done", s < n); if (s === n) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); });
     if (n === 4) renderReview();
+    if (n === 3) upUi();
   }
   $$("[data-next]").forEach(function (b) { b.addEventListener("click", function () { setStep(+b.dataset.next); }); });
   $$("#stepper button").forEach(function (b) { b.addEventListener("click", function () { setStep(+b.dataset.step); }); });
@@ -1588,12 +1590,12 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     var e = stepErr();
     $("#rel-review").innerHTML = '<table class="t"><tbody><tr><td class="muted" style="width:140px">' + T("Release", "রিলিজ") + '</td><td><b>' + esc(R.target === "shunchi" ? "SHUNCHi" : appName(R.target)) + '</b></td></tr>' +
       '<tr><td class="muted">Tag</td><td><code class="k">' + esc(tagOf()) + '</code></td></tr>' +
-      '<tr><td class="muted">' + T("Files", "ফাইল") + '</td><td>' + files().map(function (f) { return '<div><code class="k">' + esc(f.name) + '</code></div>'; }).join("") || '<div class="muted">' + T("Your file (attached on GitHub)", "আপনার ফাইল (GitHub-এ attach হবে)") + '</div>' + '</td></tr>' +
+      '<tr><td class="muted">' + T("Files on GitHub", "GitHub-এর ফাইল") + '</td><td>' + ((R.matched || []).map(function (a) { return '<div><code class="k">' + esc(a.name) + '</code> ' + (a.size ? '<span class="muted">' + fmtSize(a.size) + '</span>' : '') + '</div>'; }).join("") || '<div class="muted">-</div>') + '</td></tr>' +
       '<tr><td class="muted">' + T("Notes", "নোট") + '</td><td style="white-space:pre-wrap">' + esc(notes()) + '</td></tr></tbody></table>' + (e ? '<div class="note er" style="margin-top:10px">' + esc(e[1]) + '</div>' : "");
     var pb = $("#rel-publish"); if (pb) pb.disabled = !!e || R.running;
   }
   function phases() {
-    return [{ id: "draft", t: T("Create the draft release", "ড্রাফট রিলিজ তৈরি") }, { id: "attach", t: T("Attach the files on GitHub", "GitHub-এ ফাইল attach") }, { id: "pub", t: T("Publish the release", "রিলিজ পাবলিশ") }, { id: "act", t: T("Update website data (GitHub Action)", "ওয়েবসাইটের ডেটা আপডেট (GitHub Action)") }, { id: "live", t: T("Website is live with the new version", "নতুন ভার্সনসহ ওয়েবসাইট লাইভ") }];
+    return [{ id: "draft", t: T("Create the draft release", "ড্রাফট রিলিজ তৈরি") }, { id: "attach", t: T("Files uploaded on GitHub", "GitHub-এ ফাইল আপলোড") }, { id: "pub", t: T("Publish the release", "রিলিজ পাবলিশ") }, { id: "act", t: T("Update website data (GitHub Action)", "ওয়েবসাইটের ডেটা আপডেট (GitHub Action)") }, { id: "live", t: T("Website is live with the new version", "নতুন ভার্সনসহ ওয়েবসাইট লাইভ") }];
   }
   var PH = {};
   function drawProg() {
@@ -1614,35 +1616,46 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     });
   }
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  function attachUi(miss) {
+  function upUi() {
+    var box = $("#up-box"), act = $("#up-actions"); if (!box || !act) return;
+    if (!R.draft) {
+      box.innerHTML = "";
+      act.innerHTML = '<button class="btn" type="button" id="up-back">' + T("Back", "পেছনে") + '</button><span class="sp"></span><button class="btn p" type="button" id="up-create">' + T("Create draft and open GitHub", "ড্রাফট তৈরি করে GitHub খুলুন") + ' ↗</button>';
+      $("#up-back").onclick = function () { setStep(2); }; $("#up-create").onclick = createDraft; return;
+    }
     var editUrl = String(R.draft.url || "").replace("/releases/tag/", "/releases/edit/"), names = files().map(function (x) { return x.name; });
-    ph("attach", "wait", T("Waiting for you: attach the files on GitHub", "আপনার অপেক্ষায়: GitHub-এ ফাইল attach করুন"));
-    $("#rel-prog").querySelectorAll(".note.wn").forEach(function (n) { n.remove(); });
-    $("#rel-prog").insertAdjacentHTML("beforeend", '<div class="note wn"><div>' + T("1) Press “Go to GitHub”. 2) Drag ", "১) “GitHub-এ যান” চাপুন। ২) এই ") + (names.length ? names.map(function (n) { return '<code class="k">' + esc(n) + '</code>'; }).join(" + ") : T("your file", "আপনার ফাইল")) + T(" into the box “Attach binaries”. 3) Wait until the upload finishes and press “Save draft” (do not press Publish). 4) Come back here and press “Upload complete”.", " “Attach binaries” বক্সে দিন। ৩) আপলোড শেষ হলে “Save draft” চাপুন (Publish চাপবেন না)। ৪) এখানে ফিরে এসে “আপলোড শেষ” চাপুন।") + '</div></div>');
-    $("#rel-actions").innerHTML = '<button class="btn" type="button" id="rel-back">' + T("Back", "পেছনে") + '</button><span class="sp"></span><a class="btn" target="_blank" rel="noopener" href="https://github.com/' + esc(S.repo) + '/releases">' + T("Releases list", "রিলিজ লিস্ট") + '</a><a class="btn p" id="rel-attach" target="_blank" rel="noopener" href="' + esc(editUrl) + '">' + T("Go to GitHub", "GitHub-এ যান") + ' ↗</a><button class="btn p" id="rel-done" type="button">' + T("Upload complete", "আপলোড শেষ") + '</button>';
-    $("#rel-back").onclick = function () { setStep(3); }; $("#rel-done").onclick = function () { publishRelease(); };
-    try { $("#rel-prog .note.wn").scrollIntoView({ behavior: "smooth", block: "center" }); } catch (x) {}
-    if (miss && miss.length) toast(T("Not attached yet: ", "এখনো attach হয়নি: ") + miss.join(", "), "er");
+    box.innerHTML = '<div class="note wn"><div>' + T("1) Press “Go to GitHub”. 2) Drag ", "১) “GitHub-এ যান” চাপুন। ২) এই ") + (names.length ? names.map(function (n) { return '<code class="k">' + esc(n) + '</code>'; }).join(" + ") : T("your file", "আপনার ফাইল")) + T(" into “Attach binaries”. 3) When the upload finishes press “Save draft” (not Publish). 4) Come back here and press “Upload done”.", " “Attach binaries” বক্সে দিন। ৩) আপলোড শেষ হলে “Save draft” চাপুন (Publish নয়)। ৪) এখানে ফিরে এসে “Upload done” চাপুন।") + '</div></div><div id="up-msg" style="margin-top:10px"></div>';
+    act.innerHTML = '<button class="btn" type="button" id="up-back">' + T("Back", "পেছনে") + '</button><span class="sp"></span><a class="btn" target="_blank" rel="noopener" href="https://github.com/' + esc(S.repo) + '/releases">' + T("Releases list", "রিলিজ লিস্ট") + '</a><a class="btn p" target="_blank" rel="noopener" href="' + esc(editUrl) + '">' + T("Go to GitHub", "GitHub-এ যান") + ' ↗</a><button class="btn p" type="button" id="up-done">Upload done</button>';
+    $("#up-back").onclick = function () { setStep(2); }; $("#up-done").onclick = checkUpload;
+  }
+  async function createDraft() {
+    if (!R.ver || !VER_RE.test(R.ver)) { toast(T("Enter a version like 4.5.0.", "4.5.0-এর মতো ভার্সন দিন।"), "er"); return; }
+    var b = $("#up-create"), tag = tagOf(); busy(b, true);
+    try {
+      var list = await gh("/releases?per_page=50").then(function (j) { return Array.isArray(j) ? j : []; }, function () { return []; });
+      var ex = list.filter(function (r) { return r.tag_name === tag; })[0];
+      if (ex && !ex.draft) { toast(T("Release " + tag + " already exists. Use a new version number.", tag + " রিলিজ আগেই আছে। নতুন ভার্সন নম্বর দিন।"), "er"); busy(b, false); return; }
+      if (ex) { R.draft = { id: ex.id, url: ex.html_url }; await gh("/releases/" + ex.id, { method: "PATCH", body: { body: notes() } }); }
+      else { var rel = await gh("/releases", { method: "POST", body: { tag_name: tag, target_commitish: S.branch, name: (R.target === "shunchi" ? "SHUNCHi " : appName(R.target) + " ") + R.ver, body: notes(), draft: true, prerelease: false } }); R.draft = { id: rel.id, url: rel.html_url }; }
+      upUi(); try { window.open(String(R.draft.url || "").replace("/releases/tag/", "/releases/edit/"), "_blank", "noopener"); } catch (x) {}
+    } catch (er) { toast(errText(er), "er"); busy(b, false); }
+  }
+  async function checkUpload() {
+    var b = $("#up-done"), names = files().map(function (x) { return x.name; }); busy(b, true);
+    try {
+      var cur0 = await gh("/releases/" + R.draft.id), assets = cur0.assets || [], have = assets.map(function (a) { return a.name; });
+      var miss = names.length ? names.filter(function (n) { return have.indexOf(n) < 0; }) : (have.length ? [] : [T("your file", "আপনার ফাইল")]);
+      if (miss.length) { $("#up-msg").innerHTML = '<div class="note er">' + T("Not found on GitHub yet: ", "GitHub-এ এখনো পাওয়া যায়নি: ") + miss.map(function (n) { return '<code class="k">' + esc(n) + '</code>'; }).join(" ") + '<br>' + T("Attach them, press “Save draft”, then press “Upload done” again.", "attach করে “Save draft” চাপুন, তারপর আবার “Upload done” চাপুন।") + '</div>'; busy(b, false); return; }
+      R.matched = assets.map(function (a) { return { name: a.name, size: a.size }; }); busy(b, false); setStep(4);
+      toast(T("Files matched. Press Publish.", "ফাইল মিলেছে। এবার Publish চাপুন।"), "ok");
+    } catch (er) { toast(errText(er), "er"); busy(b, false); }
   }
   async function publishRelease() {
-    var e = stepErr(); if (e) { toast(e[1], "er"); return; }
+    var e = stepErr(); if (e) { toast(e[1], "er"); setStep(e[0]); return; }
     R.running = true; PH = {}; $("#rel-prog").classList.remove("hidden"); drawProg(); renderReview();
-    $("#rel-actions").innerHTML = ""; var tag = tagOf(), names = files().map(function (x) { return x.name; });
+    $("#rel-actions").innerHTML = "";
     try {
-      if (!R.draft) {
-        ph("draft", "run", T("Looking for this version on GitHub…", "GitHub-এ এই ভার্সন খোঁজা হচ্ছে…"));
-        var list = await gh("/releases?per_page=50").then(function (j) { return Array.isArray(j) ? j : []; }, function () { return []; });
-        var ex = list.filter(function (r) { return r.tag_name === tag; })[0];
-        if (ex && !ex.draft) { var er1 = new Error(T("Release " + tag + " already exists. Use a new version number.", tag + " রিলিজ আগেই আছে। নতুন ভার্সন নম্বর দিন।")); er1.stop = true; throw er1; }
-        if (ex) { R.draft = { id: ex.id, url: ex.html_url }; await gh("/releases/" + ex.id, { method: "PATCH", body: { body: notes() } }); }
-        else { var rel = await gh("/releases", { method: "POST", body: { tag_name: tag, target_commitish: S.branch, name: (R.target === "shunchi" ? "SHUNCHi " : appName(R.target) + " ") + R.ver, body: notes(), draft: true, prerelease: false } }); R.draft = { id: rel.id, url: rel.html_url }; }
-      }
-      ph("draft", "ok", T("Draft ready", "ড্রাফট তৈরি"));
-      ph("attach", "run", T("Checking the files on GitHub…", "GitHub-এ ফাইল আছে কিনা দেখা হচ্ছে…"));
-      var cur0 = await gh("/releases/" + R.draft.id), have = (cur0.assets || []).map(function (a) { return a.name; });
-      var miss = names.length ? names.filter(function (n) { return have.indexOf(n) < 0; }) : (have.length ? [] : [T("your file", "আপনার ফাইল")]);
-      if (miss.length) { R.running = false; attachUi(R.attachedOnce ? miss : null); R.attachedOnce = true; return; }
-      ph("attach", "ok", T("Files found on GitHub", "GitHub-এ ফাইল পাওয়া গেছে")); R.attachedOnce = false;
+      ph("draft", "ok", T("Draft ready", "ড্রাফট তৈরি")); ph("attach", "ok", T("Files matched on GitHub", "GitHub-এর ফাইল মিলেছে"));
       ph("pub", "run", ""); var t0 = Date.now() - 5000;
       await gh("/releases/" + R.draft.id, { method: "PATCH", body: { draft: false, make_latest: R.target === "shunchi" ? "true" : "false" } });
       ph("pub", "ok", T("Release is public", "রিলিজ পাবলিক হয়েছে")); var url = R.draft.url; R.draft = null;
@@ -1682,7 +1695,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   }
   function finishRelease(url, live) {
     $("#rel-actions").innerHTML = '<span class="sp"></span><a class="btn" target="_blank" rel="noopener" href="' + esc(url) + '">GitHub release</a>' + (R.target === "shunchi" ? '<a class="btn" target="_blank" rel="noopener" href="../download/">' + T("Download page", "ডাউনলোড পেজ") + '</a>' : "") + '<button class="btn p" id="rel-again" type="button">' + T("Release another", "আরেকটি রিলিজ") + '</button>';
-    $("#rel-again").onclick = function () { R.full = R.web = R.one = null; R.draft = null; $("#rel-ver").value = ""; $("#rel-en").value = ""; $("#rel-bn").value = ""; PH = {}; $("#rel-prog").classList.add("hidden"); relActionsReset(); relTargetUi(); setStep(1); };
+    $("#rel-again").onclick = function () { R.full = R.web = R.one = null; R.draft = null; R.matched = null; $("#rel-ver").value = ""; $("#rel-en").value = ""; $("#rel-bn").value = ""; PH = {}; $("#rel-prog").classList.add("hidden"); relActionsReset(); relTargetUi(); setStep(1); };
     toast(live ? T("Released! Everything is live.", "রিলিজ হয়েছে! সব লাইভ।") : T("Released. The website is still updating.", "রিলিজ হয়েছে। ওয়েবসাইট আপডেট হচ্ছে।"), "ok");
   }
   $("#rel-publish").addEventListener("click", publishRelease);
