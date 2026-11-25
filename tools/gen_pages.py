@@ -64,7 +64,7 @@ def head(P, title, desc, path, extra="", robots="index,follow,max-image-preview:
 <link rel="icon" type="image/png" href="{P}assets/favicon.png"><link rel="apple-touch-icon" href="{P}assets/apple-touch-icon.png">
 {FONTS}
 <link rel="manifest" href="{P}manifest.webmanifest"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SHUNCHi">
-<link rel="stylesheet" href="{P}assets/site.css?v=21">
+<link rel="stylesheet" href="{P}assets/site.css?v=22">
 {extra}{ldtxt}</head>
 <body>
 {GTM_BODY}<a class="skip" href="#main"><span class="en">Skip to content</span><span class="bn">মূল অংশে যান</span></a>
@@ -489,8 +489,8 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/catalog.js?v=21" data-base=""></script>
-<script src="assets/site.js?v=21"></script>
+''' + footer("") + '''<script src="assets/catalog.js?v=22" data-base=""></script>
+<script src="assets/site.js?v=22"></script>
 <script>
 (function () {
   function drawApps() { renderApps(document.getElementById("app-list"), 4); }
@@ -538,8 +538,8 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 </div></section>
 <section><div class="wrap">''' + SUGGEST_FORM + '''</div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/catalog.js?v=21" data-base="../"></script>
-<script src="../assets/site.js?v=21"></script>
+''' + footer("../") + '''<script src="../assets/catalog.js?v=22" data-base="../"></script>
+<script src="../assets/site.js?v=22"></script>
 <script>
 (function () {
   var state = { cat: "all", q: "" }, results = document.getElementById("results");
@@ -579,7 +579,7 @@ tmpl = head("../", "Tool name | SHUNCHi", "One sentence about the tool.", "apps/
   <div class="dl-card" id="tool-area"><p><span class="en">Build the tool here.</span><span class="bn">টুলটি এখানে বানান।</span></p></div>
 </div></section>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=21"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=22"></script>
 </body>
 </html>
 '''
@@ -600,6 +600,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
       <a class="btn btn-primary dl-main" id="get" href="#" hidden><span class="en">Download for Windows</span><span class="bn">উইন্ডোজের জন্য ডাউনলোড করুন</span> <small id="wsize"></small></a>
       <p class="dl-sub" id="full" hidden><span class="en">Prefer the full offline installer?</span><span class="bn">পুরো অফলাইন ইনস্টলার চান?</span> <a id="full-link" href="#"><span class="en">Download it here</span><span class="bn">এখান থেকে নামান</span></a> <span id="size"></span></p>
     </div>
+    <ul class="dl-chips"><li><span class="en">Free</span><span class="bn">ফ্রি</span></li><li>Windows 10 / 11</li><li><span class="en">64-bit</span><span class="bn">৬৪-বিট</span></li></ul>
     <p class="dl-sub" id="soon"><span class="en">The installer will appear here as soon as the first release is published.</span><span class="bn">প্রথম রিলিজ প্রকাশ হলেই ইনস্টলার এখানে পাওয়া যাবে।</span></p>
     <p class="dl-sub" id="started" hidden><span class="en">Your download should start in a moment. If it does not, use the button.</span><span class="bn">কিছুক্ষণের মধ্যে ডাউনলোড শুরু হবে। না হলে বাটনটি চাপুন।</span></p>
     <div class="dl-need"><b><span class="en">What you need</span><span class="bn">যা লাগবে</span></b>
@@ -619,7 +620,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   </div>
 </div>
 </main>
-''' + footer("../") + '''<script src="../assets/site.js?v=21"></script>
+''' + footer("../") + '''<script src="../assets/site.js?v=22"></script>
 <script>
 (function () {
   if (!window.fetch) return;
@@ -628,7 +629,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
     if (m.latest_version) document.getElementById("v").textContent = m.latest_version;
     function fill(id, t) { var ul = document.getElementById(id); (t || "").split("\\n").forEach(function (l) { l = l.replace(/^\\s*[-*•]\\s*/, "").trim(); if (l) { var li = document.createElement("li"); li.textContent = l; ul.appendChild(li); } }); return ul.children.length > 0; }
     var en = fill("notes-en", m.release_notes_en || m.release_notes), bnn = fill("notes-bn", m.release_notes_bn || m.release_notes_en || m.release_notes);
-    if (en || bnn) document.getElementById("notes-box").hidden = false;
+    if (en || bnn) { var nb = document.getElementById("notes-box"); nb.hidden = false; if (window.innerWidth < 600) nb.removeAttribute("open"); }
     if (m.released) { try { var d = new Date(m.released + "T00:00:00"); document.getElementById("date").textContent = d.toLocaleDateString(document.documentElement.lang === "bn" ? "bn-BD" : "en-GB", { day: "numeric", month: "long", year: "numeric" }); } catch (e) { document.getElementById("date").textContent = m.released; } }
     var web = /^https:\\/\\//.test(m.web_installer_url || "") ? m.web_installer_url : "";
     var fullUrl = /^https:\\/\\//.test(m.installer_url || "") ? m.installer_url : "";
@@ -683,7 +684,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   </div>
 </div></section>
 </main>
-''' + footer("") + '''<script src="assets/site.js?v=21"></script>
+''' + footer("") + '''<script src="assets/site.js?v=22"></script>
 </body>
 </html>
 '''
@@ -699,7 +700,7 @@ nf = head("/", "Page not found | SHUNCHi", "This page does not exist.", "404.htm
   <p><span class="en">The link may be old or mistyped.</span><span class="bn">লিংকটি পুরনো বা ভুল হতে পারে।</span></p>
   <p style="margin-top:22px"><a class="btn btn-primary" href="/index.html"><span class="en">Back to home</span><span class="bn">হোমে ফিরুন</span></a></p>
 </div></main>
-''' + footer("/") + '<script src="/assets/site.js?v=21"></script>\n</body>\n</html>\n'
+''' + footer("/") + '<script src="/assets/site.js?v=22"></script>\n</body>\n</html>\n'
 write("404.html", nf)
 print("pages written")
 
@@ -744,7 +745,7 @@ for p in POSTS:
 </article>
 {('<section class="alt"><div class="wrap"><div class="head" style="margin-bottom:24px"><h2 style="font-size:26px"><span class="en">More articles</span><span class="bn">আরও লেখা</span></h2></div><div class="post-grid">' + "".join(post_card(r, "../") for r in related) + "</div></div></section>") if related else ""}
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=21"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=22"></script>\n</body>\n</html>\n'
     write(url, page)
 
 reg("blog/", "0.8", "weekly", POSTS[0]["date"] if POSTS else TODAY)
@@ -763,7 +764,7 @@ blog_index = head("../", "Blog: Bangla Voice Typing Guides and Tips | SHUNCHi",
   {('<div class="post-grid">' + "".join(post_card(p, "../") for p in POSTS) + "</div>") if POSTS else '<p class="meta"><span class="en">The first articles are coming soon.</span><span class="bn">প্রথম লেখাগুলো শীঘ্রই আসছে।</span></p>'}
 </div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=21"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=22"></script>\n</body>\n</html>\n'
 write("blog/index.html", blog_index)
 
 
@@ -785,7 +786,7 @@ if VIDEOS_JSON:
 </div>
 <section style="padding-top:28px"><div class="wrap"><div class="vids all">{"".join(video_card(v) for v in VIDEOS_JSON)}</div></div></section>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=21"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=22"></script>\n</body>\n</html>\n'
     write("videos/index.html", vpage)
 
 # RSS feed
@@ -826,7 +827,7 @@ for a in APPS_JSON:
     {dlbtn}</div>
 </div>
 </main>
-''' + footer("../") + '<script src="../assets/site.js?v=21"></script>\n</body>\n</html>\n'
+''' + footer("../") + '<script src="../assets/site.js?v=22"></script>\n</body>\n</html>\n'
     write(url, page)
 
 # ====================================================================== SITEMAP + ROBOTS
