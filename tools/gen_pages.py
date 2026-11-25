@@ -994,3 +994,19 @@ write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="htt
     f"<url><loc>{DOMAIN}/{p}</loc><lastmod>{lm}</lastmod><changefreq>{fr}</changefreq><priority>{pr}</priority></url>\n" for p, lm, pr, fr in SITEMAP) + "</urlset>\n")
 write("robots.txt", f"User-agent: *\nAllow: /\nDisallow: /apps/_template.html\n\nSitemap: {DOMAIN}/sitemap.xml\n")
 print("sitemap urls:", len(SITEMAP), "posts:", len(POSTS), "software pages:", len([a for a in APPS_JSON if a.get('id')]))
+
+
+# ---------------------------------------------------------------- cache-busting: version every asset by its content hash
+def _bust_assets():
+    import hashlib, glob
+    def h(name):
+        try: return hashlib.md5(open(os.path.join(SITE, "assets", name), "rb").read()).hexdigest()[:8]
+        except OSError: return "0"
+    vers = {n: h(n) for n in ("site.css", "site.js", "auth.js")}
+    pat = re.compile(r'(assets/(site\.css|site\.js|auth\.js))\?v=[0-9a-z]+')
+    for f in glob.glob(os.path.join(SITE, "**", "*.html"), recursive=True):
+        if os.sep + "gitup" + os.sep in f: continue
+        t = open(f, encoding="utf-8").read()
+        n = pat.sub(lambda m: m.group(1) + "?v=" + vers[m.group(2)], t)
+        if n != t: open(f, "w", encoding="utf-8").write(n)
+_bust_assets()
