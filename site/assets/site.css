@@ -202,7 +202,8 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;background:var(-
 .suggest h3{font-size:20px}.suggest p{color:var(--muted);margin-top:4px;max-width:520px}
 
 /* ---------- FAQ ---------- */
-.faq{max-width:780px}
+.faq{max-width:780px;margin:0 auto}
+#faq .head{margin-left:auto;margin-right:auto;text-align:center}
 details{border-bottom:1px solid var(--line)}
 details:first-of-type{border-top:1px solid var(--line-strong)}
 summary{cursor:pointer;font-weight:700;color:var(--ink);padding:18px 0;list-style:none;display:flex;justify-content:space-between;gap:16px;align-items:center;font-size:17px;min-height:56px}
