@@ -20,5 +20,11 @@ jobs:
           git add site/stats.json
           if git diff --cached --quiet; then echo "no change"; exit 0; fi
           git commit -m "Update download count"
-          git push origin main
+          # main may move meanwhile (the release workflow commits at the same moment): rebase and retry, never fail
+          ok=0
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin main && git push origin main; then ok=1; break; fi
+            sleep $((i * 4))
+          done
+          if [ "$ok" != "1" ]; then echo "Could not push the stats this time; the next hourly run will retry"; exit 0; fi
           gh workflow run pages.yml --repo "${{ github.repository }}" --ref main
