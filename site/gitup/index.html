@@ -366,6 +366,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
         <div class="page-h"><div><h1 data-bn="আইডিয়া ইনবক্স">Ideas inbox</h1><p data-bn="ওয়েবসাইটের ফর্মে যারা আইডিয়া পাঠিয়েছে, সব এখানে।">Everything visitors sent through the idea form on the website.</p></div>
           <div class="row"><button class="btn" id="ideas-reload" type="button"><svg class="i s"><use href="#i-refresh"/></svg><span data-bn="রিফ্রেশ">Refresh</span></button>
             <button class="btn" id="ideas-csv" type="button"><svg class="i s"><use href="#i-dl"/></svg>CSV</button></div></div>
+        <div class="card" id="ideas-status" style="display:none;margin-bottom:12px"></div>
         <div class="card hidden" id="ideas-setup">
           <h2 data-bn="একবার সেটআপ: FormSubmit API key">One-time setup: FormSubmit API key</h2>
           <p class="muted" style="margin:6px 0 10px" data-bn="ফর্মের লেখা আপনার ইমেইলে আসে। এখানে দেখতে FormSubmit-এর API key লাগবে। key আপনার ইমেইলে আসবে।">Idea form messages arrive in your email. To see them here you need the FormSubmit API key. It is sent to your email.</p>
@@ -891,14 +892,25 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   function loadIdeas(manual) {
     var key = ""; try { key = localStorage.getItem(FKEY) || ""; } catch (e) {}
     if (!key) { $("#ideas-setup").classList.remove("hidden"); $("#ideas-card").classList.add("hidden"); $("#ideas-paste").classList.add("hidden"); setStat("s-ideas", "-", T("Set up in Ideas tab", "আইডিয়া ট্যাবে সেটআপ করুন")); return Promise.resolve(); }
-    return fetch("https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key)).then(function (r) { return r.json(); }).then(function (j) {
-      var list = pickList(j); if (!list) throw new Error((j && (j.message || j.error)) || "bad response"); setIdeas(list);
+    var box = $("#ideas-status"), say = function (html) { box.style.display = html ? "" : "none"; box.innerHTML = html || ""; };
+    say('<span class="muted">' + T("Loading ideas from FormSubmit…", "FormSubmit থেকে আইডিয়া আনা হচ্ছে…") + '</span>');
+    var ctl = window.AbortController ? new AbortController() : null, tm = setTimeout(function () { if (ctl) ctl.abort(); }, 20000);
+    return fetch("https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key.trim()), { signal: ctl ? ctl.signal : undefined }).then(function (r) {
+      return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (x) {} return { ok: r.ok, status: r.status, text: t, json: j }; });
+    }).then(function (res) {
+      var list = pickList(res.json);
+      if (!list) { var m = (res.json && (res.json.message || res.json.error)) || res.text.slice(0, 160) || "empty reply"; throw new Error("HTTP " + res.status + ": " + m); }
+      setIdeas(list);
+      say(list.length ? '<span class="pill ok">' + T("Connected", "সংযুক্ত") + '</span> <span class="muted">' + list.length + T(" ideas loaded.", " টি আইডিয়া লোড হয়েছে।") + '</span>'
+        : '<b>' + T("Connected, but FormSubmit has 0 saved ideas.", "সংযুক্ত, কিন্তু FormSubmit-এ এখনো ০টি আইডিয়া জমা।") + '</b><div class="muted" style="margin-top:4px">' + T("FormSubmit only stores messages sent AFTER you activated the form (the first test message + clicking Activate in the email). Send one test idea from the website, activate it from the email, then Refresh. Older messages are only in your email.", "FormSubmit শুধু ফর্ম activate করার পরের মেসেজ জমা রাখে (প্রথম টেস্ট মেসেজ পাঠিয়ে ইমেইলে Activate চাপতে হয়)। ওয়েবসাইট থেকে একটি টেস্ট আইডিয়া পাঠান, ইমেইলে Activate চাপুন, তারপর রিফ্রেশ করুন। পুরোনো মেসেজ শুধু আপনার ইমেইলে আছে।") + '</div>');
     }).catch(function (e) {
-      $("#fs-open").href = "https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key); $("#ideas-paste").classList.remove("hidden"); $("#ideas-card").classList.add("hidden"); $("#ideas-setup").classList.add("hidden");
+      var why = e && e.name === "AbortError" ? T("timed out", "সময় শেষ") : (e && e.message === "Failed to fetch" ? T("browser blocked the request (CORS) or no internet", "ব্রাউজার রিকোয়েস্ট আটকেছে (CORS) অথবা ইন্টারনেট নেই") : String(e && e.message || e));
+      say('<b style="color:var(--bad,#b91c1c)">' + T("Could not load ideas: ", "আইডিয়া লোড হয়নি: ") + esc(why) + '</b><div class="muted" style="margin-top:4px">' + T("Use the paste option below. It always works.", "নিচের paste অপশন ব্যবহার করুন। এটা সবসময় কাজ করে।") + '</div>');
+      $("#fs-open").href = "https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key.trim()); $("#ideas-paste").classList.remove("hidden"); $("#ideas-card").classList.add("hidden"); $("#ideas-setup").classList.add("hidden");
       var cached = null; try { cached = JSON.parse(localStorage.getItem(ICACHE) || "null"); } catch (x) {}
       if (cached && cached.length) { setIdeas(cached, true); $("#ideas-paste").classList.remove("hidden"); }
       setStat("s-ideas", "-", T("Could not load", "লোড হয়নি")); if (manual) toast(T("Could not load ideas directly. Use the paste option.", "সরাসরি লোড হয়নি। paste অপশন ব্যবহার করুন।"), "er");
-    });
+    }).then(function () { clearTimeout(tm); });
   }
   function ideaMail(x) { var c = String(x.contact || ""); var m = /[^\s@]+@[^\s@]+\.[^\s@]+/.exec(c); return m ? "mailto:" + m[0] + "?subject=" + encodeURIComponent("Re: " + x.title) : ""; }
   function newCount() { var seen = 0; try { seen = +localStorage.getItem(SEEN) || 0; } catch (e) {} return S.ideas ? Math.max(0, S.ideas.length - seen) : 0; }
