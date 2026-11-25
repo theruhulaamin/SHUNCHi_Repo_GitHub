@@ -17,6 +17,10 @@ CATS, APPS_BASE, TOOLS = _cat["CATS"], _cat["APPS"], _cat["TOOLS"]
 try: CONFIG = json.load(open(os.path.join(HERE, "site_config.json"), encoding="utf-8"))
 except Exception: CONFIG = {}
 GTM_ID = os.environ.get("GTM_ID") or CONFIG.get("gtm_id", "")
+
+# Latest released version comes from update.json (written by the release workflow). Nothing in the site hard-codes a version.
+try: LATEST_VER = str(json.load(open(os.path.join(SITE, "update.json"), encoding="utf-8")).get("latest_version", "")).strip()
+except Exception: LATEST_VER = ""
 if GTM_ID and not re.fullmatch(r"GTM-[A-Z0-9]{4,10}", GTM_ID): raise SystemExit("gtm_id must look like GTM-XXXXXXX")
 GTM_HEAD = ("<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" + GTM_ID + "');</script>\n") if GTM_ID else ""
 GTM_BODY = ('<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=' + GTM_ID + '" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>\n') if GTM_ID else ""
@@ -329,7 +333,7 @@ HOME_LD = [
      "email": "voice.shunchi@gmail.com", "founder": {"@type": "Person", "name": "Ruhul Amin"},
      "sameAs": ["https://www.facebook.com/voice.shunchi", "https://www.instagram.com/voice.shunchi/"]},
     {"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "SHUNCHi", "alternateName": "শুনছি",
-     "operatingSystem": "Windows 10, Windows 11", "applicationCategory": "UtilitiesApplication",
+     "operatingSystem": "Windows 10, Windows 11", "applicationCategory": "UtilitiesApplication", **({"softwareVersion": LATEST_VER} if LATEST_VER else {}),
      "description": "Free AI voice typing for Bangla and English on Windows. Press a shortcut, speak, and the text is typed into any app.",
      "inLanguage": ["bn", "en"], "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
      "author": {"@type": "Person", "name": "Ruhul Amin"}, "url": DOMAIN + "/", "downloadUrl": DOMAIN + "/download/"},
@@ -591,7 +595,7 @@ dl = head("../", "Download SHUNCHi for Windows 10 and 11: Free Bangla Voice Typi
   <h1><span class="en">Download SHUNCHi</span><span class="bn">SHUNCHi ডাউনলোড করুন</span></h1>
   <p><span class="en">Free AI voice typing for Windows 10 and 11 (64-bit).</span><span class="bn">উইন্ডোজ ১০ ও ১১ (৬৪-বিট)-এর জন্য ফ্রি এআই ভয়েস টাইপিং।</span></p>
   <div class="dl-card">
-    <div class="dl-top"><h2>SHUNCHi <span id="v">4.4.0</span></h2><span class="dl-date" id="date"></span></div>
+    <div class="dl-top"><h2>SHUNCHi <span id="v">''' + html.escape(LATEST_VER) + '''</span></h2><span class="dl-date" id="date"></span></div>
     <div class="dl-actions">
       <a class="btn btn-primary dl-main" id="get" href="#" hidden><span class="en">Download for Windows</span><span class="bn">উইন্ডোজের জন্য ডাউনলোড করুন</span></a>
       <p class="dl-sub" id="full" hidden><span class="en">Prefer the full offline installer?</span><span class="bn">পুরো অফলাইন ইনস্টলার চান?</span> <a id="full-link" href="#"><span class="en">Download it here</span><span class="bn">এখান থেকে নামান</span></a> <span id="size"></span></p>
