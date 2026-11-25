@@ -47,6 +47,8 @@ WelcomeLabel2=Free AI voice typing for Windows.%n%nThis small installer download
 ButtonNext=&Download
 
 [Code]
+procedure ExitProcess(uExitCode: Cardinal); external 'ExitProcess@kernel32.dll stdcall';
+
 var
   DownloadPage: TDownloadWizardPage;
 
@@ -133,7 +135,7 @@ begin
       // Nothing is left for this small setup to do: close it now, so no extra "Ready to Install" window shows up.
       WizardForm.Hide;
       Result := True;
-      Terminate;
+      ExitProcess(0);
     except
       if DownloadPage.AbortedByUser then
         Log('Download cancelled by the user.')
