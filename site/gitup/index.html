@@ -189,6 +189,10 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 .idea h3{font-size:16.5px}
 .idea .body{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
 .idea .mt{display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:13px}
+.legend{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}.lg1{background:var(--accent)}.lg2{background:#f59e0b;margin-left:8px}
+.hb{display:grid;gap:9px}.hb .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:13.5px}.hb .r span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hb .r b{color:var(--ink)}.hb .r .bar{grid-column:1/-1;height:7px}
+#ga-chart svg{width:100%;height:auto;display:block;overflow:visible}#ga-chart .tip{font-size:12px;fill:var(--ink)}
+#ga-range{width:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);padding:6px 8px;font:inherit}
 .dsec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 0 10px}.dsec h2{font-size:17px;margin:0;color:var(--ink)}
 .attn{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}.attn .at{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:14px;cursor:pointer;box-shadow:var(--sh)}
 .attn .at b{font-size:17px;color:var(--ink)}.attn .at.wn{border-color:#f3d28a;background:#fffbeb}.attn .at.er{border-color:#f0b9b9;background:#fef2f2}.attn .at:hover{border-color:var(--accent)}
@@ -358,6 +362,39 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
           <div class="card"><div class="card-h"><h2 data-bn="সাম্প্রতিক মন্তব্য">Latest comments</h2></div><div class="list" id="d-comments"></div></div>
         </div>
         <div class="card" style="margin-bottom:16px"><div class="card-h"><h2 data-bn="পপ-আপ">Pop-ups</h2><span class="row" style="gap:6px"><button class="btn sm" data-go="spop" type="button" data-bn="সাইট পপ-আপ">Site pop-ups</button><button class="btn sm" data-go="popups" type="button" data-bn="অ্যাপ পপ-আপ">App pop-ups</button></span></div><div class="list" id="d-pops"></div></div>
+        <div class="dsec"><h2 data-bn="ওয়েবসাইট অ্যানালিটিক্স (Google Analytics)">Website analytics (Google Analytics)</h2><span class="row" style="gap:6px"><select id="ga-range" class="hidden" aria-label="Range"><option value="7">Last 7 days</option><option value="28" selected>Last 28 days</option><option value="90">Last 90 days</option></select><button class="btn sm hidden" id="ga-reload" type="button" data-bn="রিফ্রেশ">Refresh</button><button class="btn sm hidden" id="ga-cfg" type="button" data-bn="সেটিং">Settings</button></span></div>
+        <div id="ga-setup" class="card hidden" style="margin-bottom:14px">
+          <b data-bn="Google Analytics কানেক্ট করুন">Connect Google Analytics</b>
+          <p class="muted" data-bn="একবার এই দুটি তথ্য দিলে ড্যাশবোর্ডে ভিজিটর, পেজ ভিউ, সোর্স, দেশ ও ডিভাইসের গ্রাফ দেখাবে। শুধু পড়ার (read-only) অনুমতি লাগে, কিছু বদলানো হয় না।">Enter these two values once and the dashboard shows visitors, page views, sources, countries and devices. It only needs read-only access and changes nothing.</p>
+          <div class="grid g2"><label><span data-bn="GA4 Property ID (শুধু সংখ্যা)">GA4 Property ID (numbers only)</span><input id="ga-pid" inputmode="numeric" placeholder="123456789"></label>
+            <label><span>OAuth Client ID</span><input id="ga-cid" placeholder="xxxx.apps.googleusercontent.com"></label></div>
+          <details style="margin-top:10px"><summary class="muted" data-bn="কোথায় পাব?">Where do I find these?</summary><ol class="muted" style="margin:8px 0 0 18px;line-height:1.7">
+            <li data-bn="GA4 → Admin → Property details → Property ID">GA4 → Admin → Property details → Property ID</li>
+            <li data-bn="Google Cloud console → APIs &amp; Services → Library → “Google Analytics Data API” → Enable">Google Cloud console → APIs &amp; Services → Library → “Google Analytics Data API” → Enable</li>
+            <li data-bn="Credentials → Create credentials → OAuth client ID → Web application। Authorized JavaScript origins-এ https://shunchiai.com দিন">Credentials → Create credentials → OAuth client ID → Web application. Add https://shunchiai.com under Authorized JavaScript origins</li>
+            <li data-bn="OAuth consent screen-এ আপনার Gmail-কে Test user করুন">On the OAuth consent screen, add your Gmail as a Test user</li></ol></details>
+          <div class="row" style="margin-top:12px"><button class="btn p" id="ga-save" type="button" data-bn="সেভ করুন">Save</button><span class="muted" id="ga-msg"></span></div>
+        </div>
+        <div id="ga-connect" class="card hidden" style="margin-bottom:14px"><div class="row" style="flex-wrap:wrap"><div style="flex:1;min-width:220px"><b data-bn="Google Analytics-এ সাইন ইন করুন">Sign in to Google Analytics</b><div class="muted" data-bn="আপনার Google অ্যাকাউন্টে GA4 property-র Viewer access থাকতে হবে।">Your Google account needs Viewer access to the GA4 property.</div></div><button class="btn p" id="ga-go" type="button" data-bn="Google দিয়ে কানেক্ট">Connect with Google</button></div></div>
+        <div id="ga-err" class="card hidden" style="margin-bottom:14px"></div>
+        <div id="ga-main" class="hidden">
+          <div class="grid g4" style="margin-bottom:14px">
+            <div class="stat"><div class="k"><svg class="i s"><use href="#i-user"/></svg><span data-bn="অ্যাকটিভ ভিজিটর">Active users</span></div><div class="v" id="g-users">-</div><div class="s" id="g-users-s"></div></div>
+            <div class="stat"><div class="k"><svg class="i s"><use href="#i-eye"/></svg><span data-bn="পেজ ভিউ">Page views</span></div><div class="v" id="g-views">-</div><div class="s" id="g-views-s"></div></div>
+            <div class="stat"><div class="k"><svg class="i s"><use href="#i-refresh"/></svg><span data-bn="সেশন">Sessions</span></div><div class="v" id="g-sess">-</div><div class="s" id="g-sess-s"></div></div>
+            <div class="stat"><div class="k"><svg class="i s"><use href="#i-star"/></svg><span data-bn="এখন অনলাইনে">Online now</span></div><div class="v" id="g-now">-</div><div class="s" id="g-eng"></div></div>
+          </div>
+          <div class="card" style="margin-bottom:14px"><div class="card-h"><h2 data-bn="ভিজিটর ও পেজ ভিউ">Visitors &amp; page views</h2><span class="legend"><i class="lg1"></i><span data-bn="ভিজিটর">Users</span> <i class="lg2"></i><span data-bn="পেজ ভিউ">Views</span></span></div><div id="ga-chart"></div></div>
+          <div class="grid g2" style="margin-bottom:14px">
+            <div class="card"><div class="card-h"><h2 data-bn="জনপ্রিয় পেজ">Top pages</h2></div><div id="ga-pages" class="hb"></div></div>
+            <div class="card"><div class="card-h"><h2 data-bn="ভিজিটর কোথা থেকে আসছে">Traffic sources</h2></div><div id="ga-src" class="hb"></div></div>
+          </div>
+          <div class="grid g2" style="margin-bottom:6px">
+            <div class="card"><div class="card-h"><h2 data-bn="দেশ">Countries</h2></div><div id="ga-geo" class="hb"></div></div>
+            <div class="card"><div class="card-h"><h2 data-bn="ডিভাইস">Devices</h2></div><div id="ga-dev" class="hb"></div></div>
+          </div>
+          <p class="muted" id="ga-note" style="margin:4px 2px 0"></p>
+        </div>
         <div class="dsec"><h2 data-bn="ডাউনলোড ও ওয়েবসাইট">Downloads &amp; website</h2></div>
         <div class="card">
           <div class="card-h"><h2 data-bn="রিলিজ অনুযায়ী ডাউনলোড">Downloads by release</h2><span class="muted" data-bn="GitHub-এর হিসাব। ছোট ইনস্টলার পুরো ফাইলও নামায়, তাই একবার করে গোনা হয়।">From GitHub. The small installer also fetches the full file, so each install is counted once.</span></div>
@@ -880,7 +917,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 
   function refreshAll() {
     $("#refresh").disabled = true;
-    return Promise.all([loadApps(), loadVideos(), loadPopups(), loadSitePops(), loadPosts(), loadReleases(), loadInfo(), loadRuns(), loadLive(), loadIdeas(false), loadTraffic()]).then(function () { try { renderCommunity(); S.dashUsers(); } catch (e) {} }).then(function () { $("#refresh").disabled = false; S.loaded = true; });
+    return Promise.all([loadApps(), loadVideos(), loadPopups(), loadSitePops(), loadPosts(), loadReleases(), loadInfo(), loadRuns(), loadLive(), loadIdeas(false), loadTraffic()]).then(function () { try { renderCommunity(); S.dashUsers(); S.gaInit(); } catch (e) {} }).then(function () { $("#refresh").disabled = false; S.loaded = true; });
   }
   $("#refresh").addEventListener("click", function () { refreshAll().then(function () { toast(T("Updated.", "আপডেট হয়েছে।"), "ok"); }); });
   $("#redeploy").addEventListener("click", function () {
@@ -1590,6 +1627,103 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     fbLoad().then(function () { FB.cfgOk = true; if (FB.user && !USERS.length) return loadUsers(); }, function () { FB.cfgOk = false; }).then(function () { renderCommunity(); }, function () { renderCommunity(); });
   }
   S.dashUsers = dashUsers;
+
+  /* ================= GOOGLE ANALYTICS (GA4 Data API, read-only, browser OAuth) ================= */
+  var GA = { key: "shunchi_ga_cfg", tok: null, exp: 0, cfg: null, gis: null, busy: false };
+  function gaCfg() { if (GA.cfg) return GA.cfg; var c = null; try { c = JSON.parse(localStorage.getItem(GA.key) || "null"); } catch (e) {} GA.cfg = c && c.pid && c.cid ? c : null; return GA.cfg; }
+  function gaShow(state) {
+    ["ga-setup", "ga-connect", "ga-err", "ga-main"].forEach(function (id) { $("#" + id).classList.toggle("hidden", id !== state); });
+    var has = !!gaCfg(); ["ga-range", "ga-reload", "ga-cfg"].forEach(function (id) { $("#" + id).classList.toggle("hidden", !has); });
+  }
+  function gaErr(h) { gaShow("ga-err"); $("#ga-err").innerHTML = h; }
+  function gaInit() {
+    if (!gaCfg()) { gaShow("ga-setup"); return; }
+    var t = null; try { t = JSON.parse(sessionStorage.getItem("shunchi_ga_tok") || "null"); } catch (e) {}
+    if (t && t.exp > Date.now() + 30000) { GA.tok = t.tok; GA.exp = t.exp; gaLoad(); } else gaShow("ga-connect");
+  }
+  function gaToken() {
+    return new Promise(function (res, rej) {
+      function go() {
+        try {
+          if (!GA.gis) GA.gis = window.google.accounts.oauth2.initTokenClient({ client_id: gaCfg().cid, scope: "https://www.googleapis.com/auth/analytics.readonly", callback: function () {} });
+          GA.gis.callback = function (r) { if (r && r.access_token) { GA.tok = r.access_token; GA.exp = Date.now() + (+r.expires_in || 3600) * 1000; try { sessionStorage.setItem("shunchi_ga_tok", JSON.stringify({ tok: GA.tok, exp: GA.exp })); } catch (e) {} res(); } else rej(new Error((r && r.error) || "denied")); };
+          GA.gis.error_callback = function (e) { rej(new Error(e && e.type || "popup")); };
+          GA.gis.requestAccessToken({ prompt: GA.tok ? "" : "select_account" });
+        } catch (e) { rej(e); }
+      }
+      if (window.google && window.google.accounts && window.google.accounts.oauth2) return go();
+      var sc = document.createElement("script"); sc.src = "https://accounts.google.com/gsi/client"; sc.async = true; sc.onload = go; sc.onerror = function () { rej(new Error("gsi")); }; document.head.appendChild(sc);
+    });
+  }
+  function gaPost(path, body) {
+    return fetch("https://analyticsdata.googleapis.com/v1beta/properties/" + gaCfg().pid + ":" + path, { method: "POST", headers: { Authorization: "Bearer " + GA.tok, "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function (r) {
+      return r.json().then(function (j) { if (!r.ok) { var e = new Error((j.error && j.error.message) || r.status); e.status = r.status; throw e; } return j; });
+    });
+  }
+  function gv(row, i, dim) { var a = dim ? row.dimensionValues : row.metricValues; return a && a[i] ? a[i].value : ""; }
+  function gaDelta(cur, prev) { if (!prev) return ""; var d = (cur - prev) / prev * 100; return (d >= 0 ? "▲ " : "▼ ") + Math.abs(d).toFixed(0) + "% " + T("vs previous period", "আগের সময়ের তুলনায়"); }
+  function gaDur(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + T("m ", "মি ") + (sec % 60) + T("s", "সে"); }
+  function hbars(el, rows, fmt) {
+    var mx = Math.max.apply(null, rows.map(function (r) { return r[1]; }).concat([1]));
+    el.innerHTML = rows.length ? rows.map(function (r) { return '<div class="r"><span title="' + esc(r[0]) + '">' + esc(r[0]) + '</span><b>' + (fmt ? fmt(r[1]) : nf(r[1])) + '</b><div class="bar"><i style="width:' + Math.max(3, Math.round(r[1] / mx * 100)) + '%"></i></div></div>'; }).join("") : '<div class="muted">' + T("No data yet", "এখনো ডেটা নেই") + '</div>';
+  }
+  function gaChart(days) {
+    var W = 720, H = 190, pl = 34, pb = 22, pt = 10, n = days.length, w = W - pl - 6, h = H - pb - pt;
+    var mxU = Math.max.apply(null, days.map(function (d) { return d.u; }).concat([1])), mxV = Math.max.apply(null, days.map(function (d) { return d.v; }).concat([1])), mx = Math.max(mxU, mxV);
+    var X = function (i) { return pl + (n < 2 ? w / 2 : i * w / (n - 1)); }, Y = function (v) { return pt + h - v / mx * h; };
+    var line = function (k) { return days.map(function (d, i) { return (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(d[k]).toFixed(1); }).join(" "); };
+    var grid = [0, .5, 1].map(function (f) { var y = pt + h - f * h; return '<line x1="' + pl + '" x2="' + (W - 6) + '" y1="' + y + '" y2="' + y + '" stroke="var(--line)" stroke-dasharray="3 4"/><text x="' + (pl - 6) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" fill="var(--muted)">' + nf(Math.round(mx * f)) + '</text>'; }).join("");
+    var step = Math.max(1, Math.ceil(n / 7)), lab = days.map(function (d, i) { return i % step === 0 ? '<text x="' + X(i) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="11" fill="var(--muted)">' + d.d.slice(5) + '</text>' : ""; }).join("");
+    var area = line("u") + " L" + X(n - 1) + " " + (pt + h) + " L" + X(0) + " " + (pt + h) + " Z";
+    var hits = days.map(function (d, i) { var bw = w / Math.max(1, n - 1); return '<rect x="' + (X(i) - bw / 2) + '" y="' + pt + '" width="' + bw + '" height="' + h + '" fill="transparent"><title>' + d.d + " · " + T("Users ", "ভিজিটর ") + d.u + " · " + T("Views ", "ভিউ ") + d.v + '</title></rect>'; }).join("");
+    $("#ga-chart").innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Visitors and page views">' + grid + lab + '<path d="' + area + '" fill="var(--accent)" opacity=".10"/><path d="' + line("v") + '" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linejoin="round"/><path d="' + line("u") + '" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>' + hits + '</svg>';
+  }
+  function gaLoad() {
+    if (GA.busy) return; GA.busy = true; gaShow("ga-main"); var N = +$("#ga-range").value || 28;
+    var cur = { startDate: N + "daysAgo", endDate: "today" }, prev = { startDate: (2 * N) + "daysAgo", endDate: (N + 1) + "daysAgo" };
+    Promise.all([
+      gaPost("batchRunReports", { requests: [
+        { dateRanges: [cur, prev], metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }, { name: "sessions" }, { name: "engagementRate" }, { name: "averageSessionDuration" }] },
+        { dateRanges: [cur], dimensions: [{ name: "date" }], metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }], orderBys: [{ dimension: { dimensionName: "date" } }] },
+        { dateRanges: [cur], dimensions: [{ name: "pagePath" }], metrics: [{ name: "screenPageViews" }], orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }], limit: 8 },
+        { dateRanges: [cur], dimensions: [{ name: "sessionDefaultChannelGroup" }], metrics: [{ name: "sessions" }], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 8 },
+        { dateRanges: [cur], dimensions: [{ name: "country" }], metrics: [{ name: "activeUsers" }], orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }], limit: 8 } ] }),
+      gaPost("runReport", { dateRanges: [cur], dimensions: [{ name: "deviceCategory" }], metrics: [{ name: "activeUsers" }], orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }] }),
+      gaPost("runRealtimeReport", { metrics: [{ name: "activeUsers" }] }).catch(function () { return null; })
+    ]).then(function (r) {
+      var rp = r[0].reports || [], tot = {}, ps = {}, rows = (rp[0] && rp[0].rows) || [];
+      rows.forEach(function (row) { var k = gv(row, 0, true) === "date_range_1" ? "p" : "c"; tot[k] = [0, 1, 2, 3, 4].map(function (i) { return +gv(row, i); }); });
+      var c = tot.c || [0, 0, 0, 0, 0], p = tot.p || null;
+      $("#g-users").textContent = nf(c[0]); $("#g-users-s").textContent = p ? gaDelta(c[0], p[0]) : ""; $("#g-views").textContent = nf(c[1]); $("#g-views-s").textContent = p ? gaDelta(c[1], p[1]) : "";
+      $("#g-sess").textContent = nf(c[2]); $("#g-sess-s").textContent = p ? gaDelta(c[2], p[2]) : "";
+      var now = r[2] && r[2].rows && r[2].rows[0] ? +gv(r[2].rows[0], 0) : 0; $("#g-now").textContent = r[2] ? nf(now) : "-"; $("#g-eng").textContent = T("Engagement ", "এনগেজমেন্ট ") + Math.round(c[3] * 100) + "% · " + gaDur(c[4]);
+      var days = ((rp[1] && rp[1].rows) || []).map(function (row) { var d = gv(row, 0, true); return { d: d.slice(0, 4) + "-" + d.slice(4, 6) + "-" + d.slice(6, 8), u: +gv(row, 0), v: +gv(row, 1) }; });
+      if (days.length) gaChart(days); else $("#ga-chart").innerHTML = '<div class="muted">' + T("No data yet", "এখনো ডেটা নেই") + '</div>';
+      hbars($("#ga-pages"), ((rp[2] && rp[2].rows) || []).map(function (row) { return [gv(row, 0, true), +gv(row, 0)]; }));
+      hbars($("#ga-src"), ((rp[3] && rp[3].rows) || []).map(function (row) { return [gv(row, 0, true), +gv(row, 0)]; }));
+      hbars($("#ga-geo"), ((rp[4] && rp[4].rows) || []).map(function (row) { return [gv(row, 0, true), +gv(row, 0)]; }));
+      hbars($("#ga-dev"), ((r[1].rows) || []).map(function (row) { return [gv(row, 0, true), +gv(row, 0)]; }));
+      $("#ga-note").textContent = T("Last ", "শেষ ") + N + T(" days. Google Analytics data can lag by a few hours.", " দিন। Google Analytics-এর ডেটা কয়েক ঘণ্টা দেরিতে আসতে পারে।");
+    }).catch(function (e) {
+      if (e.status === 401) { GA.tok = null; try { sessionStorage.removeItem("shunchi_ga_tok"); } catch (x) {} gaShow("ga-connect"); return; }
+      var why = e.status === 403 ? T("Google refused access. Make sure the Google Analytics Data API is enabled in your Google Cloud project, and that this Google account has Viewer access to the GA4 property.", "Google অনুমতি দেয়নি। Google Cloud প্রজেক্টে “Google Analytics Data API” চালু আছে কিনা এবং এই Google অ্যাকাউন্টের GA4 property-তে Viewer access আছে কিনা দেখুন।")
+        : e.status === 400 || e.status === 404 ? T("Property ID looks wrong. Use the numeric GA4 Property ID, not the G-XXXX measurement ID.", "Property ID ঠিক নয়। G-XXXX নয়, GA4 Property ID-র সংখ্যাটি দিন।") : esc(e.message || "error");
+      gaErr('<b>' + T("Could not load analytics.", "অ্যানালিটিক্স লোড হয়নি।") + '</b><div class="muted" style="margin-top:4px">' + why + '</div><div class="row" style="margin-top:10px"><button class="btn sm" id="ga-retry" type="button">' + T("Try again", "আবার চেষ্টা") + '</button><button class="btn sm" id="ga-cfg2" type="button">' + T("Change settings", "সেটিং বদলান") + '</button></div>');
+      $("#ga-retry").onclick = function () { gaLoad(); }; $("#ga-cfg2").onclick = function () { $("#ga-cfg").click(); };
+    }).then(function () { GA.busy = false; });
+  }
+  $("#ga-go").addEventListener("click", function () { var b = this; busy(b, true); gaToken().then(gaLoad, function (e) { toast(T("Google sign-in did not finish: ", "Google সাইন ইন শেষ হয়নি: ") + (e.message || ""), "er"); }).then(function () { busy(b, false); }); });
+  $("#ga-reload").addEventListener("click", function () { if (GA.tok && GA.exp > Date.now()) gaLoad(); else gaShow("ga-connect"); });
+  $("#ga-range").addEventListener("change", function () { if (GA.tok && GA.exp > Date.now()) gaLoad(); });
+  $("#ga-cfg").addEventListener("click", function () { var c = gaCfg() || {}; $("#ga-pid").value = c.pid || ""; $("#ga-cid").value = c.cid || ""; gaShow("ga-setup"); });
+  $("#ga-save").addEventListener("click", function () {
+    var pid = $("#ga-pid").value.trim(), cid = $("#ga-cid").value.trim(), m = $("#ga-msg");
+    if (!/^\d{5,15}$/.test(pid)) { m.textContent = T("Property ID must be numbers only.", "Property ID শুধু সংখ্যা হবে।"); return; }
+    if (!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(cid)) { m.textContent = T("Client ID should end with .apps.googleusercontent.com", "Client ID শেষে .apps.googleusercontent.com থাকবে।"); return; }
+    m.textContent = ""; GA.cfg = { pid: pid, cid: cid }; GA.gis = null; GA.tok = null; try { localStorage.setItem(GA.key, JSON.stringify(GA.cfg)); sessionStorage.removeItem("shunchi_ga_tok"); } catch (e) {}
+    gaShow("ga-connect");
+  });
+  S.gaInit = gaInit;
 
   /* ================= BLOG ================= */
   function parseMd(raw) {
