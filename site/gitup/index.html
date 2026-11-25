@@ -1633,7 +1633,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     var b = $("#up-create"), tag = tagOf(); busy(b, true);
     try {
       var list = await gh("/releases?per_page=50").then(function (j) { return Array.isArray(j) ? j : []; }, function () { return []; });
-      var ex = list.filter(function (r) { return r.tag_name === tag; })[0];
+      var rname = (R.target === "shunchi" ? "SHUNCHi " : appName(R.target) + " ") + R.ver, ex = list.filter(function (r) { return r.tag_name === tag || (r.draft && r.name === rname); })[0];
       if (ex && !ex.draft) { toast(T("Release " + tag + " already exists. Use a new version number.", tag + " রিলিজ আগেই আছে। নতুন ভার্সন নম্বর দিন।"), "er"); busy(b, false); return; }
       if (ex) { R.draft = { id: ex.id, url: ex.html_url }; await gh("/releases/" + ex.id, { method: "PATCH", body: { body: notes() } }); }
       else { var rel = await gh("/releases", { method: "POST", body: { tag_name: tag, target_commitish: S.branch, name: (R.target === "shunchi" ? "SHUNCHi " : appName(R.target) + " ") + R.ver, body: notes(), draft: true, prerelease: false } }); R.draft = { id: rel.id, url: rel.html_url }; }
@@ -1657,7 +1657,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     try {
       ph("draft", "ok", T("Draft ready", "ড্রাফট তৈরি")); ph("attach", "ok", T("Files matched on GitHub", "GitHub-এর ফাইল মিলেছে"));
       ph("pub", "run", ""); var t0 = Date.now() - 5000;
-      await gh("/releases/" + R.draft.id, { method: "PATCH", body: { draft: false, make_latest: R.target === "shunchi" ? "true" : "false" } });
+      await gh("/releases/" + R.draft.id, { method: "PATCH", body: { tag_name: tagOf(), target_commitish: S.branch, draft: false, make_latest: R.target === "shunchi" ? "true" : "false" } });
       ph("pub", "ok", T("Release is public", "রিলিজ পাবলিক হয়েছে")); var url = R.draft.url; R.draft = null;
       ph("act", "run", T("Waiting for GitHub to start…", "GitHub শুরু করার অপেক্ষা…"));
       var actOk = false, tries = 0;

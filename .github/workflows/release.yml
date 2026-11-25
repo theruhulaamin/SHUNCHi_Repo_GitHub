@@ -1,6 +1,9 @@
 name: Release update
 on:
   release: { types: [published] }
+  workflow_dispatch:
+    inputs:
+      release_id: { description: "Release id (only to re-run the manifest for a release that is already public)", required: true }
 permissions: { contents: write, actions: write }
 jobs:
   manifest:
@@ -8,12 +11,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { ref: main }
+      - name: Read the release (manual run)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env: { GH_TOKEN: "${{ github.token }}", REL_ID: "${{ inputs.release_id }}" }
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/$REL_ID" > rel.json
+          python3 - <<'PY'
+          import json, os, re, uuid
+          r = json.load(open("rel.json"))
+          tag = r.get("tag_name") or ""
+          if tag.startswith("untagged-"):
+              m = re.search(r"(\d+(?:\.\d+)+)", r.get("name") or "")
+              if m: tag = "v" + m.group(1)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as f:
+              d = "EOF" + uuid.uuid4().hex
+              f.write("RESOLVED_TAG=%s\nRESOLVED_ASSETS=%s\nRESOLVED_BODY<<%s\n%s\n%s\n" % (tag, " ".join(a["browser_download_url"] for a in r.get("assets", [])), d, r.get("body") or "", d))
+          PY
       - name: Write update manifest
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.event.release.tag_name || env.RESOLVED_TAG }}
           GH_TOKEN: ${{ github.token }}
-          BODY: ${{ github.event.release.body }}
-          ASSETS: ${{ join(github.event.release.assets.*.browser_download_url, ' ') }}
+          BODY: ${{ github.event.release.body || env.RESOLVED_BODY }}
+          ASSETS: ${{ join(github.event.release.assets.*.browser_download_url, ' ') || env.RESOLVED_ASSETS }}
         run: python3 .github/scripts/make_update.py
       - name: Commit
         run: |
