@@ -78,8 +78,10 @@ set "ISCC_EXE="
 where ISCC >nul 2>nul && set "ISCC_EXE=ISCC"
 if not defined ISCC_EXE if exist "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" set "ISCC_EXE=%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
 if not defined ISCC_EXE if exist "%ProgramFiles%\Inno Setup 6\ISCC.exe" set "ISCC_EXE=%ProgramFiles%\Inno Setup 6\ISCC.exe"
+if not defined ISCC_EXE if exist "%LocalAppData%\Programs\Inno Setup 6\ISCC.exe" set "ISCC_EXE=%LocalAppData%\Programs\Inno Setup 6\ISCC.exe"
 if not defined ISCC_EXE (
   echo Inno Setup Compiler was not found. Install Inno Setup 6.4 or newer (jrsoftware.org).
+  echo The app itself was built OK in dist\SHUNCHi. Install Inno Setup and run this file again.
   pause
   exit /b 1
 )
