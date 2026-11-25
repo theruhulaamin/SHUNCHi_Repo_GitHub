@@ -363,7 +363,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
 
       <!-- ===== IDEAS ===== -->
       <section id="p-ideas" class="sec hidden">
-        <div class="page-h"><div><h1 data-bn="আইডিয়া ইনবক্স">Ideas inbox</h1><p data-bn="ওয়েবসাইটের ফর্মে যারা আইডিয়া পাঠিয়েছে, সব এখানে।">Everything visitors sent through the idea form on the website.</p></div>
+        <div class="page-h"><div><h1 data-bn="আইডিয়া ইনবক্স">Ideas inbox</h1><p data-bn="ওয়েবসাইট ও SHUNCHi অ্যাপ থেকে আসা সব আইডিয়া এখানে, সরাসরি আপনার GitHub থেকে।">Every idea from the website and the SHUNCHi app, straight from your own GitHub.</p></div>
           <div class="row"><button class="btn" id="ideas-reload" type="button"><svg class="i s"><use href="#i-refresh"/></svg><span data-bn="রিফ্রেশ">Refresh</span></button>
             <button class="btn" id="ideas-csv" type="button"><svg class="i s"><use href="#i-dl"/></svg>CSV</button></div></div>
         <div class="card" id="ideas-status" style="display:none;margin-bottom:12px"></div>
@@ -389,7 +389,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
           <div class="row" style="margin-bottom:12px">
             <input id="idea-q" type="search" placeholder="Search ideas…" data-bn-ph="আইডিয়া খুঁজুন…" style="flex:1;min-width:200px">
             <select id="idea-type" style="width:auto"><option value="">All types</option></select>
-            <button class="btn sm" id="ideas-key" type="button" data-bn="API key বদলান">Change API key</button>
+            
           </div>
           <div class="list" id="idea-list"></div>
         </div>
@@ -879,7 +879,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       if (!details && title.length > 90) { details = title; title = title.slice(0, 80).replace(/\s+\S*$/, "") + "…"; }   // app ideas are one long text
       var id = (at + "|" + g("Name") + "|" + title).slice(0, 140) || String(i);
       if (seen[id]) id += "#" + (++seen[id]); else seen[id] = 1;
-      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at) };
+      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at), n: s._n || 0, closed: !!s._closed };
     }).sort(function (a, b) { return (b.t - a.t) || String(b.at).localeCompare(String(a.at)); });
   }
   function setIdeas(subs, fromCache) {
@@ -889,28 +889,39 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     $("#idea-type").innerHTML = '<option value="">' + T("All types", "সব ধরন") + '</option>' + Object.keys(types).map(function (t) { return '<option>' + esc(t) + '</option>'; }).join("");
     renderIdeas(); updateIdeaBadge();
   }
+  var IDEAS_REPO = "theruhulaamin/shunchi-ideas";
+  function ghIdeas(path, opt) {
+    opt = opt || {};
+    return fetch("https://api.github.com/repos/" + IDEAS_REPO + path, {
+      method: opt.method || "GET",
+      headers: { "Authorization": "Bearer " + S.token, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
+      body: opt.body ? JSON.stringify(opt.body) : undefined
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.message || ("HTTP " + r.status)); e.status = r.status; throw e; } return j; }); });
+  }
+  function issueToSub(it) {
+    var m = /<!--shunchi:([\s\S]*?)-->/.exec(it.body || ""), f = {};
+    if (m) { try { f = JSON.parse(m[1]); } catch (e) {} }
+    if (!f.Idea) f.Idea = String(it.title || "").replace(/^\[[^\]]*\]\s*/, "");
+    if (!f.Source) f.Source = "Website";
+    return { form_data: f, submitted_at: it.created_at, _n: it.number, _closed: it.state === "closed" };
+  }
   function loadIdeas(manual) {
-    var key = ""; try { key = localStorage.getItem(FKEY) || ""; } catch (e) {}
-    if (!key) { $("#ideas-setup").classList.remove("hidden"); $("#ideas-card").classList.add("hidden"); $("#ideas-paste").classList.add("hidden"); setStat("s-ideas", "-", T("Set up in Ideas tab", "আইডিয়া ট্যাবে সেটআপ করুন")); return Promise.resolve(); }
-    var box = $("#ideas-status"), say = function (html) { box.style.display = html ? "" : "none"; box.innerHTML = html || ""; };
-    say('<span class="muted">' + T("Loading ideas from FormSubmit…", "FormSubmit থেকে আইডিয়া আনা হচ্ছে…") + '</span>');
-    var ctl = window.AbortController ? new AbortController() : null, tm = setTimeout(function () { if (ctl) ctl.abort(); }, 20000);
-    return fetch("https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key.trim()), { signal: ctl ? ctl.signal : undefined }).then(function (r) {
-      return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (x) {} return { ok: r.ok, status: r.status, text: t, json: j }; });
-    }).then(function (res) {
-      var list = pickList(res.json);
-      if (!list) { var m = (res.json && (res.json.message || res.json.error)) || res.text.slice(0, 160) || "empty reply"; throw new Error("HTTP " + res.status + ": " + m); }
-      setIdeas(list);
-      say(list.length ? '<span class="pill ok">' + T("Connected", "সংযুক্ত") + '</span> <span class="muted">' + list.length + T(" ideas loaded.", " টি আইডিয়া লোড হয়েছে।") + '</span>'
-        : '<b>' + T("Connected, but FormSubmit has 0 saved ideas.", "সংযুক্ত, কিন্তু FormSubmit-এ এখনো ০টি আইডিয়া জমা।") + '</b><div class="muted" style="margin-top:4px">' + T("FormSubmit only stores messages sent AFTER you activated the form (the first test message + clicking Activate in the email). Send one test idea from the website, activate it from the email, then Refresh. Older messages are only in your email.", "FormSubmit শুধু ফর্ম activate করার পরের মেসেজ জমা রাখে (প্রথম টেস্ট মেসেজ পাঠিয়ে ইমেইলে Activate চাপতে হয়)। ওয়েবসাইট থেকে একটি টেস্ট আইডিয়া পাঠান, ইমেইলে Activate চাপুন, তারপর রিফ্রেশ করুন। পুরোনো মেসেজ শুধু আপনার ইমেইলে আছে।") + '</div>');
+    var box = $("#ideas-status"), say = function (h) { box.style.display = h ? "" : "none"; box.innerHTML = h || ""; };
+    $("#ideas-setup").classList.add("hidden"); $("#ideas-paste").classList.add("hidden"); $("#ideas-card").classList.remove("hidden");
+    var all = [];
+    function page(n) {
+      return ghIdeas("/issues?state=all&per_page=100&sort=created&direction=desc&page=" + n).then(function (arr) {
+        arr = (arr || []).filter(function (x) { return !x.pull_request; }); all = all.concat(arr);
+        return arr.length === 100 && n < 5 ? page(n + 1) : null;
+      });
+    }
+    return page(1).then(function () {
+      setIdeas(all.map(issueToSub)); say("");
     }).catch(function (e) {
-      var why = e && e.name === "AbortError" ? T("timed out", "সময় শেষ") : (e && e.message === "Failed to fetch" ? T("browser blocked the request (CORS) or no internet", "ব্রাউজার রিকোয়েস্ট আটকেছে (CORS) অথবা ইন্টারনেট নেই") : String(e && e.message || e));
-      say('<b style="color:var(--bad,#b91c1c)">' + T("Could not load ideas: ", "আইডিয়া লোড হয়নি: ") + esc(why) + '</b><div class="muted" style="margin-top:4px">' + T("Use the paste option below. It always works.", "নিচের paste অপশন ব্যবহার করুন। এটা সবসময় কাজ করে।") + '</div>');
-      $("#fs-open").href = "https://formsubmit.co/api/get-submissions/" + encodeURIComponent(key.trim()); $("#ideas-paste").classList.remove("hidden"); $("#ideas-card").classList.add("hidden"); $("#ideas-setup").classList.add("hidden");
-      var cached = null; try { cached = JSON.parse(localStorage.getItem(ICACHE) || "null"); } catch (x) {}
-      if (cached && cached.length) { setIdeas(cached, true); $("#ideas-paste").classList.remove("hidden"); }
-      setStat("s-ideas", "-", T("Could not load", "লোড হয়নি")); if (manual) toast(T("Could not load ideas directly. Use the paste option.", "সরাসরি লোড হয়নি। paste অপশন ব্যবহার করুন।"), "er");
-    }).then(function () { clearTimeout(tm); });
+      var why = e.status === 404 ? T("The private repository “" + IDEAS_REPO + "” was not found, or your admin token cannot see it. Create it and add it to your admin token (Issues: read and write).", "প্রাইভেট রিপোজিটরি “" + IDEAS_REPO + "” পাওয়া যায়নি, অথবা আপনার অ্যাডমিন টোকেন এটি দেখতে পায় না। রিপো বানান এবং টোকেনে যোগ করুন (Issues: read and write)।") : e.status === 401 || e.status === 403 ? T("Your admin token has no access to the ideas repository. Add it to the token (Issues: read and write).", "অ্যাডমিন টোকেনের আইডিয়া রিপোজিটরিতে অনুমতি নেই। টোকেনে যোগ করুন (Issues: read and write)।") : esc(e.message || String(e));
+      say('<b style="color:var(--bad,#b91c1c)">' + T("Could not load ideas.", "আইডিয়া লোড হয়নি।") + '</b><div class="muted" style="margin-top:4px">' + why + '</div>');
+      $("#ideas-card").classList.add("hidden"); setStat("s-ideas", "-", T("Could not load", "লোড হয়নি")); if (manual) toast(T("Could not load ideas.", "আইডিয়া লোড হয়নি।"), "er");
+    });
   }
   function ideaMail(x) { var c = String(x.contact || ""); var m = /[^\s@]+@[^\s@]+\.[^\s@]+/.exec(c); return m ? "mailto:" + m[0] + "?subject=" + encodeURIComponent("Re: " + x.title) : ""; }
   function newCount() { var seen = 0; try { seen = +localStorage.getItem(SEEN) || 0; } catch (e) {} return S.ideas ? Math.max(0, S.ideas.length - seen) : 0; }
@@ -925,19 +936,19 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     var rows = S.ideas.map(function (x, i) { x._i = i; return x; }).filter(function (x) { return (!ty || x.type === ty) && (!q || (x.title + " " + x.details + " " + x.name + " " + x.contact).toLowerCase().indexOf(q) >= 0); });
     if (!rows.length) { list.innerHTML = '<div class="empty"><b>' + (S.ideas.length ? T("Nothing matches", "কিছু মেলেনি") : T("No ideas yet", "এখনো কোনো আইডিয়া আসেনি")) + '</b>' + T("New ideas from the website form appear here.", "ওয়েবসাইটের ফর্ম থেকে আসা আইডিয়া এখানে দেখাবে।") + '</div>'; return; }
     list.innerHTML = rows.map(function (x) {
-      var mail = ideaMail(x), isDone = done[x.id];
+      var mail = ideaMail(x), isDone = x.n ? x.closed : done[x.id];
       return '<div class="idea' + (x._i < nn ? " new" : "") + '" style="' + (isDone ? "opacity:.6" : "") + '"><div class="row"><h3 style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(x.title) + '</h3>' + (x._i < nn ? '<span class="pill">' + T("new", "নতুন") + '</span>' : "") + (x.type ? '<span class="pill wn">' + esc(x.type) + '</span>' : "") + (isDone ? '<span class="pill ok">' + T("done", "শেষ") + '</span>' : "") + '</div>' +
-        '<div class="body">' + esc(x.details) + '</div><div class="mt"><span>' + esc(x.name && x.name !== "-" ? x.name : T("No name", "নাম নেই")) + '</span><span>·</span><span>' + esc(x.contact && x.contact !== "-" ? x.contact : T("No contact", "যোগাযোগ নেই")) + '</span><span>·</span><span>' + esc(x.at ? ago(x.at) : "") + '</span>' + (x.lang ? '<span class="pill">' + esc(x.lang) + '</span>' : "") + '</div>' +
+        '<div class="body">' + esc(x.details) + '</div><div class="mt"><span>' + esc(x.name && x.name !== "-" ? x.name : T("No name", "নাম নেই")) + '</span><span>·</span><span>' + esc(x.contact && x.contact !== "-" ? x.contact : T("No contact", "যোগাযোগ নেই")) + '</span><span>·</span><span>' + esc(x.at ? ago(x.at) : "") + '</span>' + (x.src ? '<span class="pill">' + esc(/app/i.test(x.src) ? "App" : "Website") + '</span>' : "") + (x.lang ? '<span class="pill">' + esc(x.lang) + '</span>' : "") + '</div>' +
         '<div class="row">' + (mail ? '<a class="btn sm" href="' + esc(mail) + '">' + T("Reply by email", "ইমেইলে উত্তর") + '</a>' : "") + '<button class="btn sm" data-copy="' + x._i + '" type="button">' + T("Copy", "কপি") + '</button><button class="btn sm" data-done="' + esc(x.id) + '" type="button">' + (isDone ? T("Mark open", "আবার খুলুন") : T("Mark done", "শেষ করুন")) + '</button></div></div>';
     }).join("");
     $$("[data-copy]", list).forEach(function (b) { b.onclick = function () { var x = S.ideas[+b.dataset.copy]; var t = x.title + "\n\n" + x.details + "\n\n" + x.name + " · " + x.contact; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast(T("Copied.", "কপি হয়েছে।"), "ok"); }, function () { toast(T("Copy failed.", "কপি হয়নি।"), "er"); }); }; });
-    $$("[data-done]", list).forEach(function (b) { b.onclick = function () { var d = doneMap(); if (d[b.dataset.done]) delete d[b.dataset.done]; else d[b.dataset.done] = 1; try { localStorage.setItem(DONE, JSON.stringify(d)); } catch (e) {} renderIdeas(); }; });
+    $$("[data-done]", list).forEach(function (b) { b.onclick = function () { var it = S.ideas.filter(function (y) { return y.id === b.dataset.done; })[0]; if (it && it.n) { b.disabled = true; ghIdeas("/issues/" + it.n, { method: "PATCH", body: { state: it.closed ? "open" : "closed" } }).then(function () { it.closed = !it.closed; renderIdeas(); }, function (e) { b.disabled = false; toast(errText(e), "er"); }); return; } var d = doneMap(); if (d[b.dataset.done]) delete d[b.dataset.done]; else d[b.dataset.done] = 1; try { localStorage.setItem(DONE, JSON.stringify(d)); } catch (e) {} renderIdeas(); }; });
   }
   REND.push(function () { if (S.ideas) { renderIdeas(); updateIdeaBadge(); } });
   $("#idea-q").addEventListener("input", renderIdeas); $("#idea-type").addEventListener("change", renderIdeas);
   $("#ideas-reload").addEventListener("click", function () { loadIdeas(true); });
   $("#fs-save").addEventListener("click", function () { var k = $("#fs-key").value.trim(); if (!k) { toast(T("Paste the API key first.", "আগে API key বসান।"), "er"); return; } try { localStorage.setItem(FKEY, k); } catch (e) {} $("#fs-key").value = ""; loadIdeas(true); });
-  $("#ideas-key").addEventListener("click", function () { try { localStorage.removeItem(FKEY); } catch (e) {} S.ideas = null; loadIdeas(false); });
+  
   $("#fs-clip").addEventListener("click", function () { if (!navigator.clipboard || !navigator.clipboard.readText) { toast(T("Clipboard not available. Paste into the box.", "ক্লিপবোর্ড পাওয়া যায়নি। বক্সে paste করুন।"), "er"); return; } navigator.clipboard.readText().then(function (t) { $("#fs-json").value = t; $("#fs-load").click(); }, function () { toast(T("Allow clipboard access, or paste into the box.", "ক্লিপবোর্ড অনুমতি দিন, নয়তো বক্সে paste করুন।"), "er"); }); });
   $("#fs-load").addEventListener("click", function () { try { var j = JSON.parse($("#fs-json").value.trim()), list = pickList(j); if (!list) throw 0; setIdeas(list); } catch (e) { toast(T("That text is not the expected data.", "এই লেখা সঠিক ডেটা নয়।"), "er"); } });
   $("#ideas-csv").addEventListener("click", function () {

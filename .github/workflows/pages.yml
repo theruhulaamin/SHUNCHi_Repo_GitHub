@@ -17,6 +17,17 @@ jobs:
         with: { python-version: "3.12" }
       - uses: actions/setup-node@v4
         with: { node-version: "20" }
+      - name: Write idea-inbox config (token comes from the repository secret IDEAS_TOKEN)
+        env:
+          IDEAS_TOKEN: ${{ secrets.IDEAS_TOKEN }}
+        run: |
+          python3 -I - <<'EOF'
+          import json, os
+          t = os.environ.get("IDEAS_TOKEN", "").strip()
+          cfg = {"repo": "theruhulaamin/shunchi-ideas", "token": t} if t else {}
+          open("site/data/ideas-config.json", "w").write(json.dumps(cfg))
+          print("ideas config:", "enabled" if t else "NOT set (IDEAS_TOKEN secret missing)")
+          EOF
       - name: Build pages (blog, software pages, sitemap, feed)
         run: |
           pip install markdown

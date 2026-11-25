@@ -859,7 +859,36 @@ class IdeaSender(threading.Thread):
         super().__init__(daemon=True, name="SHUNCHi-Idea")
         self.signals, self.fields = signals, fields
 
+    def _send_github(self):
+        """Primary route: one issue in the developer's private idea inbox. The token lives only on the website."""
+        with urllib.request.urlopen(urllib.request.Request(
+                WEBSITE_URL + "/data/ideas-config.json", headers={"User-Agent": f"SHUNCHi/{APP_VERSION}"}), timeout=12) as r:
+            cfg = json.loads(r.read(8192).decode("utf-8") or "{}")
+        repo, token = str(cfg.get("repo", "")), str(cfg.get("token", ""))
+        if not repo or not token:
+            raise ValueError("idea inbox is not configured")
+        f = self.fields
+        meta = dict(f, Type="App idea", Language="-", Page="-", Source=f"SHUNCHi app {APP_VERSION}", Details="")
+        meta_json = json.dumps(meta, ensure_ascii=False).replace(">", "\\u003e")
+        idea = str(f.get("Idea", "")).strip()
+        body = (f"**Name:** {f.get('Name', '-')}\n**Contact:** {f.get('Contact', '-')}\n**Source:** SHUNCHi app {APP_VERSION}\n\n"
+                f"{idea}\n\n<!--shunchi:{meta_json}-->")
+        req = urllib.request.Request(
+            f"https://api.github.com/repos/{repo}/issues", method="POST",
+            data=json.dumps({"title": "[App idea] " + idea.replace("\n", " ")[:90], "body": body}, ensure_ascii=False).encode("utf-8"),
+            headers={"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json",
+                     "Content-Type": "application/json", "User-Agent": f"SHUNCHi/{APP_VERSION}"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            if r.status != 201:
+                raise ValueError(f"GitHub HTTP {r.status}")
+
     def run(self):
+        try:
+            self._send_github()
+            self.signals.idea_result.emit(True, "Thank you! Your idea reached the developer.")
+            return
+        except Exception as exc:
+            logging.info("Idea inbox failed, trying the mail form: %s", exc)
         try:
             payload = dict(self.fields)
             payload.update({"_subject": "SHUNCHi idea: " + str(self.fields.get("Idea", ""))[:80],

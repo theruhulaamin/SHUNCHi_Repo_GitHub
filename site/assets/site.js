@@ -88,9 +88,24 @@
       Name: d.get("name") || "-", Contact: d.get("contact") || "-", Language: document.documentElement.lang, Page: location.href
     };
     var ctl = window.AbortController ? new AbortController() : null, timer = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
-    fetch("https://formsubmit.co/ajax/" + TO, {
-      method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload), signal: ctl ? ctl.signal : undefined
-    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) { try { console.warn("FormSubmit:", r.status, j && j.message); } catch (x) {} throw new Error((j && j.message) || ("HTTP " + r.status)); } }); })
+    function viaFormSubmit() {
+      return fetch("https://formsubmit.co/ajax/" + TO, {
+        method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload), signal: ctl ? ctl.signal : undefined
+      });
+    }
+    /* 1) our own GitHub inbox (private repo, issue per idea)  2) FormSubmit  3) mail app */
+    function viaGitHub() {
+      return fetch("/data/ideas-config.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (cfg) {
+        if (!cfg || !cfg.repo || !cfg.token) throw new Error("inbox not configured");
+        var meta = JSON.stringify({ Type: payload.Type, Idea: title, Details: details, Name: payload.Name, Contact: payload.Contact, Language: payload.Language, Page: payload.Page, Source: "Website" }).replace(/>/g, "\\u003e");
+        var text = "**Type:** " + payload.Type + "\n**Name:** " + payload.Name + "\n**Contact:** " + payload.Contact + "\n**Language:** " + payload.Language + "\n\n" + details + "\n\n<!--shunchi:" + meta + "-->";
+        return fetch("https://api.github.com/repos/" + cfg.repo + "/issues", {
+          method: "POST", headers: { "Authorization": "Bearer " + cfg.token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
+          body: JSON.stringify({ title: ("[" + payload.Type + "] " + title).slice(0, 120), body: text }), signal: ctl ? ctl.signal : undefined
+        }).then(function (r) { if (r.status !== 201) throw new Error("GitHub HTTP " + r.status); return { ok: true, json: function () { return Promise.resolve({ success: true }); } }; });
+      });
+    }
+    viaGitHub().catch(function (e) { try { console.warn("Inbox:", e && e.message); } catch (x) {} return viaFormSubmit(); }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || j.success === "false" || j.success === false) { try { console.warn("FormSubmit:", r.status, j && j.message); } catch (x) {} throw new Error((j && j.message) || ("HTTP " + r.status)); } }); })
       .then(function () { form.reset(); say("Thank you! Your idea reached me.", "ধন্যবাদ! আপনার আইডিয়া আমার কাছে পৌঁছেছে।", true); })
       .catch(function (err) {
         try { console.warn("Idea form failed:", err && err.message); } catch (x) {}
