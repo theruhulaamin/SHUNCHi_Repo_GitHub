@@ -391,6 +391,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
             <select id="idea-type" style="width:auto"><option value="">All types</option></select>
             
           </div>
+          <div class="row" id="idea-chips" style="margin-bottom:12px;flex-wrap:wrap"></div>
           <div class="list" id="idea-list"></div>
         </div>
       </section>
@@ -879,7 +880,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
       if (!details && title.length > 90) { details = title; title = title.slice(0, 80).replace(/\s+\S*$/, "") + "…"; }   // app ideas are one long text
       var id = (at + "|" + g("Name") + "|" + title).slice(0, 140) || String(i);
       if (seen[id]) id += "#" + (++seen[id]); else seen[id] = 1;
-      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact") || [g("Email"), g("Phone")].filter(Boolean).join(" · "), email: g("Email"), phone: g("Phone"), address: g("Address"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at), n: s._n || 0, closed: !!s._closed };
+      return { id: id, type: g("Type") || (fromApp ? "App idea" : ""), title: title, details: details, name: g("Name"), contact: g("Contact") || [g("Email"), g("Phone")].filter(Boolean).join(" · "), email: g("Email"), phone: g("Phone"), address: g("Address"), lang: g("Language"), page: g("Page"), src: src, at: at, t: timeOf(at), n: s._n || 0, closed: !!s._closed, status: s._status || "pending" };
     }).sort(function (a, b) { return (b.t - a.t) || String(b.at).localeCompare(String(a.at)); });
   }
   function setIdeas(subs, fromCache) {
@@ -903,7 +904,9 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
     if (m) { try { f = JSON.parse(m[1]); } catch (e) {} }
     if (!f.Idea) f.Idea = String(it.title || "").replace(/^\[[^\]]*\]\s*/, "");
     if (!f.Source) f.Source = "Website";
-    return { form_data: f, submitted_at: it.created_at, _n: it.number, _closed: it.state === "closed" };
+    var st = ""; (it.labels || []).forEach(function (l) { var m = /^status:(pending|analysis|approved|rejected)$/.exec(l && l.name || ""); if (m) st = m[1]; });
+    if (!st) st = it.state === "closed" ? "approved" : "pending";
+    return { form_data: f, submitted_at: it.created_at, _n: it.number, _closed: it.state === "closed", _status: st };
   }
   function loadIdeas(manual) {
     var box = $("#ideas-status"), say = function (h) { box.style.display = h ? "" : "none"; box.innerHTML = h || ""; };
@@ -927,22 +930,80 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   function newCount() { var seen = 0; try { seen = +localStorage.getItem(SEEN) || 0; } catch (e) {} return S.ideas ? Math.max(0, S.ideas.length - seen) : 0; }
   function updateIdeaBadge() {
     var n = newCount(), b = $("#b-ideas"); b.textContent = n; b.classList.toggle("hidden", !n || S.tab === "ideas");
-    setStat("s-ideas", S.ideas ? nf(S.ideas.length) : "-", n ? n + T(" new", " টি নতুন") : T("all seen", "সব দেখা"));
+    setStat("s-ideas", S.ideas ? nf(S.ideas.length) : "-", (n ? n + T(" new", " টি নতুন") : T("all seen", "সব দেখা")) + (S.ideas ? " · " + S.ideas.filter(function (x) { return x.status === "pending"; }).length + T(" pending", " পেন্ডিং") : ""));
   }
   function markIdeasSeen() { if (S.ideas) { try { localStorage.setItem(SEEN, String(S.ideas.length)); } catch (e) {} } updateIdeaBadge(); }
+  var STAT = ["pending", "analysis", "approved", "rejected"], ideaFilter = "";
+  function statName(k) { return { pending: T("Pending", "পেন্ডিং"), analysis: T("Analysis", "বিশ্লেষণ"), approved: T("Approved", "অনুমোদিত"), rejected: T("Rejected", "বাতিল") }[k] || k; }
+  function statPill(k) { return '<span class="pill ' + ({ pending: "wn", analysis: "", approved: "ok", rejected: "er" }[k] || "") + '">' + esc(statName(k)) + '</span>'; }
+  function replyText(x, st) {
+    var bn = x.lang === "bn" || (x.lang !== "en" && LANG === "bn"), nm = x.name && x.name !== "-" ? x.name : "", t = x.title || "";
+    if (bn) return (nm ? "প্রিয় " + nm + ",\n\n" : "আসসালামু আলাইকুম,\n\n") + (st === "approved"
+      ? "আপনার আইডিয়া “" + t + "” আমাদের পছন্দ হয়েছে এবং অনুমোদন করা হয়েছে। আমরা শিগগিরই কাজ শুরু করব, তৈরি হলে আপনাকে জানাব।\n\nআইডিয়া পাঠানোর জন্য ধন্যবাদ।"
+      : "আপনার আইডিয়া “" + t + "” পাঠানোর জন্য ধন্যবাদ। দুঃখিত, এই মুহূর্তে এটি নিয়ে আমরা কাজ করতে পারছি না। তবে নতুন আইডিয়া পাঠাতে থাকুন, আমরা সব পড়ি।") + "\n\n— রুহুল আমিন, SHUNCHi\nshunchiai.com";
+    return (nm ? "Hello " + nm + ",\n\n" : "Hello,\n\n") + (st === "approved"
+      ? "Thank you for your idea “" + t + "”. We liked it and it is approved. We will start work soon and let you know when it is ready."
+      : "Thank you for your idea “" + t + "”. Sorry, we are not able to take it forward right now. Please keep sending ideas, we read every one.") + "\n\n— Ruhul Amin, SHUNCHi\nshunchiai.com";
+  }
+  function ideaTo(x) { var m = /[^\s@]+@[^\s@]+\.[^\s@]+/.exec(String(x.email || x.contact || "")); return m ? m[0] : ""; }
+  function replyModal(x, st) {
+    return new Promise(function (res) {
+      var root = $("#modal-root"), to = ideaTo(x), subj = (st === "approved" ? "Your idea was approved: " : "About your idea: ") + x.title;
+      root.innerHTML = '<div class="modal" role="dialog" aria-modal="true"><div class="box" style="max-width:560px"><h3>' + (st === "approved" ? T("Approve this idea", "আইডিয়া অনুমোদন") : T("Reject this idea", "আইডিয়া বাতিল")) + '</h3>' +
+        '<p class="muted">' + (to ? T("Write your reply. It opens in your email, addressed to ", "উত্তর লিখুন। এটি আপনার ইমেইলে খুলবে, প্রাপক ") + '<b>' + esc(to) + '</b>' : T("No email address on this idea, so the reply cannot be sent. You can still save the status.", "এই আইডিয়ায় ইমেইল নেই, তাই উত্তর পাঠানো যাবে না। স্ট্যাটাস সেভ করা যাবে।")) + '</p>' +
+        '<textarea id="m-reply" rows="9" style="margin-top:10px;width:100%">' + esc(replyText(x, st)) + '</textarea>' +
+        '<div class="row" style="flex-wrap:wrap"><button class="btn" id="m-no" type="button">' + T("Cancel", "বাতিল") + '</button><span class="sp"></span><button class="btn" id="m-save" type="button">' + T("Save status only", "শুধু স্ট্যাটাস সেভ") + '</button>' +
+        (to ? '<button class="btn" id="m-mail" type="button">' + T("Mail app", "মেইল অ্যাপ") + '</button><button class="btn p" id="m-gmail" type="button">' + T("Save and open Gmail", "সেভ করে Gmail খুলুন") + '</button>' : "") + '</div></div></div>';
+      function done(v) { root.innerHTML = ""; document.removeEventListener("keydown", key, true); res(v); }
+      function key(e) { if (e.key === "Escape") { e.preventDefault(); done(null); } }
+      document.addEventListener("keydown", key, true);
+      var ta = $("#m-reply", root);
+      $("#m-no", root).onclick = function () { done(null); };
+      $("#m-save", root).onclick = function () { done({ text: "", sent: false }); };
+      if (to) {
+        $("#m-gmail", root).onclick = function () { var t = ta.value; window.open("https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(to) + "&su=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(t), "_blank", "noopener"); done({ text: t, sent: true }); };
+        $("#m-mail", root).onclick = function () { var t = ta.value; location.href = "mailto:" + to + "?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(t); done({ text: t, sent: true }); };
+      }
+      ta.focus();
+    });
+  }
+  function setIdeaStatus(x, st, reply) {
+    var body = { labels: ["status:" + st], state: (st === "approved" || st === "rejected") ? "closed" : "open" };
+    return ghIdeas("/issues/" + x.n, { method: "PATCH", body: body }).then(function () {
+      x.status = st; x.closed = body.state === "closed";
+      if (reply && reply.text) return ghIdeas("/issues/" + x.n + "/comments", { method: "POST", body: { body: "**Reply (" + st + ") sent to " + (ideaTo(x) || "-") + ":**\n\n" + reply.text } }).catch(function () {});
+    });
+  }
+  function ideaCounts() { var c = { "": 0 }; STAT.forEach(function (k) { c[k] = 0; }); (S.ideas || []).forEach(function (x) { c[""]++; c[x.status] = (c[x.status] || 0) + 1; }); return c; }
+  function renderChips() {
+    var c = ideaCounts(), box = $("#idea-chips"); if (!box) return;
+    box.innerHTML = [""].concat(STAT).map(function (k) { return '<button type="button" class="btn sm' + (ideaFilter === k ? " p" : "") + '" data-chip="' + k + '">' + (k ? esc(statName(k)) : T("All", "সব")) + ' <span style="opacity:.75">' + (c[k] || 0) + '</span></button>'; }).join("");
+    $$("[data-chip]", box).forEach(function (b) { b.onclick = function () { ideaFilter = b.dataset.chip; renderIdeas(); }; });
+  }
   function renderIdeas() {
-    var list = $("#idea-list"); if (!S.ideas) return;
-    var q = $("#idea-q").value.trim().toLowerCase(), ty = $("#idea-type").value, done = doneMap(), nn = newCount();
-    var rows = S.ideas.map(function (x, i) { x._i = i; return x; }).filter(function (x) { return (!ty || x.type === ty) && (!q || (x.title + " " + x.details + " " + x.name + " " + x.contact).toLowerCase().indexOf(q) >= 0); });
-    if (!rows.length) { list.innerHTML = '<div class="empty"><b>' + (S.ideas.length ? T("Nothing matches", "কিছু মেলেনি") : T("No ideas yet", "এখনো কোনো আইডিয়া আসেনি")) + '</b>' + T("New ideas from the website form appear here.", "ওয়েবসাইটের ফর্ম থেকে আসা আইডিয়া এখানে দেখাবে।") + '</div>'; return; }
+    var list = $("#idea-list"); if (!S.ideas) return; renderChips();
+    var q = $("#idea-q").value.trim().toLowerCase(), ty = $("#idea-type").value, nn = newCount();
+    var rows = S.ideas.map(function (x, i) { x._i = i; return x; }).filter(function (x) { return (!ty || x.type === ty) && (!ideaFilter || x.status === ideaFilter) && (!q || (x.title + " " + x.details + " " + x.name + " " + x.contact + " " + x.address).toLowerCase().indexOf(q) >= 0); });
+    if (!rows.length) { list.innerHTML = '<div class="empty"><b>' + (S.ideas.length ? T("Nothing matches", "কিছু মেলেনি") : T("No ideas yet", "এখনো কোনো আইডিয়া আসেনি")) + '</b>' + T("New ideas from the website form and the app appear here.", "ওয়েবসাইট ও অ্যাপ থেকে আসা আইডিয়া এখানে দেখাবে।") + '</div>'; return; }
     list.innerHTML = rows.map(function (x) {
-      var mail = ideaMail(x), isDone = x.n ? x.closed : done[x.id];
-      return '<div class="idea' + (x._i < nn ? " new" : "") + '" style="' + (isDone ? "opacity:.6" : "") + '"><div class="row"><h3 style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(x.title) + '</h3>' + (x._i < nn ? '<span class="pill">' + T("new", "নতুন") + '</span>' : "") + (x.type ? '<span class="pill wn">' + esc(x.type) + '</span>' : "") + (isDone ? '<span class="pill ok">' + T("done", "শেষ") + '</span>' : "") + '</div>' +
-        '<div class="body">' + esc(x.details) + '</div><div class="mt"><span>' + esc(x.name && x.name !== "-" ? x.name : T("No name", "নাম নেই")) + '</span><span>·</span><span>' + esc(x.contact && x.contact !== "-" ? x.contact : T("No contact", "যোগাযোগ নেই")) + '</span>' + (x.address ? '<span>·</span><span>' + esc(x.address) + '</span>' : "") + '<span>·</span><span>' + esc(x.at ? ago(x.at) : "") + '</span>' + (x.src ? '<span class="pill">' + esc(/app/i.test(x.src) ? "App" : "Website") + '</span>' : "") + (x.lang ? '<span class="pill">' + esc(x.lang) + '</span>' : "") + '</div>' +
-        '<div class="row">' + (mail ? '<a class="btn sm" href="' + esc(mail) + '">' + T("Reply by email", "ইমেইলে উত্তর") + '</a>' : "") + '<button class="btn sm" data-copy="' + x._i + '" type="button">' + T("Copy", "কপি") + '</button><button class="btn sm" data-done="' + esc(x.id) + '" type="button">' + (isDone ? T("Mark open", "আবার খুলুন") : T("Mark done", "শেষ করুন")) + '</button></div></div>';
+      var mail = ideaMail(x), fin = x.status === "approved" || x.status === "rejected";
+      return '<div class="idea' + (x._i < nn ? " new" : "") + '" style="' + (fin ? "opacity:.75" : "") + '"><div class="row"><h3 style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(x.title) + '</h3>' + (x._i < nn ? '<span class="pill">' + T("new", "নতুন") + '</span>' : "") + (x.type ? '<span class="pill wn">' + esc(x.type) + '</span>' : "") + statPill(x.status) + '</div>' +
+        '<div class="body">' + esc(x.details) + '</div><div class="mt"><span>' + esc(x.name && x.name !== "-" ? x.name : T("No name", "নাম নেই")) + '</span><span>·</span><span>' + esc(x.contact && x.contact !== "-" ? x.contact : T("No contact", "যোগাযোগ নেই")) + '</span>' + (x.phone && String(x.contact).indexOf(x.phone) < 0 ? '<span>·</span><span>' + esc(x.phone) + '</span>' : "") + (x.address ? '<span>·</span><span>' + esc(x.address) + '</span>' : "") + '<span>·</span><span>' + esc(x.at ? ago(x.at) : "") + '</span>' + (x.src ? '<span class="pill">' + esc(/app/i.test(x.src) ? "App" : "Website") + '</span>' : "") + (x.lang ? '<span class="pill">' + esc(x.lang) + '</span>' : "") + '</div>' +
+        '<div class="row" style="flex-wrap:wrap"><span class="muted" style="font-size:13px">' + T("Status:", "স্ট্যাটাস:") + '</span>' + STAT.map(function (k) { return '<button class="btn sm' + (x.status === k ? " p" : "") + '" data-st="' + k + '" data-n="' + x._i + '" type="button">' + esc(statName(k)) + '</button>'; }).join("") +
+        '<span class="sp"></span><button class="btn sm" data-copy="' + x._i + '" type="button">' + T("Copy", "কপি") + '</button>' + (mail ? '<a class="btn sm" href="' + esc(mail) + '">' + T("Email", "ইমেইল") + '</a>' : "") + '</div></div>';
     }).join("");
     $$("[data-copy]", list).forEach(function (b) { b.onclick = function () { var x = S.ideas[+b.dataset.copy]; var t = x.title + "\n\n" + x.details + "\n\n" + x.name + " · " + x.contact + (x.phone ? " · " + x.phone : "") + (x.address ? "\n" + x.address : ""); (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast(T("Copied.", "কপি হয়েছে।"), "ok"); }, function () { toast(T("Copy failed.", "কপি হয়নি।"), "er"); }); }; });
-    $$("[data-done]", list).forEach(function (b) { b.onclick = function () { var it = S.ideas.filter(function (y) { return y.id === b.dataset.done; })[0]; if (it && it.n) { b.disabled = true; ghIdeas("/issues/" + it.n, { method: "PATCH", body: { state: it.closed ? "open" : "closed" } }).then(function () { it.closed = !it.closed; renderIdeas(); }, function (e) { b.disabled = false; toast(errText(e), "er"); }); return; } var d = doneMap(); if (d[b.dataset.done]) delete d[b.dataset.done]; else d[b.dataset.done] = 1; try { localStorage.setItem(DONE, JSON.stringify(d)); } catch (e) {} renderIdeas(); }; });
+    $$("[data-st]", list).forEach(function (b) {
+      b.onclick = function () {
+        var x = S.ideas[+b.dataset.n], st = b.dataset.st; if (!x || x.status === st) return;
+        if (!x.n) { toast(T("Only ideas from the GitHub inbox can change status.", "শুধু GitHub ইনবক্সের আইডিয়ার স্ট্যাটাস বদলানো যায়।"), "er"); return; }
+        var go = st === "approved" || st === "rejected" ? replyModal(x, st) : Promise.resolve({ text: "" });
+        go.then(function (reply) {
+          if (!reply) return; b.disabled = true;
+          return setIdeaStatus(x, st, reply).then(function () { toast(T("Status saved: ", "স্ট্যাটাস সেভ হয়েছে: ") + statName(st) + (reply.sent ? T(". Press Send in your email.", "। ইমেইলে Send চাপুন।") : ""), "ok"); renderIdeas(); updateIdeaBadge(); }, function (e) { b.disabled = false; toast(errText(e), "er"); });
+        });
+      };
+    });
   }
   REND.push(function () { if (S.ideas) { renderIdeas(); updateIdeaBadge(); } });
   $("#idea-q").addEventListener("input", renderIdeas); $("#idea-type").addEventListener("change", renderIdeas);
@@ -954,7 +1015,7 @@ code.k{background:var(--accent-soft);padding:2px 7px;border-radius:6px;overflow-
   $("#ideas-csv").addEventListener("click", function () {
     if (!S.ideas || !S.ideas.length) { toast(T("No ideas to export.", "এক্সপোর্ট করার কিছু নেই।"), "er"); return; }
     var q = function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; };
-    var csv = "﻿" + ["Date", "Type", "Idea", "Details", "Name", "Email", "Phone", "Address", "Contact", "Language"].join(",") + "\n" + S.ideas.map(function (x) { return [x.at, x.type, x.title, x.details, x.name, x.email, x.phone, x.address, x.contact, x.lang].map(q).join(","); }).join("\n");
+    var csv = "﻿" + ["Date", "Status", "Type", "Idea", "Details", "Name", "Email", "Phone", "Address", "Contact", "Language"].join(",") + "\n" + S.ideas.map(function (x) { return [x.at, x.status, x.type, x.title, x.details, x.name, x.email, x.phone, x.address, x.contact, x.lang].map(q).join(","); }).join("\n");
     var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "shunchi-ideas-" + today() + ".csv"; document.body.appendChild(a); a.click(); a.remove();
   });
 
