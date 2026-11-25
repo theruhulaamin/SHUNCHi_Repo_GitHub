@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.0.1",
+    "date": "2026-11-25",
+    "tag": "v5.0.1",
+    "notes_en": "SHUNCHi is now smoother and more reliable! We've improved overall app performance, fixed minor bugs, enhanced the user interface, and made several stability improvements to provide a better user experience. We've also made internal improvements to support upcoming features and future updates. Stay tuned for more exciting improvements!",
+    "notes_bn": "SHUNCHi এখন আরও স্মুথ ও নির্ভরযোগ্য! অ্যাপের সামগ্রিক পারফরম্যান্স উন্নত করা হয়েছে, ছোটখাটো বাগ সমাধান করা হয়েছে এবং ইউজার ইন্টারফেস আরও সুন্দর ও ব্যবহারবান্ধব করা হয়েছে। পাশাপাশি, বিভিন্ন ফিচারের স্থিতিশীলতা বাড়ানো হয়েছে এবং ভবিষ্যতের নতুন ফিচার যুক্ত করার জন্য কিছু অভ্যন্তরীণ উন্নয়ন করা হয়েছে। আরও নতুন আপডেটের জন্য SHUNCHi-এর সঙ্গেই থাকুন!",
+    "size": 45168518
+  },
+  {
     "version": "5.0.0",
     "date": "2026-11-25",
     "tag": "v5.0.0",
