@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "SHUNCHi"
-APP_VERSION = "5.0.2"
+APP_VERSION = "5.0.3"
 APP_VENDOR = "RUHUL"
 KEYRING_SERVICE = "SHUNCHi"
 KEYRING_USERNAME = "gemini_api_key"
@@ -290,13 +290,16 @@ class GeminiError(Exception):
         self.kind = kind  # error | auth | quota | network | access | empty
 
 
+NEUTRAL_ERROR = "Check your internet connection, then restart the app or wait a minute."
+
+
 def friendly_error(exc):
     """Short, actionable text for the user."""
     if isinstance(exc, GeminiError):
         if exc.kind == "auth":
             return "The Gemini API key was rejected. Create a new key in Google AI Studio and save it again."
         if exc.kind == "quota":
-            return "Check your internet connection, then restart the app or wait a minute."
+            return NEUTRAL_ERROR
         if exc.kind == "network":
             return "Could not reach Google Gemini. Check your internet connection."
         if exc.kind == "access":
@@ -304,6 +307,8 @@ def friendly_error(exc):
         if exc.kind == "empty":
             return "No speech was recognised. Speak a little closer to the microphone."
     text = str(exc) or exc.__class__.__name__
+    if re.search(r"quota|limit|exhaust|exceed|\brate\b|too many|overload|unavailable|try again later|HTTP 5\d\d", text, re.I):
+        return NEUTRAL_ERROR           # never show Google's raw limit / overload wording to the person
     return text[:260]
 
 

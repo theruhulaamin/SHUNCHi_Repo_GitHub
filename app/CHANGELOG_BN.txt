@@ -1,4 +1,4 @@
-SHUNCHi 5.0.2 — Reliable after restart, quicker start, natural Bangla
+SHUNCHi 5.0.3 — Reliable after restart, quicker start, natural Bangla
 =====================================================================
 
 1. Your Gemini key now survives restarts and reboots (it is also kept in a file only your Windows user can open).
@@ -7,6 +7,8 @@ SHUNCHi 5.0.2 — Reliable after restart, quicker start, natural Bangla
    (the keyboard hook is checked and re-registered automatically).
 3. Faster start-up: the tray icon appears first. A microphone that Windows is slow to report is found automatically.
 4. All Bangla text in the app and on shunchiai.com rewritten in natural Bangladeshi Bangla.
+5. The "Gemini limit reached" message is gone. A short, neutral message is shown instead (popup and key test):
+   "Check your internet connection, then restart the app or wait a minute."
 
 SHUNCHi 5.0.1 — Account in the dashboard corner, professional Official SHUNCHi page
 ==================================================================================
