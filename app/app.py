@@ -296,7 +296,7 @@ def friendly_error(exc):
         if exc.kind == "auth":
             return "The Gemini API key was rejected. Create a new key in Google AI Studio and save it again."
         if exc.kind == "quota":
-            return "Gemini limit reached. Wait a minute, or check your quota in Google AI Studio."
+            return "Check your internet connection, then restart the app or wait a minute."
         if exc.kind == "network":
             return "Could not reach Google Gemini. Check your internet connection."
         if exc.kind == "access":
@@ -3455,6 +3455,7 @@ BN.update({
     "Your profile": "আপনার প্রোফাইল", "Account menu": "অ্যাকাউন্ট মেনু",
     "Password must be at least 8 characters.": "পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।",
     "Save my dictations": "আমার বলা কথাগুলো সেভ রাখুন",
+    "Check your internet connection, then restart the app or wait a minute.": "ইন্টারনেট সংযোগ দেখে নিন, তারপর অ্যাপটি রিস্টার্ট করুন অথবা এক মিনিট অপেক্ষা করুন।",
     "History is on": "হিস্টোরি চালু হয়েছে", "History is off": "হিস্টোরি বন্ধ হয়েছে",
     "Keep a list of what you dictate on this computer. Turn it off and nothing new is saved.": "আপনি যা বলেন, তার একটি তালিকা এই কম্পিউটারেই জমা থাকবে। বন্ধ রাখলে নতুন কিছু সেভ হবে না।",
     "Your recent dictations. They are stored only on this computer.": "আপনার সাম্প্রতিক ভয়েস টাইপিং। এগুলো শুধু এই কম্পিউটারেই থাকে।",
