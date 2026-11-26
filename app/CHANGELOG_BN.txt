@@ -9,6 +9,9 @@ SHUNCHi 5.0.3 — Reliable after restart, quicker start, natural Bangla
 4. All Bangla text in the app and on shunchiai.com rewritten in natural Bangladeshi Bangla.
 5. The "Gemini limit reached" message is gone. A short, neutral message is shown instead (popup and key test):
    "Check your internet connection, then restart the app or wait a minute."
+6. Automatic updates are always on (the switch is gone) and are shown on the Dashboard with a "Check now" button.
+   SHUNCHi checks every hour and after waking from sleep. While you do not update, a system-tray notification
+   appears about once an hour; with the window open it asks once per start and again every 3 hours.
 
 SHUNCHi 5.0.1 — Account in the dashboard corner, professional Official SHUNCHi page
 ==================================================================================

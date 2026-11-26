@@ -54,7 +54,7 @@ APPS_PAGE_URL = WEBSITE_URL + "/apps/index.html"
 IDEA_ENDPOINT = "https://formsubmit.co/ajax/ruhulaaminn@gmail.com"   # where the "app or tool idea" form is delivered
 READY_TEXT = "Ready · Win + Left Ctrl = Bangla · Win + Left Shift = English"
 READY_TEXT_KEY = READY_TEXT
-UPDATE_CHECK_HOURS = 3
+UPDATE_CHECK_HOURS = 1
 IDEA_FALLBACK_URL = APPS_PAGE_URL + "#suggest"
 APP_OWNER = {}      # set by ShunchiApp so the window can ask it to shut down cleanly
 INSTALLER_PREFIX = "/theruhulaamin/shunchi_repo_github/releases/download/"
@@ -2570,6 +2570,36 @@ class DashboardPage(QWidget):
         layout.addWidget(self.practice)
         root.addWidget(card)
 
+        # Automatic updates (always on) with the current state and a Check now button
+        self._upd_info = (f"SHUNCHi {APP_VERSION}", None)
+        upd_card, upd_box = make_card((20, 14, 20, 14), 6)
+        upd_row = QHBoxLayout()
+        upd_row.setSpacing(12)
+        upd_col = QVBoxLayout()
+        upd_col.setSpacing(2)
+        upd_head = QHBoxLayout()
+        upd_head.setSpacing(10)
+        self.upd_title = QLabel()
+        self.upd_title.setObjectName("cardTitle")
+        self.upd_pill = QLabel()
+        self.upd_pill.setAlignment(Qt.AlignCenter)
+        self.upd_pill.setStyleSheet(f"background:{C_OK_SOFT};color:{C_OK};border-radius:11px;padding:3px 12px;font-size:11.5px;font-weight:700;")
+        upd_head.addWidget(self.upd_title)
+        upd_head.addWidget(self.upd_pill)
+        upd_head.addStretch()
+        self.upd_status = QLabel()
+        self.upd_status.setObjectName("cardText")
+        self.upd_status.setWordWrap(True)
+        upd_col.addLayout(upd_head)
+        upd_col.addWidget(self.upd_status)
+        self.upd_check = QPushButton()
+        self.upd_check.setObjectName("secondary")
+        self.upd_check.setCursor(Qt.PointingHandCursor)
+        upd_row.addLayout(upd_col, 1)
+        upd_row.addWidget(self.upd_check, 0, Qt.AlignVCenter)
+        upd_box.addLayout(upd_row)
+        root.addWidget(upd_card)
+
         # "Before you start" is the one thing every new user must read, so it is red.
         self.notes = QFrame()
         self.notes.setObjectName("notes")
@@ -2632,6 +2662,10 @@ class DashboardPage(QWidget):
         self.try_title.setText(T("Try it here"))
         self.try_hint.setText(T("Click inside the box, press a shortcut and speak. Pause when you finish; the text appears here."))
         self.practice.setPlaceholderText(T("Your dictated text will be typed here…"))
+        self.upd_title.setText(T("Automatic updates"))
+        self.upd_pill.setText(T("ALWAYS ON"))
+        self.upd_check.setText(T("Checking…") if getattr(self, "_upd_busy", False) else T("Check now"))
+        self._paint_update_info()
         self.notes_title.setText(T("Before you start"))
         for line, text in zip(self.note_lines, NOTES_BN if UI_BN else NOTES_EN):
             line.setText("•  " + text)
@@ -2642,6 +2676,27 @@ class DashboardPage(QWidget):
         self.lang_switch.set_value(UI_BN)
         self._paint_account()
         harden_labels(self)
+
+    def set_update_info(self, text, kind=None):
+        self._upd_info = (text, kind)
+        self._paint_update_info()
+
+    def _paint_update_info(self):
+        text, kind = self._upd_info
+        m = re.fullmatch(r"You are up to date · SHUNCHi ([\d.]+)\.", text)
+        if m:
+            shown = T("You are up to date · SHUNCHi") + " " + m.group(1)
+        else:
+            m = re.fullmatch(r"Version ([\d.]+) is available\.", text)
+            shown = (T("New version") + " " + m.group(1) + " " + T("is available")) if m else T(text)
+        color = {"ok": C_OK, "error": C_ERR}.get(kind, C_MUTED)
+        self.upd_status.setStyleSheet(f"color:{color};font-size:13px;")
+        self.upd_status.setText(shown)
+
+    def set_update_checking(self, busy):
+        self._upd_busy = bool(busy)
+        self.upd_check.setEnabled(not busy)
+        self.upd_check.setText(T("Checking…") if busy else T("Check now"))
 
     # ---- account corner (top right): Log in / Sign up, or the name with the profile menu
     def set_account(self, info):
@@ -3074,10 +3129,12 @@ class SettingsPage(QWidget):
         ut = QLabel("Updates")
         ut.setObjectName("cardTitle")
         upd_layout.addWidget(ut)
-        self.auto_update = ToggleSwitch()
+        self.auto_update = QLabel("ON")             # always on: updates keep SHUNCHi working and safe
+        self.auto_update.setAlignment(Qt.AlignCenter)
+        self.auto_update.setStyleSheet(f"background:{C_OK_SOFT};color:{C_OK};border-radius:11px;padding:3px 14px;font-size:11.5px;font-weight:700;")
         upd_layout.addWidget(setting_row(
-            "Check for updates automatically",
-            f"SHUNCHi quietly checks {WEBSITE_LABEL} and tells you when a new version is ready.", self.auto_update))
+            "Automatic updates · always on",
+            f"SHUNCHi checks {WEBSITE_LABEL} every hour and tells you in the system tray when a new version is ready.", self.auto_update))
         upd_layout.addWidget(divider())
         self.check_button = QPushButton("Check now")
         self.check_button.setObjectName("secondary")
@@ -3120,18 +3177,16 @@ class SettingsPage(QWidget):
         self.max_minutes.valueChanged.connect(lambda _: self.window_ref.on_settings_changed())
         self.microphone.currentIndexChanged.connect(lambda _: self.window_ref.on_settings_changed())
         self.startup.toggled.connect(self.window_ref.on_startup_toggled)
-        self.auto_update.toggled.connect(self.window_ref.on_auto_update_toggled)
 
     def load_values(self, smart, silence, max_minutes, startup, auto_update=True, history=True):
-        for widget in (self.smart, self.silence, self.max_minutes, self.startup, self.auto_update, self.history_on):
+        for widget in (self.smart, self.silence, self.max_minutes, self.startup, self.history_on):
             widget.blockSignals(True)
         self.history_on.setChecked(history)
         self.smart.setChecked(smart)
         self.silence.set_value(silence)
         self.max_minutes.set_value(max_minutes)
         self.startup.setChecked(startup)
-        self.auto_update.setChecked(auto_update)
-        for widget in (self.smart, self.silence, self.max_minutes, self.startup, self.auto_update, self.history_on):
+        for widget in (self.smart, self.silence, self.max_minutes, self.startup, self.history_on):
             widget.blockSignals(False)
 
     def set_update_status(self, text, kind=None):
@@ -3460,6 +3515,9 @@ BN.update({
     "Your profile": "আপনার প্রোফাইল", "Account menu": "অ্যাকাউন্ট মেনু",
     "Password must be at least 8 characters.": "পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।",
     "Save my dictations": "আমার বলা কথাগুলো সেভ রাখুন",
+    "Automatic updates": "অটোমেটিক আপডেট", "ALWAYS ON": "সবসময় চালু", "Check now": "এখনই দেখুন", "Checking…": "দেখা হচ্ছে…",
+    "You are up to date · SHUNCHi": "আপনার ভার্সন একদম নতুন · SHUNCHi", "New version": "নতুন ভার্সন", "is available": "এসে গেছে",
+    "Could not check for updates.": "আপডেট দেখা যায়নি।",
     "Check your internet connection, then restart the app or wait a minute.": "ইন্টারনেট সংযোগ দেখে নিন, তারপর অ্যাপটি রিস্টার্ট করুন অথবা এক মিনিট অপেক্ষা করুন।",
     "History is on": "হিস্টোরি চালু হয়েছে", "History is off": "হিস্টোরি বন্ধ হয়েছে",
     "Keep a list of what you dictate on this computer. Turn it off and nothing new is saved.": "আপনি যা বলেন, তার একটি তালিকা এই কম্পিউটারেই জমা থাকবে। বন্ধ রাখলে নতুন কিছু সেভ হবে না।",
@@ -4281,7 +4339,10 @@ class MainWindow(QMainWindow):
         self.smart_mode = self.settings.value("smart_mode", True, type=bool)
         self.silence_seconds = nearest_option(self.settings.value("silence_seconds", 0.7), (0.7, 1.0, 1.6))
         self.max_minutes = int(nearest_option(self.settings.value("max_minutes", 5), (2, 5, 10)))
-        self.auto_update = self.settings.value("auto_update", True, type=bool)
+        self.auto_update = True         # automatic update checks cannot be turned off
+        self.settings.setValue("auto_update", True)
+        self._last_tray_note = 0.0
+        self._last_prompt = 0.0
         self.save_history_enabled = self.settings.value("save_history", True, type=bool)
         self.latest_info = None
         self.update_thread = None
@@ -4337,6 +4398,7 @@ class MainWindow(QMainWindow):
         self.history_page.set_recording(self.save_history_enabled)
         self.more_apps_page.set_apps(self.load_remote_apps())
         self.dashboard_page.update_button.clicked.connect(self.start_update_install)
+        self.dashboard_page.upd_check.clicked.connect(self.check_updates_manual)
         self.show_status(READY_TEXT)
         self.signals.videos_ready.connect(self.help_page.set_videos)
         QTimer.singleShot(1500, lambda: VideoLoader(self.signals).start())
@@ -4568,6 +4630,8 @@ class MainWindow(QMainWindow):
             dead = False                            # it keeps failing: stop retrying (the person was already told why)
         if dead:
             self._hook_deaths += 1
+        if slept:
+            QTimer.singleShot(20000, self.auto_update_check)
         if slept or dead:
             self._restart_hotkeys()
 
@@ -4600,13 +4664,6 @@ class MainWindow(QMainWindow):
         self.settings.setValue("max_minutes", self.max_minutes)
         self.settings.sync()
 
-    def on_auto_update_toggled(self, checked):
-        self.auto_update = bool(checked)
-        self.settings.setValue("auto_update", self.auto_update)
-        self.settings.sync()
-        if self.auto_update:
-            self.auto_update_check()
-
     # ------------------------------------------------------------------ updates + remote apps
     def load_remote_apps(self):
         try:
@@ -4616,8 +4673,7 @@ class MainWindow(QMainWindow):
         return [a for a in raw if isinstance(a, dict)][:12] if isinstance(raw, list) else []
 
     def auto_update_check(self):
-        if self.auto_update:
-            self.start_update_check(False)
+        self.start_update_check(False)
 
     def check_updates_manual(self):
         self.start_update_check(True)
@@ -4627,6 +4683,7 @@ class MainWindow(QMainWindow):
             return
         if manual:
             self.settings_page.set_checking(True)
+            self.dashboard_page.set_update_checking(True)
         self.update_thread = UpdateChecker(self.signals, manual)
         self.update_thread.start()
 
@@ -4662,6 +4719,10 @@ class MainWindow(QMainWindow):
         elif self.update_prompted_for != info.get("latest"):
             QTimer.singleShot(900, lambda: self.notify_update(info) if self.isVisible() else None)
 
+    def _window_in_view(self):
+        """True when the person can actually see the window (not hidden in the tray, not minimised)."""
+        return self.isVisible() and not self.isMinimized()
+
     def update_is_forced(self):
         """True while this version is older than the minimum version the developer requires."""
         return bool(self.force_min) and parse_version(APP_VERSION) < parse_version(self.force_min)
@@ -4669,9 +4730,11 @@ class MainWindow(QMainWindow):
     def on_update_result(self, result):
         manual = bool(result.get("manual"))
         self.settings_page.set_checking(False)
+        self.dashboard_page.set_update_checking(False)
         if not result.get("ok"):
             if manual:
                 self.settings_page.set_update_status(result.get("error", "Could not check for updates."), "error")
+                self.dashboard_page.set_update_info(result.get("error", "Could not check for updates."), "error")
             return
         info = result["info"]
         try:
@@ -4686,31 +4749,46 @@ class MainWindow(QMainWindow):
             self.latest_info = info
             self.dashboard_page.show_update(info["latest"], self.update_is_forced())
             self.settings_page.set_update_status(f"Version {info['latest']} is available.", "ok")
+            self.dashboard_page.set_update_info(f"Version {info['latest']} is available.", "ok")
+            now = time.time()
             if self.update_is_forced():
                 self.show_forced_update()
-            elif manual or self.update_prompted_for != info["latest"]:
+            elif manual:
                 self.notify_update(info)
+            elif self._window_in_view():
+                # asked once per start, and again every 3 hours if the person chose "Later"
+                if self.update_prompted_for != info["latest"] or now - self._last_prompt > 3 * 3600:
+                    self.notify_update(info)
+            elif now - self._last_tray_note > 50 * 60:
+                self.notify_update(info)         # window hidden: a tray message about every hour until updated
         else:
             self.latest_info = None
             self.force_min = ""
             self.settings.setValue("force_min_version", "")
             self.dashboard_page.hide_update()
             self.settings_page.set_update_status(f"You are up to date · SHUNCHi {APP_VERSION}.", "ok" if manual else None)
+            self.dashboard_page.set_update_info(f"You are up to date · SHUNCHi {APP_VERSION}.", "ok")
 
     def notify_update(self, info):
         """Visible window: ask directly. Hidden in the tray: only a tray message (a dialog could steal focus mid-dictation)."""
-        if not self.isVisible():
+        if not self._window_in_view():
             tray = getattr(self, "tray_icon", None)
             if tray is not None:
-                tray.showMessage(f"SHUNCHi {info['latest']} is available",
-                                 "Click here to open SHUNCHi and update.", QSystemTrayIcon.Information, 8000)
+                self._last_tray_note = time.time()
+                if UI_BN:
+                    tray.showMessage(f"SHUNCHi {info['latest']} এসে গেছে",
+                                     "আপডেট করতে এখানে ক্লিক করুন।", QSystemTrayIcon.Information, 10000)
+                else:
+                    tray.showMessage(f"SHUNCHi {info['latest']} is available",
+                                     "Click here to open SHUNCHi and update.", QSystemTrayIcon.Information, 10000)
             return
         if self.recording or self.processing:
             QTimer.singleShot(20000, lambda: self.notify_update(info))
             return
         if self.update_dialog_open or self.update_busy():
             return
-        self.update_prompted_for = info["latest"]      # once per start; it comes back next time SHUNCHi opens
+        self.update_prompted_for = info["latest"]
+        self._last_prompt = time.time()
         self.update_dialog_open = True
         try:
             box = QMessageBox(self)
