@@ -97,9 +97,9 @@
 
   /* ---------- sign in / up ---------- */
   var ERR = {
-    "auth/invalid-credential": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল।"], "auth/wrong-password": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল।"], "auth/user-not-found": ["No account with this email. Create one.", "এই ইমেইলে অ্যাকাউন্ট নেই। নতুন খুলুন।"],
-    "auth/email-already-in-use": ["This email already has an account. Log in instead.", "এই ইমেইলে অ্যাকাউন্ট আছে। লগইন করুন।"], "auth/weak-password": ["Password must be at least 6 characters.", "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।"],
-    "auth/invalid-email": ["Enter a valid email.", "সঠিক ইমেইল দিন।"], "auth/popup-closed-by-user": ["Google window was closed.", "Google উইন্ডো বন্ধ করা হয়েছে।"], "auth/cancelled-popup-request": ["Google window was closed.", "Google উইন্ডো বন্ধ করা হয়েছে।"],
+    "auth/invalid-credential": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে।"], "auth/wrong-password": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে।"], "auth/user-not-found": ["No account with this email. Create one.", "এই ইমেইলে অ্যাকাউন্ট নেই। নতুন খুলুন।"],
+    "auth/email-already-in-use": ["This email already has an account. Log in instead.", "এই ইমেইলে আগেই অ্যাকাউন্ট খোলা আছে। লগইন করুন।"], "auth/weak-password": ["Password must be at least 6 characters.", "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।"],
+    "auth/invalid-email": ["Enter a valid email.", "সঠিক ইমেইল ঠিকানা দিন।"], "auth/popup-closed-by-user": ["Google window was closed.", "Google উইন্ডো বন্ধ করা হয়েছে।"], "auth/cancelled-popup-request": ["Google window was closed.", "Google উইন্ডো বন্ধ করা হয়েছে।"],
     "auth/popup-blocked": ["Your browser blocked the Google window. Allow pop-ups and try again.", "ব্রাউজার Google উইন্ডো আটকেছে। পপ-আপ অনুমতি দিয়ে আবার চেষ্টা করুন।"], "auth/network-request-failed": ["No internet connection.", "ইন্টারনেট সংযোগ নেই।"],
     "auth/too-many-requests": ["Too many tries. Wait a little and try again.", "অনেকবার চেষ্টা হয়েছে। একটু পরে আবার চেষ্টা করুন।"], "auth/unauthorized-domain": ["This website address is not allowed in Firebase yet (Authorized domains).", "এই ওয়েবসাইটের ঠিকানা Firebase-এ অনুমোদিত নয় (Authorized domains)।"],
     "auth/operation-not-allowed": ["This sign-in method is not turned on in Firebase.", "এই সাইন-ইন পদ্ধতি Firebase-এ চালু করা নেই।"], "auth/requires-recent-login": ["For safety, enter your current password or log in again, then retry.", "নিরাপত্তার জন্য বর্তমান পাসওয়ার্ড দিন বা আবার লগইন করে চেষ্টা করুন।"], "auth/credential-already-in-use": ["This sign-in is already linked to another account.", "এই সাইন-ইন অন্য অ্যাকাউন্টে যুক্ত আছে।"], "auth/invalid-action-code": ["This link has expired. Request a new one.", "লিংকের মেয়াদ শেষ। নতুন লিংক নিন।"], "auth/operation-not-allowed": ["This sign-in method is not turned on in Firebase.", "এই সাইন-ইন পদ্ধতি Firebase-এ চালু করা নেই।"]
@@ -170,13 +170,13 @@
     modal.querySelectorAll("[data-m]").forEach(function (b) { b.onclick = function () { setMode(b.dataset.m); }; });
     $(".pw-eye", modal).onclick = function () { var i = $("[name=pass]", modal); i.type = i.type === "password" ? "text" : "password"; };
     $("#au-g", modal).onclick = function () { busy(true); api.google().then(function () { close(); }, function (e) { say(errMsg(e)); }).then(function () { busy(false); }); };
-    $("#au-forgot", modal).onclick = function () { var em = $("[name=email]", modal).value.trim(); if (!em) { say(L("Type your email above first.", "আগে উপরে ইমেইল লিখুন।")); return; } api.reset(em).then(function () { say(L("Password reset email sent. Check your inbox.", "পাসওয়ার্ড রিসেটের ইমেইল পাঠানো হয়েছে। ইনবক্স দেখুন।"), true); }, function (e) { say(errMsg(e)); }); };
-    $("#au-link", modal).onclick = function () { var em = $("[name=email]", modal).value.trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { say(L("Type your email above first.", "আগে উপরে ইমেইল লিখুন।")); return; } api.sendLink(em).then(function () { say(L("Sign-in link sent. Open it from your email on this device.", "সাইন-ইন লিংক পাঠানো হয়েছে। এই ডিভাইসে ইমেইল থেকে খুলুন।"), true); }, function (e) { say(errMsg(e)); }); };
+    $("#au-forgot", modal).onclick = function () { var em = $("[name=email]", modal).value.trim(); if (!em) { say(L("Type your email above first.", "আগে উপরে আপনার ইমেইল ঠিকানা লিখুন।")); return; } api.reset(em).then(function () { say(L("Password reset email sent. Check your inbox.", "পাসওয়ার্ড রিসেটের ইমেইল পাঠানো হয়েছে। ইনবক্স দেখুন।"), true); }, function (e) { say(errMsg(e)); }); };
+    $("#au-link", modal).onclick = function () { var em = $("[name=email]", modal).value.trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { say(L("Type your email above first.", "আগে উপরে আপনার ইমেইল ঠিকানা লিখুন।")); return; } api.sendLink(em).then(function () { say(L("Sign-in link sent. Open it from your email on this device.", "সাইন-ইন লিংক পাঠানো হয়েছে। এই ডিভাইসে ইমেইল থেকে খুলুন।"), true); }, function (e) { say(errMsg(e)); }); };
     $("#au-form", modal).addEventListener("submit", function (e) {
       e.preventDefault(); var f = e.target, name = f.name.value.trim(), em = f.email.value.trim(), pw = f.pass.value;
-      if (mode === "signup" && !name) { say(L("Please enter your name.", "নাম লিখুন।")); return; }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { say(L("Enter a valid email.", "সঠিক ইমেইল দিন।")); return; }
-      if (pw.length < (mode === "signup" ? 8 : 6)) { say(mode === "signup" ? L("Use at least 8 characters for a new password.", "নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের দিন।") : L("Password must be at least 6 characters.", "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।")); return; }
+      if (mode === "signup" && !name) { say(L("Please enter your name.", "আপনার নাম লিখুন।")); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { say(L("Enter a valid email.", "সঠিক ইমেইল ঠিকানা দিন।")); return; }
+      if (pw.length < (mode === "signup" ? 8 : 6)) { say(mode === "signup" ? L("Use at least 8 characters for a new password.", "নতুন পাসওয়ার্ড অন্তত ৮ অক্ষরের দিন।") : L("Password must be at least 6 characters.", "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।")); return; }
       busy(true); say("");
       (mode === "signup" ? api.signup(name, em, pw) : api.login(em, pw)).then(function () { close(); if (mode === "signup") d.dispatchEvent(new CustomEvent("shunchi:signup")); }, function (er) { say(errMsg(er)); }).then(function () { busy(false); });
     });
@@ -195,7 +195,7 @@
     return load().then(function () {
       if (api.user) { location.href = profileUrl(); return; }
       buildModal(); setMode(m || "login"); modal.hidden = false; d.body.classList.add("auth-open"); setTimeout(function () { var i = $(m === "signup" ? "[name=name]" : "[name=email]", modal); i && i.focus(); }, 30);
-    }, function () { alert(L("Accounts are not turned on yet.", "অ্যাকাউন্ট সুবিধা এখনো চালু হয়নি।")); });
+    }, function () { alert(L("Accounts are not turned on yet.", "অ্যাকাউন্ট ফিচার এখনো চালু হয়নি।")); });
   };
   function profileUrl() { return (d.querySelector(".brand") ? d.querySelector(".brand").getAttribute("href").replace(/index\.html$/, "") : "/") + "account/index.html"; }
 
@@ -262,7 +262,7 @@
           return '<li class="c-item"><i class="c-av">' + esc(initials(c.name)) + '</i><div><b>' + esc(c.name) + '</b> <time>' + esc(dt) + '</time><p>' + esc(c.text).replace(/\n/g, "<br>") + '</p>' + (mine ? '<button type="button" class="au-link" data-cdel="' + esc(c.id) + '">' + L("Delete", "ডিলিট") + '</button>' : "") + '</div></li>';
         }).join("") : '<li class="c-empty">' + bi("No comments yet. Be the first.", "এখনো কোনো মন্তব্য নেই। প্রথম মন্তব্যটি আপনার হোক।") + '</li>';
         list.querySelectorAll("[data-cdel]").forEach(function (b) { b.onclick = function () { api.deleteComment(b.dataset.cdel).then(draw); }; });
-      }, function () { list.innerHTML = '<li class="c-empty">' + bi("Comments could not be loaded.", "মন্তব্য লোড হয়নি।") + '</li>'; });
+      }, function () { list.innerHTML = '<li class="c-empty">' + bi("Comments could not be loaded.", "মন্তব্য লোড করা যায়নি।") + '</li>'; });
     }
     draw();
     if (!form._wired) {
@@ -281,9 +281,9 @@
   function statusFor(code) {
     return (statusCache ? Promise.resolve(statusCache) : fetch("/data/ideas-status.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : {}; }, function () { return {}; }).then(function (j) { statusCache = j; return j; })).then(function (m) { return sha256(code).then(function (h) { return m[h] || null; }); });
   }
-  var SLAB = { pending: ["Pending", "পেন্ডিং"], analysis: ["Under analysis", "বিশ্লেষণ চলছে"], approved: ["Approved", "অনুমোদিত"], rejected: ["Not taken forward", "এগোনো যাচ্ছে না"] };
+  var SLAB = { pending: ["Pending", "অপেক্ষমাণ"], analysis: ["Under analysis", "যাচাই চলছে"], approved: ["Approved", "অনুমোদিত"], rejected: ["Not taken forward", "আপাতত নেওয়া হচ্ছে না"] };
 
-  var STAGES = [["Received", "গৃহীত"], ["Under review", "পর্যালোচনা"], ["Decision", "সিদ্ধান্ত"]];
+  var STAGES = [["Received", "পেয়েছি"], ["Under review", "যাচাই"], ["Decision", "সিদ্ধান্ত"]];
   function stepsHtml(rec, bn) {
     var h = rec.h && rec.h.length ? rec.h : [{ s: "pending", t: "", f: "" }, { s: rec.s, t: rec.t, f: rec.f }];
     var stage = function (s) { return s === "pending" ? 0 : s === "analysis" ? 1 : 2; }, by = {};
@@ -292,7 +292,7 @@
     var cur = stage(rec.s), out = '<ol class="steps-tl">';
     for (var i = 0; i < 3; i++) {
       var e = by[i], done = i <= cur && e, cls = done ? "done" + (i === cur ? " now" : "") : "todo", name = STAGES[i][bn ? 1 : 0];
-      if (i === 2 && e) { name = e.s === "approved" ? (bn ? "অনুমোদিত" : "Approved") : (bn ? "এগোনো যাচ্ছে না" : "Not taken forward"); cls += e.s === "approved" ? " ok" : " no"; }
+      if (i === 2 && e) { name = e.s === "approved" ? (bn ? "অনুমোদিত" : "Approved") : (bn ? "আপাতত নেওয়া হচ্ছে না" : "Not taken forward"); cls += e.s === "approved" ? " ok" : " no"; }
       out += '<li class="' + cls + '"><i></i><div><b>' + name + '</b>' + (done && e.t ? ' <time>' + String(e.t).replace(/[<>&"]/g, "") + '</time>' : "") + (done && e.f ? '<p class="step-fb"></p>' : "") + '</div></li>';
     }
     return out + "</ol>";
@@ -360,7 +360,7 @@
     var g = $("[data-goto-pw]"); if (g) g.onclick = function () { var i = $("#pw-form [name=pw]"); i.scrollIntoView({ behavior: "smooth", block: "center" }); i.focus(); };
     var has = api.hasPassword();
     $("#pw-title").textContent = has ? L("Change password", "পাসওয়ার্ড বদলান") : L("Set a password", "পাসওয়ার্ড সেট করুন");
-    $("#pw-help").textContent = has ? L("Use at least 6 characters.", "কমপক্ষে ৬ অক্ষর দিন।") : L("You signed in with Google. Add a password to also log in with your email.", "আপনি Google দিয়ে সাইন-ইন করেছেন। পাসওয়ার্ড দিলে ইমেইল দিয়েও লগইন করতে পারবেন।");
+    $("#pw-help").textContent = has ? L("Use at least 6 characters.", "অন্তত ৬ অক্ষর দিন।") : L("You signed in with Google. Add a password to also log in with your email.", "আপনি Google দিয়ে সাইন-ইন করেছেন। পাসওয়ার্ড দিলে ইমেইল দিয়েও লগইন করতে পারবেন।");
     $("#pw-go").textContent = has ? L("Change password", "পাসওয়ার্ড বদলান") : L("Set password", "পাসওয়ার্ড সেট করুন");
     $("#pw-cur-wrap").hidden = !has;
   }
@@ -403,7 +403,7 @@
       });
       $("#pw-form").addEventListener("submit", function (e) {
         e.preventDefault(); var fm = e.target, m = $("#pw-msg"), pw = fm.elements.pw.value, say = function (t, ok) { m.className = "auth-msg " + (ok ? "ok" : "err"); m.textContent = t; };
-        if (pw.length < 8) { say(L("Use at least 8 characters.", "কমপক্ষে ৮ অক্ষর দিন।")); return; }
+        if (pw.length < 8) { say(L("Use at least 8 characters.", "অন্তত ৮ অক্ষর দিন।")); return; }
         if (pw !== fm.elements.pw2.value) { say(L("The two passwords do not match.", "দুটি পাসওয়ার্ড মেলেনি।")); return; }
         if (api.hasPassword() && !fm.elements.cur.value) { /* Firebase asks for a fresh login only when needed; try without first */ }
         var btn = $("#pw-go"); btn.disabled = true; say(L("Saving…", "সেভ হচ্ছে…"), true);
@@ -434,7 +434,7 @@
         e.preventDefault(); var msg = $("#pc-msg"), cur = api.profile || {}, E = fm.elements, bad = function (t) { msg.className = "auth-msg err"; msg.textContent = t; };
         var nm = (fm.querySelector("[data-f=name]").hidden ? (cur.name || api.user.name) : E.name.value).trim(), ph = (fm.querySelector("[data-f=phone]").hidden ? cur.phone : E.phone.value) || "", ad = (fm.querySelector("[data-f=address]").hidden ? cur.address : E.address.value) || "";
         ph = ph.trim(); ad = ad.trim();
-        if (!nm) return bad(L("Please enter your name.", "নাম লিখুন।"));
+        if (!nm) return bad(L("Please enter your name.", "আপনার নাম লিখুন।"));
         if (!/^[0-9+()\-\s]{6,30}$/.test(ph)) return bad(L("Enter a valid phone number.", "সঠিক ফোন নম্বর দিন।"));
         if (ad.length < 5) return bad(L("Enter your address.", "ঠিকানা লিখুন।"));
         var b = fm.querySelector("[type=submit]"); b.disabled = true; msg.textContent = "";

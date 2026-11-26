@@ -20,7 +20,7 @@ Go to the [download page](/download/) and run the installer. No administrator ri
 
 ## Step 2: Add your free key
 
-Open SHUNCHi, go to **Settings**, paste your Gemini API key and choose **Save & test**. A green **Connected** label means you are ready. Your key is kept in Windows Credential Manager on your PC.
+Open SHUNCHi, go to **Settings**, paste your Gemini API key and choose **Save & test**. A green **Connected** label means you are ready. Your key is kept safely on your PC, protected by your Windows account.
 
 ## Step 3: Speak and see the text appear
 

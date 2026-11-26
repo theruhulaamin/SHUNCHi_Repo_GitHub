@@ -1,3 +1,13 @@
+SHUNCHi 5.0.2 — Reliable after restart, quicker start, natural Bangla
+=====================================================================
+
+1. Your Gemini key now survives restarts and reboots (it is also kept in a file only your Windows user can open).
+   You enter it once and it stays.
+2. Win + Left Ctrl / Win + Left Shift keep working after Windows starts, after sleep and after wake-up
+   (the keyboard hook is checked and re-registered automatically).
+3. Faster start-up: the tray icon appears first. A microphone that Windows is slow to report is found automatically.
+4. All Bangla text in the app and on shunchiai.com rewritten in natural Bangladeshi Bangla.
+
 SHUNCHi 5.0.1 — Account in the dashboard corner, professional Official SHUNCHi page
 ==================================================================================
 

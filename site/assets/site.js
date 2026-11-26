@@ -128,7 +128,7 @@
   function showTrack(code) {
     var box = document.getElementById("suggest-track");
     if (!box) { box = document.createElement("div"); box.id = "suggest-track"; box.className = "suggest-track"; form.parentNode.insertBefore(box, form.nextSibling); }
-    box.innerHTML = '<div><b>' + (bn() ? "আপনার ট্র্যাকিং নম্বর" : "Your tracking number") + '</b><code>' + code + '</code></div><p>' + (bn() ? "এটি সংরক্ষণ করুন। নিচের “আইডিয়ার স্ট্যাটাস” অংশে এই নম্বর দিয়ে আপনার আইডিয়ার অবস্থা ও মতামত দেখতে পারবেন।" : "Keep it safe. Use it in “Idea status” below to see where your idea stands and any feedback.") + '</p><button type="button" class="btn btn-ghost">' + (bn() ? "কপি" : "Copy") + '</button>';
+    box.innerHTML = '<div><b>' + (bn() ? "আপনার ট্র্যাকিং নম্বর" : "Your tracking number") + '</b><code>' + code + '</code></div><p>' + (bn() ? "এটি সেভ করে রাখুন। নিচের “আইডিয়ার স্ট্যাটাস” অংশে এই নম্বর দিয়ে আপনার আইডিয়ার অবস্থা ও মতামত দেখতে পারবেন।" : "Keep it safe. Use it in “Idea status” below to see where your idea stands and any feedback.") + '</p><button type="button" class="btn btn-ghost">' + (bn() ? "কপি" : "Copy") + '</button>';
     box.querySelector("button").onclick = function () { try { navigator.clipboard.writeText(code); this.textContent = bn() ? "কপি হয়েছে" : "Copied"; } catch (e) {} };
     var inp = document.getElementById("status-code"); if (inp) inp.value = code;
   }
@@ -140,7 +140,7 @@
     var uname = (d.get("name") || "").trim(), email = (d.get("email") || "").trim(), phone = (d.get("phone") || "").trim(), address = (d.get("address") || "").trim();
     if (!title || !details) { say("Please add the idea name and what it should do.", "আইডিয়ার নাম ও এটি কী কাজ করবে তা লিখুন।", false); return; }
     if (!uname || !email || !phone || !address) { say("Name, email, phone and address are required.", "নাম, ইমেইল, ফোন ও ঠিকানা দিতে হবে।", false); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { say("Please enter a valid email.", "সঠিক ইমেইল দিন।", false); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { say("Please enter a valid email.", "সঠিক ইমেইল ঠিকানা দিন।", false); return; }
     if (!/^[0-9+()\-\s]{6,30}$/.test(phone)) { say("Please enter a valid phone number.", "সঠিক ফোন নম্বর দিন।", false); return; }
     btn.disabled = true; say("Sending…", "পাঠানো হচ্ছে…", true);
     window.SHIdea.send({ type: d.get("type"), title: title, details: details, name: uname, email: email, phone: phone, address: address }).then(function (r) {
@@ -160,10 +160,10 @@
   var out = document.getElementById("status-out"), inp = document.getElementById("status-code");
   function bn() { return document.documentElement.lang === "bn"; }
   function sha(str) { return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function (b) { return [].map.call(new Uint8Array(b), function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); }); }
-  var LABEL = { pending: ["Pending", "পেন্ডিং"], analysis: ["Under analysis", "বিশ্লেষণ চলছে"], approved: ["Approved", "অনুমোদিত"], rejected: ["Not taken forward", "এগোনো যাচ্ছে না"] };
+  var LABEL = { pending: ["Pending", "অপেক্ষমাণ"], analysis: ["Under analysis", "যাচাই চলছে"], approved: ["Approved", "অনুমোদিত"], rejected: ["Not taken forward", "আপাতত নেওয়া হচ্ছে না"] };
   var DEF = { pending: ["We received your idea. It is waiting for review.", "আপনার আইডিয়া পেয়েছি। পর্যালোচনার অপেক্ষায় আছে।"], analysis: ["We are looking into your idea.", "আপনার আইডিয়াটি আমরা খতিয়ে দেখছি।"], approved: ["Great news: your idea is approved.", "সুখবর: আপনার আইডিয়া অনুমোদিত হয়েছে।"], rejected: ["Sorry, we cannot take this idea forward right now.", "দুঃখিত, এই মুহূর্তে আইডিয়াটি নিয়ে এগোতে পারছি না।"] };
 
-  var STAGES = [["Received", "গৃহীত"], ["Under review", "পর্যালোচনা"], ["Decision", "সিদ্ধান্ত"]];
+  var STAGES = [["Received", "পেয়েছি"], ["Under review", "যাচাই"], ["Decision", "সিদ্ধান্ত"]];
   function stepsHtml(rec, bn) {
     var h = rec.h && rec.h.length ? rec.h : [{ s: "pending", t: "", f: "" }, { s: rec.s, t: rec.t, f: rec.f }];
     var stage = function (s) { return s === "pending" ? 0 : s === "analysis" ? 1 : 2; }, by = {};
@@ -172,7 +172,7 @@
     var cur = stage(rec.s), out = '<ol class="steps-tl">';
     for (var i = 0; i < 3; i++) {
       var e = by[i], done = i <= cur && e, cls = done ? "done" + (i === cur ? " now" : "") : "todo", name = STAGES[i][bn ? 1 : 0];
-      if (i === 2 && e) { name = e.s === "approved" ? (bn ? "অনুমোদিত" : "Approved") : (bn ? "এগোনো যাচ্ছে না" : "Not taken forward"); cls += e.s === "approved" ? " ok" : " no"; }
+      if (i === 2 && e) { name = e.s === "approved" ? (bn ? "অনুমোদিত" : "Approved") : (bn ? "আপাতত নেওয়া হচ্ছে না" : "Not taken forward"); cls += e.s === "approved" ? " ok" : " no"; }
       out += '<li class="' + cls + '"><i></i><div><b>' + name + '</b>' + (done && e.t ? ' <time>' + String(e.t).replace(/[<>&"]/g, "") + '</time>' : "") + (done && e.f ? '<p class="step-fb"></p>' : "") + '</div></li>';
     }
     return out + "</ol>";

@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "SHUNCHi"
-APP_VERSION = "5.0.1"
+APP_VERSION = "5.0.2"
 APP_VENDOR = "RUHUL"
 KEYRING_SERVICE = "SHUNCHi"
 KEYRING_USERNAME = "gemini_api_key"
@@ -360,6 +360,109 @@ def startup_supported():
     return os.name == "nt" and bool(getattr(sys, "frozen", False))
 
 
+class SecretStore:
+    """Keeps the Gemini key so it survives restarts and reboots.
+
+    Windows Credential Manager entries written by the 'keyring' library are sometimes dropped when a
+    PC that is not on a company domain is restarted. So the key is ALSO kept in a file that only this
+    Windows user can open (encrypted with Windows DPAPI). Reading tries the file first, then the
+    Credential Manager, and heals whichever copy is missing."""
+    FILE = APPDATA / "key.dat"
+    ENTROPY = b"SHUNCHi-key-v1"
+
+    @staticmethod
+    def _blob(data):
+        from ctypes import wintypes
+
+        class Blob(ctypes.Structure):
+            _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
+        buf = ctypes.create_string_buffer(data, len(data))
+        return Blob(len(data), ctypes.cast(buf, ctypes.POINTER(ctypes.c_char))), buf, Blob
+
+    @classmethod
+    def _dpapi(cls, data, protect):
+        inb, keep1, Blob = cls._blob(data)
+        ent, keep2, _ = cls._blob(cls.ENTROPY)
+        out = Blob()
+        crypt = ctypes.windll.crypt32
+        ok = (crypt.CryptProtectData if protect else crypt.CryptUnprotectData)(
+            ctypes.byref(inb), None, ctypes.byref(ent), None, None, 0, ctypes.byref(out))
+        if not ok:
+            raise OSError("Windows DPAPI failed")
+        try:
+            return ctypes.string_at(out.pbData, out.cbData)
+        finally:
+            ctypes.windll.kernel32.LocalFree(out.pbData)
+
+    @classmethod
+    def _file_get(cls):
+        if os.name != "nt" or not cls.FILE.exists():
+            return None
+        try:
+            return cls._dpapi(cls.FILE.read_bytes(), False).decode("utf-8").strip() or None
+        except Exception:
+            logging.exception("Could not read the saved key file")
+            return None
+
+    @classmethod
+    def _file_set(cls, key):
+        if os.name != "nt":
+            return False
+        try:
+            tmp = cls.FILE.with_suffix(".tmp")
+            tmp.write_bytes(cls._dpapi(key.encode("utf-8"), True))
+            os.replace(str(tmp), str(cls.FILE))
+            return True
+        except Exception:
+            logging.exception("Could not write the key file")
+            return False
+
+    @staticmethod
+    def _ring_get():
+        try:
+            return keyring.get_password(KEYRING_SERVICE, KEYRING_USERNAME) or None
+        except Exception:
+            logging.exception("Credential Manager read failed")
+            return None
+
+    @staticmethod
+    def _ring_set(key):
+        try:
+            keyring.set_password(KEYRING_SERVICE, KEYRING_USERNAME, key)
+            return True
+        except Exception:
+            logging.exception("Credential Manager write failed")
+            return False
+
+    @classmethod
+    def get(cls):
+        key = cls._file_get()
+        if not key:
+            key = cls._ring_get()
+            if key:
+                cls._file_set(key)                 # heal the file copy
+        return key or None
+
+    @classmethod
+    def save(cls, key):
+        """True if at least one place kept the key."""
+        a = cls._file_set(key)
+        b = cls._ring_set(key)
+        return a or b
+
+    @classmethod
+    def delete(cls):
+        try:
+            if cls.FILE.exists():
+                cls.FILE.unlink()
+        except Exception:
+            logging.exception("Could not delete the key file")
+        try:
+            keyring.delete_password(KEYRING_SERVICE, KEYRING_USERNAME)
+        except Exception:
+            pass
+
+
 def startup_enabled():
     if os.name != "nt":
         return False
@@ -591,32 +694,32 @@ BN = {
     "Developer": "ডেভেলপার",
     "AI voice typing · by RUHUL": "এআই ভয়েস টাইপিং · RUHUL",
     "Speak in Bangla or English. SHUNCHi types it wherever your cursor is.":
-        "বাংলা বা ইংরেজিতে বলুন। আপনার কার্সর যেখানে আছে, শুনছি সেখানেই লিখে দেবে।",
+        "বাংলা বা ইংরেজিতে বলুন। আপনার কার্সর যেখানে আছে, SHUNCHi সেখানেই লিখে দেবে।",
     "Open Settings": "সেটিংস খুলুন",
     "Update now": "এখনই আপডেট করুন",
-    "Bangla Dictation": "বাংলা টাইপিং",
-    "English Dictation": "ইংরেজি টাইপিং",
-    "Speak in Bangla (English words are fine too)": "বাংলায় বলুন (ইংরেজি শব্দও চলবে)",
+    "Bangla Dictation": "বাংলা ভয়েস টাইপিং",
+    "English Dictation": "ইংলিশ ভয়েস টাইপিং",
+    "Speak in Bangla (English words are fine too)": "বাংলায় বলুন (মাঝে ইংরেজি শব্দ থাকলেও সমস্যা নেই)",
     "Speak in English": "ইংরেজিতে বলুন",
-    "Try it here": "এখানে চেষ্টা করুন",
+    "Try it here": "এখানেই চেষ্টা করে দেখুন",
     "Click inside the box, press a shortcut and speak. Pause when you finish; the text appears here.":
-        "বক্সের ভেতরে ক্লিক করুন, শর্টকাট চাপুন আর বলুন। বলা শেষ করে একটু থামুন, লেখাটি এখানে আসবে।",
-    "Your dictated text will be typed here…": "আপনার বলা লেখা এখানে টাইপ হবে…",
-    "Before you start": "শুরুর আগে জেনে নিন",
-    "Add your Gemini API key in Settings to start voice typing.": "ভয়েস টাইপিং শুরু করতে সেটিংসে আপনার Gemini API key দিন।",
-    "Add your Gemini API key in Settings first.": "আগে সেটিংসে আপনার Gemini API key দিন।",
+        "বক্সের ভেতরে ক্লিক করে শর্টকাট চাপুন, তারপর কথা বলুন। বলা শেষ হলে একটু থামুন, লেখাটি এখানে বসে যাবে।",
+    "Your dictated text will be typed here…": "আপনার বলা কথা এখানে লেখা হবে…",
+    "Before you start": "শুরু করার আগে",
+    "Add your Gemini API key in Settings to start voice typing.": "ভয়েস টাইপিং শুরু করতে সেটিংসে গিয়ে আপনার Gemini API key দিন।",
+    "Add your Gemini API key in Settings first.": "আগে সেটিংসে গিয়ে আপনার Gemini API key দিন।",
     "Ready · press Win + Left Ctrl (Bangla) or Win + Left Shift (English).":
-        "প্রস্তুত · Win + Left Ctrl (বাংলা) বা Win + Left Shift (ইংরেজি) চাপুন।",
-    "Testing your Gemini connection…": "Gemini সংযোগ পরীক্ষা হচ্ছে…",
-    "Connected · voice typing is ready.": "সংযুক্ত · ভয়েস টাইপিং প্রস্তুত।",
-    "Connected · voice typing is working.": "সংযুক্ত · ভয়েস টাইপিং কাজ করছে।",
+        "তৈরি · বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift চাপুন।",
+    "Testing your Gemini connection…": "Gemini-র সাথে সংযোগ যাচাই করা হচ্ছে…",
+    "Connected · voice typing is ready.": "সংযুক্ত হয়েছে · এখন ভয়েস টাইপিং ব্যবহার করতে পারবেন।",
+    "Connected · voice typing is working.": "সংযুক্ত · ভয়েস টাইপিং ঠিকমতো চলছে।",
     "Windows Credential Manager is unavailable. Check your Windows account permissions.":
-        "Windows Credential Manager পাওয়া যাচ্ছে না। আপনার Windows অ্যাকাউন্টের অনুমতি দেখুন।",
-    READY_TEXT_KEY: "প্রস্তুত · Win + Left Ctrl = বাংলা · Win + Left Shift = ইংরেজি",
-    "Took too long. Please try again.": "অনেক সময় লাগছে। আবার চেষ্টা করুন।",
-    "Update cancelled.": "আপডেট বাতিল হয়েছে।",
-    "Installer started. SHUNCHi will close so the update can finish.": "ইনস্টলার চালু হয়েছে। আপডেট শেষ করতে শুনছি বন্ধ হবে।",
-    "No microphone detected · check Windows microphone permissions.": "কোনো মাইক্রোফোন পাওয়া যায়নি · Windows-এর মাইক্রোফোন অনুমতি দেখুন।",
+        "Windows Credential Manager পাওয়া যাচ্ছে না। আপনার Windows অ্যাকাউন্টের পারমিশন দেখে নিন।",
+    READY_TEXT_KEY: "তৈরি · Win + Left Ctrl = বাংলা · Win + Left Shift = ইংরেজি",
+    "Took too long. Please try again.": "অনেক সময় লেগে যাচ্ছে। আবার চেষ্টা করুন।",
+    "Update cancelled.": "আপডেট বাতিল করা হয়েছে।",
+    "Installer started. SHUNCHi will close so the update can finish.": "ইনস্টলার চালু হয়েছে। আপডেট শেষ করতে SHUNCHi এখন বন্ধ হবে।",
+    "No microphone detected · check Windows microphone permissions.": "কোনো মাইক্রোফোন পাওয়া যায়নি · Windows-এর মাইক্রোফোন পারমিশন দেখে নিন।",
 }
 NOTES_EN = (
     "<b>A Gemini API key is required.</b> Without your own free key SHUNCHi cannot type for you. Add it once in Settings.",
@@ -625,9 +728,9 @@ NOTES_EN = (
     "If you need a much higher limit, a <b>Pro subscription with extended limits</b> is planned for the future.",
 )
 NOTES_BN = (
-    "<b>Gemini API key আবশ্যক।</b> আপনার নিজের ফ্রি key ছাড়া শুনছি লিখতে পারবে না। সেটিংসে একবারই যোগ করুন।",
-    "আপনার লেখা চলে <b>আপনার নিজের Gemini key-এর ফ্রি লিমিটে</b>, তাই সাধারণ মেসেজ ও নিয়মিত কাজ ফ্রি ভার্সনেই হয়ে যাওয়ার কথা।",
-    "অনেক বেশি লিমিট লাগলে ভবিষ্যতে <b>বাড়তি লিমিটের Pro সাবস্ক্রিপশন</b> আনার পরিকল্পনা আছে।",
+    "<b>Gemini API key লাগবে।</b> নিজের ফ্রি key ছাড়া SHUNCHi লিখে দিতে পারবে না। সেটিংসে মাত্র একবার দিলেই হবে।",
+    "আপনার লেখা চলবে <b>আপনার নিজের Gemini key-এর ফ্রি লিমিটে</b>। তাই সাধারণ মেসেজ আর রোজকার কাজ ফ্রিতেই হয়ে যাওয়ার কথা।",
+    "আরও বেশি লিমিট লাগলে ভবিষ্যতে <b>বাড়তি লিমিটসহ Pro সাবস্ক্রিপশন</b> আনার পরিকল্পনা আছে।",
 )
 
 
@@ -640,7 +743,7 @@ def T(text):
         return BN[text]
     m = re.fullmatch(r"Typed (\d+) characters\.", text)
     if m:
-        return f"{m.group(1)}টি অক্ষর টাইপ হয়েছে।"
+        return f"{m.group(1)}টি অক্ষর লেখা হয়েছে।"
     if text.startswith("Microphone active · "):
         return "মাইক্রোফোন চালু · " + text[len("Microphone active · "):]
     return text
@@ -670,12 +773,19 @@ class AppSignals(QObject):
 
 class MicrophoneScanner(threading.Thread):
     """Enumerate PortAudio devices in the background; never block app start-up."""
-    def __init__(self, signals):
+    def __init__(self, signals, refresh=False):
         super().__init__(daemon=True, name="SHUNCHi-Microphone-Scan")
         self.signals = signals
+        self.refresh = refresh
 
     def run(self):
         try:
+            if self.refresh:
+                try:        # PortAudio caches its device list; reload it (e.g. when Windows audio started late)
+                    sd._terminate()
+                    sd._initialize()
+                except Exception:
+                    logging.exception("PortAudio refresh failed")
             devices = []
             for index, device in enumerate(sd.query_devices()):
                 channels = int(device.get("max_input_channels", 0))
@@ -1062,7 +1172,7 @@ try{history.replaceState(null,"","/cb")}catch(e){}
 function ok(){document.getElementById("i").innerHTML="&#10003;";document.getElementById("h").textContent="Login successful / লগইন সফল হয়েছে";
 document.getElementById("p").innerHTML="You can close this tab and go back to SHUNCHi.<br>এই ট্যাব বন্ধ করে SHUNCHi অ্যাপে ফিরে যান।"}
 function bad(){var i=document.getElementById("i");i.innerHTML="!";i.style.background="#FEF2F2";i.className="i e";i.style.color="#B91C1C";document.getElementById("h").textContent="Login failed / লগইন হয়নি";
-document.getElementById("p").innerHTML="Go back to SHUNCHi and try again.<br>অ্যাপে ফিরে আবার চেষ্টা করুন।"}
+document.getElementById("p").innerHTML="Go back to SHUNCHi and try again.<br>অ্যাপে ফিরে গিয়ে আবার চেষ্টা করুন।"}
 if(!s||!r){bad();return}
 fetch("/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({state:s,rt:r})}).then(function(x){x.ok?ok():bad()},bad);
 })();
@@ -2637,8 +2747,8 @@ class DashboardPage(QWidget):
         self._upd = (version, forced)
         if UI_BN:
             self.update_text.setText(
-                f"SHUNCHi {version} আপডেট করা জরুরি। ভয়েস টাইপিং চালিয়ে যেতে আপডেট করুন." if forced
-                else f"SHUNCHi {version} এসেছে। নতুন উন্নতিগুলো পেতে আপডেট করুন।")
+                f"SHUNCHi {version} আপডেট করা জরুরি। ভয়েস টাইপিং চালিয়ে যেতে এখনই আপডেট করুন।" if forced
+                else f"SHUNCHi {version} এসে গেছে। নতুন ফিচার ও উন্নতি পেতে আপডেট করুন।")
         elif forced:
             self.update_text.setText(f"SHUNCHi {version} is required. Please update to keep using voice typing.")
         else:
@@ -3316,60 +3426,60 @@ class MoreAppsPage(QWidget):
 
 
 BN.update({
-    "Account": "অ্যাকাউন্ট", "Optional account": "ঐচ্ছিক অ্যাকাউন্ট",
+    "Account": "অ্যাকাউন্ট", "Optional account": "অ্যাকাউন্ট (ঐচ্ছিক)",
     "Your account": "আপনার অ্যাকাউন্ট", "Log in": "লগইন", "Sign up": "সাইন আপ", "Log out": "লগআউট",
     "Continue with Google": "Google দিয়ে চালিয়ে যান", "Forgot password?": "পাসওয়ার্ড ভুলে গেছেন?",
     "Name": "নাম", "Email": "ইমেইল", "Password": "পাসওয়ার্ড", "Phone": "ফোন", "Address": "ঠিকানা",
     "Create account": "অ্যাকাউন্ট খুলুন", "Save": "সেভ", "Saved.": "সেভ হয়েছে।", "My details": "আমার তথ্য",
-    "My ideas": "আমার আইডিয়া", "Open my profile on the website": "ওয়েবসাইটে আমার প্রোফাইল খুলুন",
-    "Fill from my account": "আমার অ্যাকাউন্ট থেকে বসান",
+    "My ideas": "আমার আইডিয়াগুলো", "Open my profile on the website": "ওয়েবসাইটে আমার প্রোফাইল দেখুন",
+    "Fill from my account": "অ্যাকাউন্টের তথ্য দিয়ে পূরণ করুন",
     "An account is optional. SHUNCHi works fully without it. An account keeps your ideas with their status, your details for quick filling, and your data in the upcoming tools.":
-        "অ্যাকাউন্ট ঐচ্ছিক। এটি ছাড়াই SHUNCHi পুরোপুরি কাজ করে। অ্যাকাউন্টে আপনার আইডিয়া ও স্ট্যাটাস, দ্রুত পূরণের তথ্য এবং আসন্ন টুলগুলোর ডেটা সংরক্ষিত থাকে।",
-    "Please wait…": "অপেক্ষা করুন…", "Enter your name.": "নাম লিখুন।", "Enter a valid email.": "সঠিক ইমেইল দিন।",
-    "Password must be at least 6 characters.": "পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।",
-    "Password reset email sent. Check your inbox.": "পাসওয়ার্ড রিসেটের ইমেইল পাঠানো হয়েছে। ইনবক্স দেখুন।",
-    "Type your email first.": "আগে ইমেইল লিখুন।", "No ideas yet.": "এখনো কোনো আইডিয়া নেই।",
-    "Your account is blocked, so ideas are not saved to your profile.": "আপনার অ্যাকাউন্ট ব্লক করা, তাই আইডিয়া প্রোফাইলে সেভ হবে না।",
-    "Pending": "পেন্ডিং", "Under analysis": "বিশ্লেষণ চলছে", "Approved": "অনুমোদিত", "Not taken forward": "এগোনো যাচ্ছে না",
-    "Wrong email or password.": "ইমেইল বা পাসওয়ার্ড ভুল।", "No internet connection.": "ইন্টারনেট সংযোগ নেই।",
-    "This email already has an account. Log in instead.": "এই ইমেইলে অ্যাকাউন্ট আছে। লগইন করুন।",
-    "No account with this email. Create one.": "এই ইমেইলে অ্যাকাউন্ট নেই। নতুন খুলুন।",
-    "Accounts are not turned on yet.": "অ্যাকাউন্ট সুবিধা এখনো চালু হয়নি।",
+        "অ্যাকাউন্ট না খুললেও চলবে, SHUNCHi এমনিতেই পুরোপুরি কাজ করে। অ্যাকাউন্ট থাকলে পাঠানো আইডিয়া ও তার অবস্থা দেখা যাবে, ফর্মে নাম-ফোন-ঠিকানা এক ক্লিকে বসবে, আর পরে আসা টুলগুলোর ডেটাও আপনার অ্যাকাউন্টেই থাকবে।",
+    "Please wait…": "একটু অপেক্ষা করুন…", "Enter your name.": "আপনার নাম লিখুন।", "Enter a valid email.": "সঠিক ইমেইল ঠিকানা দিন।",
+    "Password must be at least 6 characters.": "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে।",
+    "Password reset email sent. Check your inbox.": "পাসওয়ার্ড রিসেটের ইমেইল পাঠানো হয়েছে। আপনার ইনবক্স দেখুন।",
+    "Type your email first.": "আগে আপনার ইমেইল ঠিকানা লিখুন।", "No ideas yet.": "এখনো কোনো আইডিয়া পাঠাননি।",
+    "Your account is blocked, so ideas are not saved to your profile.": "আপনার অ্যাকাউন্টটি ব্লক করা আছে, তাই আইডিয়া প্রোফাইলে সেভ হবে না।",
+    "Pending": "অপেক্ষমাণ", "Under analysis": "যাচাই চলছে", "Approved": "অনুমোদিত", "Not taken forward": "আপাতত নেওয়া হচ্ছে না",
+    "Wrong email or password.": "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে।", "No internet connection.": "ইন্টারনেট সংযোগ নেই।",
+    "This email already has an account. Log in instead.": "এই ইমেইলে আগেই অ্যাকাউন্ট খোলা আছে। লগইন করুন।",
+    "No account with this email. Create one.": "এই ইমেইলে কোনো অ্যাকাউন্ট নেই। নতুন অ্যাকাউন্ট খুলুন।",
+    "Accounts are not turned on yet.": "অ্যাকাউন্ট ফিচার এখনো চালু হয়নি।",
 })
 
 STATUS_LABEL = {"pending": "Pending", "analysis": "Under analysis", "approved": "Approved", "rejected": "Not taken forward"}
 
 
 BN.update({
-    "Log in / Sign up": "লগইন / সাইন আপ", "Open my profile": "আমার প্রোফাইল খুলুন", "Not added": "যোগ করা হয়নি",
+    "Log in / Sign up": "লগইন / সাইন আপ", "Open my profile": "আমার প্রোফাইল খুলুন", "Not added": "দেওয়া হয়নি",
     "Your profile": "আপনার প্রোফাইল", "Account menu": "অ্যাকাউন্ট মেনু",
-    "Password must be at least 8 characters.": "পাসওয়ার্ড কমপক্ষে ৮ অক্ষর হতে হবে।",
-    "Save my dictations": "আমার ডিকটেশন সেভ করুন",
-    "History is on": "হিস্টোরি চালু", "History is off": "হিস্টোরি বন্ধ",
-    "Keep a list of what you dictate on this computer. Turn it off and nothing new is saved.": "আপনি যা বলেন তার তালিকা এই কম্পিউটারে রাখে। বন্ধ করলে নতুন কিছু সেভ হবে না।",
-    "Your recent dictations. They are stored only on this computer.": "আপনার সাম্প্রতিক ডিকটেশন। এগুলো শুধু এই কম্পিউটারে থাকে।",
-    "ON": "চালু", "OFF": "বন্ধ", "Search your dictations…": "ডিকটেশন খুঁজুন…", "Copy": "কপি", "Copied ✓": "কপি হয়েছে ✓",
-    "Clear history": "হিস্টোরি মুছুন", "Time": "সময়", "Language": "ভাষা", "Text": "লেখা", "Copy this dictation": "এই ডিকটেশন কপি করুন",
-    "History is off, so new dictations are not saved. Turn the switch above on to save them again.": "হিস্টোরি বন্ধ, তাই নতুন ডিকটেশন সেভ হচ্ছে না। আবার সেভ করতে উপরের সুইচ চালু করুন।",
-    "No dictations yet. Press a shortcut and speak to get started.": "এখনো কোনো ডিকটেশন নেই। শর্টকাট চেপে কথা বলুন।",
-    "Delete all saved dictations from this computer?": "এই কম্পিউটার থেকে সব সেভ করা ডিকটেশন মুছে ফেলবেন?",
-    "Five quick steps. After that SHUNCHi works in any app.": "পাঁচটি সহজ ধাপ। এরপর যেকোনো অ্যাপে SHUNCHi কাজ করবে।",
-    "Good to know": "জেনে রাখুন", "Video guides": "ভিডিও গাইড", "More videos on shunchiai.com": "আরও ভিডিও shunchiai.com-এ",
-    "Watch on YouTube": "YouTube-এ দেখুন", "Loading videos…": "ভিডিও লোড হচ্ছে…",
-    "Connect to the internet to see the video guides.": "ভিডিও গাইড দেখতে ইন্টারনেট সংযোগ দিন।",
+    "Password must be at least 8 characters.": "পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।",
+    "Save my dictations": "আমার বলা কথাগুলো সেভ রাখুন",
+    "History is on": "হিস্টোরি চালু হয়েছে", "History is off": "হিস্টোরি বন্ধ হয়েছে",
+    "Keep a list of what you dictate on this computer. Turn it off and nothing new is saved.": "আপনি যা বলেন, তার একটি তালিকা এই কম্পিউটারেই জমা থাকবে। বন্ধ রাখলে নতুন কিছু সেভ হবে না।",
+    "Your recent dictations. They are stored only on this computer.": "আপনার সাম্প্রতিক ভয়েস টাইপিং। এগুলো শুধু এই কম্পিউটারেই থাকে।",
+    "ON": "চালু", "OFF": "বন্ধ", "Search your dictations…": "লেখা খুঁজুন…", "Copy": "কপি", "Copied ✓": "কপি হয়েছে ✓",
+    "Clear history": "হিস্টোরি মুছে ফেলুন", "Time": "সময়", "Language": "ভাষা", "Text": "লেখা", "Copy this dictation": "এই লেখাটি কপি করুন",
+    "History is off, so new dictations are not saved. Turn the switch above on to save them again.": "হিস্টোরি বন্ধ আছে, তাই নতুন কিছু সেভ হচ্ছে না। আবার সেভ করতে চাইলে উপরের সুইচটি চালু করুন।",
+    "No dictations yet. Press a shortcut and speak to get started.": "এখনো কিছু বলা হয়নি। শর্টকাট চেপে কথা বলে দেখুন।",
+    "Delete all saved dictations from this computer?": "এই কম্পিউটার থেকে সেভ করা সব লেখা মুছে ফেলবেন?",
+    "Five quick steps. After that SHUNCHi works in any app.": "মাত্র পাঁচ ধাপ। এরপর যেকোনো অ্যাপে SHUNCHi দিয়ে লিখতে পারবেন।",
+    "Good to know": "কিছু দরকারি কথা", "Video guides": "ভিডিও গাইড", "More videos on shunchiai.com": "আরও ভিডিও shunchiai.com-এ",
+    "Watch on YouTube": "YouTube-এ দেখুন", "Loading videos…": "ভিডিও আসছে…",
+    "Connect to the internet to see the video guides.": "ভিডিও দেখতে ইন্টারনেটে যুক্ত হোন।",
     "Voice History": "ভয়েস হিস্টোরি", "How to use": "কীভাবে ব্যবহার করবেন",
-    "Log in / Sign up in browser": "ব্রাউজারে লগইন / সাইন আপ", "Cancel": "বাতিল",
-    "or use email and password here": "অথবা এখানে ইমেইল ও পাসওয়ার্ড দিন", "Why log in?": "কেন লগইন করবেন?",
-    "Track every idea you send, with its status and the developer's feedback": "আপনার পাঠানো প্রতিটি আইডিয়ার স্ট্যাটাস ও ডেভেলপারের মতামত দেখুন",
-    "Fill your name, phone and address in one click": "নাম, ফোন ও ঠিকানা এক ক্লিকে বসান",
-    "One account for this app and shunchiai.com": "এই অ্যাপ ও shunchiai.com-এ একই অ্যাকাউন্ট",
-    "Your data for the upcoming tools stays with your account": "আসন্ন টুলগুলোর ডেটা আপনার অ্যাকাউন্টে থাকবে",
-    "Your browser opened. Log in there with Google or email, then come back here.": "আপনার ব্রাউজার খুলেছে। সেখানে Google বা ইমেইল দিয়ে লগইন করে এখানে ফিরে আসুন।",
-    "Login successful. Welcome": "লগইন সফল হয়েছে। স্বাগতম", "Login cancelled.": "লগইন বাতিল হয়েছে।",
+    "Log in / Sign up in browser": "ব্রাউজারে লগইন / সাইন আপ করুন", "Cancel": "বাতিল",
+    "or use email and password here": "অথবা এখানেই ইমেইল ও পাসওয়ার্ড দিয়ে করুন", "Why log in?": "লগইন করলে কী লাভ?",
+    "Track every idea you send, with its status and the developer's feedback": "আপনার পাঠানো প্রতিটি আইডিয়ার অবস্থা ও ডেভেলপারের মতামত দেখতে পারবেন",
+    "Fill your name, phone and address in one click": "নাম, ফোন ও ঠিকানা এক ক্লিকে ফর্মে বসাতে পারবেন",
+    "One account for this app and shunchiai.com": "অ্যাপ ও shunchiai.com, দুই জায়গাতেই একই অ্যাকাউন্ট",
+    "Your data for the upcoming tools stays with your account": "পরে আসা টুলগুলোর ডেটা আপনার অ্যাকাউন্টেই জমা থাকবে",
+    "Your browser opened. Log in there with Google or email, then come back here.": "ব্রাউজার খুলেছে। সেখানে Google বা ইমেইল দিয়ে লগইন করে এই অ্যাপে ফিরে আসুন।",
+    "Login successful. Welcome": "লগইন সফল হয়েছে। স্বাগতম", "Login cancelled.": "লগইন বাতিল করা হয়েছে।",
     "Login timed out. Try again.": "সময় শেষ হয়ে গেছে। আবার চেষ্টা করুন।",
-    "Could not open your browser. Open shunchiai.com in a browser and log in there.": "ব্রাউজার খোলা যায়নি। ব্রাউজারে shunchiai.com খুলে সেখানে লগইন করুন।",
+    "Could not open your browser. Open shunchiai.com in a browser and log in there.": "ব্রাউজার খোলা যায়নি। নিজে ব্রাউজারে shunchiai.com খুলে সেখানে লগইন করুন।",
     "Account created. We emailed you a verification link (needed to comment on the website).":
-        "অ্যাকাউন্ট তৈরি হয়েছে। আপনার ইমেইলে একটি ভেরিফিকেশন লিংক পাঠানো হয়েছে (ওয়েবসাইটে মন্তব্য করতে লাগবে)।",
+        "অ্যাকাউন্ট খোলা হয়েছে। আপনার ইমেইলে একটি ভেরিফিকেশন লিংক পাঠানো হয়েছে (ওয়েবসাইটে মন্তব্য করতে এটি লাগবে)।",
 })
 
 
@@ -3710,27 +3820,27 @@ def html_escape(text):
 class HelpPage(QWidget):
     STEPS = (
         ("Get a free key", "Open Google AI Studio and create a Gemini API key (Settings has a shortcut).",
-         "ফ্রি কী নিন", "Google AI Studio খুলে একটি Gemini API key বানান (Settings-এ শর্টকাট আছে)।"),
-        ("Save it in Settings", "Paste the key and choose Save & test. It is stored in Windows Credential Manager.",
-         "Settings-এ সেভ করুন", "কী পেস্ট করে Save & test চাপুন। এটি Windows Credential Manager-এ নিরাপদে থাকে।"),
+         "ফ্রি কী নিন", "Google AI Studio-তে গিয়ে একটি Gemini API key বানিয়ে নিন (Settings-এ শর্টকাট বাটন আছে)।"),
+        ("Save it in Settings", "Paste the key and choose Save & test. It is kept safely on this computer.",
+         "Settings-এ সেভ করুন", "key-টি পেস্ট করে Save & test চাপুন। এটি আপনার কম্পিউটারেই নিরাপদে রাখা থাকে।"),
         ("Click where you want to type", "A browser, WhatsApp, Word, Notepad… any text field.",
-         "যেখানে লিখবেন সেখানে ক্লিক করুন", "ব্রাউজার, WhatsApp, Word, Notepad… যেকোনো টেক্সট বক্স।"),
+         "যেখানে লিখবেন সেখানে ক্লিক করুন", "ব্রাউজার, WhatsApp, Word, Notepad… যেকোনো লেখার জায়গায়।"),
         ("Press a shortcut and speak", "Win + Left Ctrl for Bangla, Win + Left Shift for English.",
-         "শর্টকাট চেপে কথা বলুন", "বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।"),
+         "শর্টকাট চেপে বলতে থাকুন", "বাংলার জন্য Win + Left Ctrl, ইংরেজির জন্য Win + Left Shift।"),
         ("Pause", "When you stop speaking, SHUNCHi stops by itself and types the finished text at your cursor.",
-         "একটু থামুন", "কথা শেষ করে থামলে SHUNCHi নিজে থেকেই থামে এবং তৈরি লেখা আপনার কার্সারে বসিয়ে দেয়।"),
+         "একটু থামুন", "কথা শেষ করে থামলেই SHUNCHi নিজে থেমে যায় এবং লেখাটি আপনার কার্সরের জায়গায় বসিয়ে দেয়।"),
     )
     TIPS = (
-        ("Press the same shortcut again to finish early.", "আগে শেষ করতে চাইলে একই শর্টকাট আবার চাপুন।"),
-        ("You can mix English words into Bangla speech.", "বাংলা কথার মধ্যে ইংরেজি শব্দ মেশাতে পারেন।"),
+        ("Press the same shortcut again to finish early.", "তাড়াতাড়ি শেষ করতে চাইলে একই শর্টকাট আবার চাপুন।"),
+        ("You can mix English words into Bangla speech.", "বাংলা বলার মাঝে ইংরেজি শব্দ মিশিয়েও বলতে পারেন।"),
         ("If a program runs as administrator, Windows may block auto-typing; the text is then copied so you can press Ctrl + V.",
-         "কোনো প্রোগ্রাম অ্যাডমিন হিসেবে চললে Windows অটো-টাইপিং আটকাতে পারে; তখন লেখাটি কপি হয়ে যায়, Ctrl + V চাপুন।"),
+         "কোনো প্রোগ্রাম অ্যাডমিন হিসেবে চললে Windows অটো-টাইপিং আটকে দিতে পারে। তখন লেখাটি কপি হয়ে যায়, আপনি Ctrl + V চাপুন।"),
         ("Windows Settings > Privacy > Microphone must allow desktop apps to use the microphone.",
-         "Windows Settings > Privacy > Microphone-এ ডেস্কটপ অ্যাপকে মাইক্রোফোন ব্যবহারের অনুমতি থাকতে হবে।"),
+         "Windows Settings > Privacy > Microphone থেকে ডেস্কটপ অ্যাপকে মাইক্রোফোন ব্যবহারের অনুমতি দিয়ে রাখতে হবে।"),
         ("Your Gemini key is yours. Never share it and never install modified copies of SHUNCHi.",
-         "Gemini key আপনার নিজের। কাউকে দেবেন না, আর SHUNCHi-র পরিবর্তিত কপি ইনস্টল করবেন না।"),
+         "Gemini key শুধু আপনার। এটি কাউকে দেবেন না, আর SHUNCHi-র কোনো পরিবর্তিত কপি ইনস্টল করবেন না।"),
         (f"New versions, downloads and help are published at {WEBSITE_LABEL}.",
-         f"নতুন ভার্সন, ডাউনলোড ও সাহায্য {WEBSITE_LABEL}-এ প্রকাশিত হয়।"),
+         f"নতুন ভার্সন, ডাউনলোড ও সাহায্য সবসময় {WEBSITE_LABEL}-এ পাবেন।"),
     )
 
     def __init__(self):
@@ -4175,6 +4285,11 @@ class MainWindow(QMainWindow):
         self.update_prompted_for = ""
         self.force_min = str(self.settings.value("force_min_version", "") or "")
         self.spec_token = 0
+        self._key_retries = 0
+        self._mic_rescans = 0
+        self._hook_deaths = 0
+        self._shown_once = False
+        self._last_tick = time.monotonic()
         self.spec_state = "none"        # none | running | done | failed
         self.spec_text = ""
         self.spec_voiced = -1
@@ -4222,6 +4337,14 @@ class MainWindow(QMainWindow):
         self.mic_scanner = MicrophoneScanner(self.signals)
         self.mic_scanner.start()
         self.hotkeys.start()
+        # Windows can silently drop a keyboard hook (right after logon, after sleep, or when the system is busy).
+        # A small watchdog re-registers it whenever that may have happened.
+        self.hook_timer = QTimer(self)
+        self.hook_timer.setInterval(5000)
+        self.hook_timer.timeout.connect(self._hook_watchdog)
+        self.hook_timer.start()
+        for delay in (8000, 25000, 60000):
+            QTimer.singleShot(delay, self._restart_hotkeys)
         # The window appears straight away (unless Windows started us quietly); the slower checks run after it.
         if not self.start_hidden:
             self.show()
@@ -4417,6 +4540,30 @@ class MainWindow(QMainWindow):
         logging.error("Shown to user: %s", message)
         self.show_status(str(message).splitlines()[0] if message else "")
         QMessageBox.warning(self, APP_NAME, str(message))
+
+    # ------------------------------------------------------------------ keyboard hook health
+    def _restart_hotkeys(self):
+        if self.recording or self.processing:
+            return
+        try:
+            self.hotkeys.stop()
+        except Exception:
+            logging.exception("Old hotkey listener would not stop")
+        self.hotkeys = HotkeyManager(self.signals)
+        self.hotkeys.start()
+        logging.info("Hotkey listener (re)started")
+
+    def _hook_watchdog(self):
+        now = time.monotonic()
+        slept = now - self._last_tick > 20          # the timer is 5 s: a big gap means the PC was asleep
+        self._last_tick = now
+        dead = not self.hotkeys.is_alive()
+        if dead and self._hook_deaths >= 5:
+            dead = False                            # it keeps failing: stop retrying (the person was already told why)
+        if dead:
+            self._hook_deaths += 1
+        if slept or dead:
+            self._restart_hotkeys()
 
     # ------------------------------------------------------------------ settings
     def _history_toggled(self, enabled):
@@ -4718,20 +4865,23 @@ class MainWindow(QMainWindow):
         self.mic_scan_complete = True
         self.settings_page.populate_microphones(self.available_devices, saved)
         if not self.available_devices:
-            self.show_status("No microphone detected · check Windows microphone permissions.")
+            # Right after Windows starts the audio service may not be ready: look again a few times.
+            if self._mic_rescans < 6:
+                self._mic_rescans += 1
+                QTimer.singleShot(4000, lambda: MicrophoneScanner(self.signals, refresh=True).start())
+            else:
+                self.show_status("No microphone detected · check Windows microphone permissions.")
 
     # ------------------------------------------------------------------ API key
     def first_run_check(self):
-        try:
-            self.api_key = keyring.get_password(KEYRING_SERVICE, KEYRING_USERNAME) or None
-        except Exception as exc:
-            logging.exception("Windows Credential Manager could not initialise")
-            self.api_key = None
-            self.dashboard_page.set_api_state("error", "Windows Credential Manager is unavailable. Check your Windows account permissions.")
-            self.settings_page.set_key_status(False)
-            self.show()
-            QMessageBox.critical(self, APP_NAME, f"Windows Credential Manager is unavailable:\n{exc}")
-            return
+        self.api_key = SecretStore.get()
+        if not self.api_key and self._key_retries < 3:
+            # Right after Windows starts, the credential store may not be ready yet. Look again a little later
+            # before telling the person anything.
+            self._key_retries += 1
+            QTimer.singleShot(2500 * self._key_retries, self.first_run_check)
+            if self.start_hidden:
+                return
         if self.api_key:
             self.dashboard_page.set_api_state("pending", "Ready · press Win + Left Ctrl (Bangla) or Win + Left Shift (English).")
             self.settings_page.set_key_status(True)
@@ -4739,7 +4889,8 @@ class MainWindow(QMainWindow):
         else:
             self.dashboard_page.set_api_state("missing", "Add your Gemini API key in Settings to start voice typing.")
             self.settings_page.set_key_status(False)
-        if not (self.start_hidden and self.api_key):
+        if not (self.start_hidden and self.api_key) and not self._shown_once:
+            self._shown_once = True
             self.show()
             self.raise_()
             self.activateWindow()
@@ -4749,11 +4900,8 @@ class MainWindow(QMainWindow):
         if len(key) < 20 or any(ch.isspace() for ch in key):
             self.settings_page.set_key_result("That does not look like a Gemini API key. Copy it again from Google AI Studio.", False)
             return
-        try:
-            keyring.set_password(KEYRING_SERVICE, KEYRING_USERNAME, key)
-        except Exception as exc:
-            logging.exception("Could not save the API key")
-            self.settings_page.set_key_result(f"Windows could not store the key: {exc}", False)
+        if not SecretStore.save(key):
+            self.settings_page.set_key_result("Windows could not store the key. Check your Windows account permissions.", False)
             return
         self.api_key = key
         self.settings_page.set_busy(True)
@@ -4764,10 +4912,7 @@ class MainWindow(QMainWindow):
         self.api_tester.start()
 
     def remove_api_key(self):
-        try:
-            keyring.delete_password(KEYRING_SERVICE, KEYRING_USERNAME)
-        except Exception:
-            pass
+        SecretStore.delete()
         self.api_key = None
         self.settings_page.key_input.clear()
         self.settings_page.set_key_status(False)
@@ -4799,16 +4944,22 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(0, self.show_forced_update)
             return
         if not self.api_key:
-            try:
-                self.api_key = keyring.get_password(KEYRING_SERVICE, KEYRING_USERNAME) or None
-            except Exception:
-                self.api_key = None
+            self.api_key = SecretStore.get()
+            if self.api_key:
+                self.dashboard_page.set_api_state("pending", "Ready · press Win + Left Ctrl (Bangla) or Win + Left Shift (English).")
+                self.settings_page.set_key_status(True)
         if not self.api_key:
             self.popup.show_error("Add your Gemini API key in Settings first.")
             self.show_status("Add your Gemini API key in Settings to start voice typing.")
             return
-        if not self.mic_scan_complete:
-            self.popup.show_error("Microphone is still starting. Try again in a moment.")
+        if not self.mic_scan_complete or not self.available_devices:
+            # Scan again right now instead of making the person wait.
+            try:
+                MicrophoneScanner(self.signals, refresh=True).run()
+            except Exception:
+                logging.exception("Immediate microphone scan failed")
+        if not self.available_devices:
+            self.popup.show_error("No microphone found. Check Windows microphone permissions.")
             return
         self.current_language = language
         self.chunks = []
@@ -5040,8 +5191,6 @@ class ShunchiApp:
         self.qt.setWindowIcon(QIcon(resource_path("assets/shunchi.ico")))
         self.qt.setFont(QFont("Segoe UI", 10))
         self.qt.setStyleSheet(build_qss(ensure_chevron()))
-        self.window = MainWindow()
-
         self.tray = QSystemTrayIcon(QIcon(resource_path("assets/shunchi.ico")))
         self.tray.setToolTip("SHUNCHi by RUHUL · AI Voice Typing")
         self.menu = QMenu()
@@ -5062,15 +5211,28 @@ class ShunchiApp:
         self.menu.addSeparator()
         self.menu.addAction(self.menu_exit)
         self.tray.setContextMenu(self.menu)
-        self.window.tray_icon = self.tray
         self.tray.activated.connect(self.tray_activated)
         self.tray.messageClicked.connect(self.on_tray_message)
-        self.tray.show()
+        self.tray.show()                    # visible at once; the window is built right after
+        self.qt.processEvents()
+        self.window = MainWindow()
+        self.window.tray_icon = self.tray
+        # At Windows start-up the taskbar may not exist yet; make sure the icon really appears.
+        for delay in (3000, 10000, 30000):
+            QTimer.singleShot(delay, self._ensure_tray)
         try:
             if SPLASH is not None:
                 SPLASH.close()
         except Exception:
             logging.exception("Splash close failed")
+
+    def _ensure_tray(self):
+        try:
+            if not self.tray.isVisible():
+                self.tray.hide()
+                self.tray.show()
+        except Exception:
+            logging.exception("Tray refresh failed")
 
     def acquire_mutex(self):
         if os.name != "nt":

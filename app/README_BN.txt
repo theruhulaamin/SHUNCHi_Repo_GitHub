@@ -1,4 +1,4 @@
-SHUNCHi by RUHUL — Version 5.0.1
+SHUNCHi by RUHUL — Version 5.0.2
 =================================
 
 Free AI voice typing for Windows. Press a shortcut, speak Bangla or English, pause, and the finished,

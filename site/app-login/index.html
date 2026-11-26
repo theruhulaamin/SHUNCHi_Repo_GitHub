@@ -42,10 +42,10 @@ input{width:100%;font:inherit;font-size:15px;padding:11px 13px;border:1px solid 
     <h1><span class="en">Log in to the SHUNCHi app</span><span class="bn">SHUNCHi অ্যাপে লগইন করুন</span></h1>
     <p class="sub"><span class="en">Sign in once here, then you are taken back to the app automatically.</span><span class="bn">এখানে একবার লগইন করুন, তারপর নিজে থেকেই অ্যাপে ফিরে যাবেন।</span></p>
     <ul class="ben">
-      <li><span class="en">Track every idea you send, with its status and the developer’s feedback.</span><span class="bn">আপনার পাঠানো প্রতিটি আইডিয়ার স্ট্যাটাস ও ডেভেলপারের মতামত দেখুন।</span></li>
-      <li><span class="en">Fill your name, phone and address in one click.</span><span class="bn">নাম, ফোন ও ঠিকানা এক ক্লিকে বসান।</span></li>
+      <li><span class="en">Track every idea you send, with its status and the developer’s feedback.</span><span class="bn">আপনার পাঠানো প্রতিটি আইডিয়ার অবস্থা ও ডেভেলপারের মতামত দেখতে পারবেন।</span></li>
+      <li><span class="en">Fill your name, phone and address in one click.</span><span class="bn">নাম, ফোন ও ঠিকানা এক ক্লিকে ফর্মে বসাতে পারবেন।</span></li>
       <li><span class="en">One account for the app and shunchiai.com (comments, profile).</span><span class="bn">অ্যাপ ও shunchiai.com-এ একই অ্যাকাউন্ট (মন্তব্য, প্রোফাইল)।</span></li>
-      <li><span class="en">Your data for the upcoming tools stays with your account.</span><span class="bn">আসন্ন টুলগুলোর ডেটা আপনার অ্যাকাউন্টে থাকবে।</span></li>
+      <li><span class="en">Your data for the upcoming tools stays with your account.</span><span class="bn">পরে আসা টুলগুলোর ডেটা আপনার অ্যাকাউন্টেই জমা থাকবে।</span></li>
     </ul>
 
     <div id="have" class="hide">
@@ -92,9 +92,9 @@ const V = "10.14.1", B = "https://www.gstatic.com/firebasejs/" + V + "/";
 let F, auth, mode = "in", busy = false;
 const msg = (t, k) => { const m = $("msg"); m.textContent = t || ""; m.className = "msg" + (k ? " " + k : ""); };
 const ERR = {
-  "auth/invalid-credential": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল।"], "auth/wrong-password": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল।"],
-  "auth/user-not-found": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল।"], "auth/email-already-in-use": ["This email already has an account. Use Log in.", "এই ইমেইলে অ্যাকাউন্ট আছে। লগইন করুন।"],
-  "auth/weak-password": ["Password is too weak (use 8+ characters).", "পাসওয়ার্ড দুর্বল (৮+ অক্ষর দিন)।"], "auth/invalid-email": ["Enter a valid email.", "সঠিক ইমেইল দিন।"],
+  "auth/invalid-credential": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে।"], "auth/wrong-password": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে।"],
+  "auth/user-not-found": ["Wrong email or password.", "ইমেইল বা পাসওয়ার্ড ভুল হয়েছে।"], "auth/email-already-in-use": ["This email already has an account. Use Log in.", "এই ইমেইলে আগেই অ্যাকাউন্ট খোলা আছে। লগইন করুন।"],
+  "auth/weak-password": ["Password is too weak (use 8+ characters).", "পাসওয়ার্ড দুর্বল (৮+ অক্ষর দিন)।"], "auth/invalid-email": ["Enter a valid email.", "সঠিক ইমেইল ঠিকানা দিন।"],
   "auth/too-many-requests": ["Too many attempts. Try again in a few minutes.", "অনেকবার চেষ্টা হয়েছে। কয়েক মিনিট পর আবার চেষ্টা করুন।"],
   "auth/network-request-failed": ["No internet connection.", "ইন্টারনেট সংযোগ নেই।"], "auth/popup-blocked": ["The browser blocked the Google window. Allow pop-ups and try again.", "ব্রাউজার Google উইন্ডো আটকেছে। পপ-আপ অনুমতি দিয়ে আবার চেষ্টা করুন।"],
   "auth/popup-closed-by-user": ["The Google window was closed.", "Google উইন্ডো বন্ধ হয়েছে।"], "auth/unauthorized-domain": ["This website is not allowed for Google sign-in yet.", "এই ওয়েবসাইটে Google লগইন এখনো চালু নেই।"]
@@ -138,9 +138,9 @@ async function boot() {
   $("submit").onclick = async () => {
     if (busy) return; msg("");
     const em = $("f-mail").value.trim(), pw = $("f-pass").value, nm = $("f-name").value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return msg(T("Enter a valid email.", "সঠিক ইমেইল দিন।"), "er");
-    if (mode === "up" && !nm) return msg(T("Enter your name.", "নাম লিখুন।"), "er");
-    if (pw.length < (mode === "up" ? 8 : 6)) return msg(mode === "up" ? T("Password must be at least 8 characters.", "পাসওয়ার্ড কমপক্ষে ৮ অক্ষর হতে হবে।") : T("Enter your password.", "পাসওয়ার্ড দিন।"), "er");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return msg(T("Enter a valid email.", "সঠিক ইমেইল ঠিকানা দিন।"), "er");
+    if (mode === "up" && !nm) return msg(T("Enter your name.", "আপনার নাম লিখুন।"), "er");
+    if (pw.length < (mode === "up" ? 8 : 6)) return msg(mode === "up" ? T("Password must be at least 8 characters.", "পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।") : T("Enter your password.", "পাসওয়ার্ড দিন।"), "er");
     lock(true);
     try {
       if (mode === "up") {
@@ -153,7 +153,7 @@ async function boot() {
   };
   $("f-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") $("submit").click(); });
   $("forgot").onclick = async () => {
-    const em = $("f-mail").value.trim(); if (!em) return msg(T("Type your email first.", "আগে ইমেইল লিখুন।"), "er");
+    const em = $("f-mail").value.trim(); if (!em) return msg(T("Type your email first.", "আগে আপনার ইমেইল ঠিকানা লিখুন।"), "er");
     try { await F.sendPasswordResetEmail(auth, em); msg(T("If this account exists, a reset link was emailed.", "অ্যাকাউন্ট থাকলে রিসেট লিংক ইমেইলে গেছে।"), "ok"); } catch (e) { say(e); }
   };
 }

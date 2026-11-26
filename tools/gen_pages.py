@@ -49,7 +49,7 @@ def history_block():
         rows.append(f'<details class="vh-item"{" open" if i == 0 else ""}><summary><span class="vh-ver">SHUNCHi {ver}</span>{latest}<span class="vh-date">{date}{size}</span></summary>'
                     f'<div class="vh-body">{en}{bn}</div></details>')
     return ('<section class="vh" id="history"><h2><span class="en">Version history</span><span class="bn">ভার্সনের ইতিহাস</span></h2>'
-            '<p class="vh-sub"><span class="en">Every SHUNCHi version and what changed in it.</span><span class="bn">শুনছি-র প্রতিটি ভার্সন আর তাতে কী বদলেছে।</span></p>' + "".join(rows) + '</section>')
+            '<p class="vh-sub"><span class="en">Every SHUNCHi version and what changed in it.</span><span class="bn">SHUNCHi-র প্রতিটি ভার্সন আর তাতে কী বদলেছে।</span></p>' + "".join(rows) + '</section>')
 
 try: VIDEOS_JSON = [v for v in (json.load(open(os.path.join(SITE, "data", "videos.json"), encoding="utf-8")) or []) if re.fullmatch(r"[A-Za-z0-9_-]{11}", str(v.get("id", "")))]
 except Exception: VIDEOS_JSON = []
@@ -101,7 +101,7 @@ def header(P, current=""):
         cur = ' aria-current="page"' if current == key else ""
         return f'<a href="{href}"{cur}><span class="en">{en}</span><span class="bn">{bn}</span></a>'
     items = [
-        (f"{P}index.html#features", "Features", "সুবিধা", "f"),
+        (f"{P}index.html#features", "Features", "ফিচার", "f"),
         (f"{P}index.html#setup", "Setup", "সেটআপ", "s"),
         (f"{P}apps/index.html", "More Apps", "আরও অ্যাপ", "apps"),
         (f"{P}blog/index.html", "Blog", "ব্লগ", "blog"),
@@ -133,7 +133,7 @@ def footer(P):
         lab = f'<span class="en">{en}</span><span class="bn">{bn}</span>' if bn else en
         return f'<a href="{href}"' + (' rel="noopener"' if ext else '') + f'>{lab}</a>'
     links = "".join([
-        l(f"{P}index.html#features","Features","সুবিধা"),
+        l(f"{P}index.html#features","Features","ফিচার"),
         l(f"{P}index.html#setup","Setup","সেটআপ"),
         l(f"{P}index.html#faq","FAQ","প্রশ্নোত্তর"),
         l(f"{P}download/index.html","Download","ডাউনলোড"),
@@ -359,8 +359,8 @@ faq = "".join([
       "<p>No. Your recording is sent to Google to be transcribed, so you need an internet connection. Without one, SHUNCHi shows a clear notice and keeps running.</p>",
       "<p>না। আপনার রেকর্ডিং লেখায় রূপান্তরের জন্য গুগলে পাঠানো হয়, তাই ইন্টারনেট লাগে। ইন্টারনেট না থাকলে SHUNCHi পরিষ্কার একটি বার্তা দেখায়, বন্ধ হয়ে যায় না।</p>"),
     q("What happens to my audio and my text?", "আমার অডিও আর লেখার কী হয়?",
-      "<p>Audio goes to Google only to be transcribed, using your own key. On Google's free tier, content may be used to improve Google's products, so avoid dictating secrets. Your history stays on your computer and your key stays in Windows Credential Manager. Read the <a href=\"privacy.html\">privacy page</a>.</p>",
-      "<p>অডিও শুধু লেখায় রূপান্তরের জন্য আপনার নিজের কী দিয়ে গুগলে যায়। গুগলের ফ্রি টিয়ারে কনটেন্ট তাদের পণ্যের উন্নয়নে ব্যবহৃত হতে পারে, তাই গোপন কিছু ডিকটেট না করাই ভালো। হিস্ট্রি থাকে শুধু আপনার কম্পিউটারে আর কী থাকে Windows Credential Manager-এ। বিস্তারিত <a href=\"privacy.html\">গোপনীয়তা পাতায়</a>।</p>"),
+      "<p>Audio goes to Google only to be transcribed, using your own key. On Google's free tier, content may be used to improve Google's products, so avoid dictating secrets. Your history stays on your computer and your key stays on your computer. Read the <a href=\"privacy.html\">privacy page</a>.</p>",
+      "<p>অডিও শুধু লেখায় রূপান্তরের জন্য আপনার নিজের কী দিয়ে গুগলে যায়। গুগলের ফ্রি টিয়ারে কনটেন্ট তাদের পণ্যের উন্নয়নে ব্যবহৃত হতে পারে, তাই গোপন কিছু ডিকটেট না করাই ভালো। হিস্ট্রি থাকে শুধু আপনার কম্পিউটারে আর কী-ও নিরাপদে থাকে। বিস্তারিত <a href=\"privacy.html\">গোপনীয়তা পাতায়</a>।</p>"),
     q("How do I update or uninstall?", "কীভাবে আপডেট বা আনইনস্টল করব?",
       "<p>When a newer version is out, SHUNCHi shows a banner on its Dashboard with a Download button. Run the new installer over the old one; your settings and key are kept. To uninstall, use Windows Settings, then Apps.</p>",
       "<p>নতুন ভার্সন এলে SHUNCHi-র Dashboard-এ ডাউনলোড বাটনসহ একটি ব্যানার দেখা যায়। নতুন ইনস্টলার পুরনোটার ওপরেই চালান, সেটিংস ও কী অক্ষত থাকবে। আনইনস্টল করতে Windows Settings > Apps ব্যবহার করুন।</p>"),
@@ -426,14 +426,14 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
 </div></div>
 
 <section id="features"><div class="wrap">
-  <div class="head"><div class="eyebrow"><span class="en">Features</span><span class="bn">সুবিধা</span></div>
+  <div class="head"><div class="eyebrow"><span class="en">Features</span><span class="bn">ফিচার</span></div>
     <h2><span class="en">Simple on the surface, careful underneath</span><span class="bn">ব্যবহারে সহজ, ভেতরে যত্নে গড়া</span></h2></div>
   <ul class="rules">
     <li><h3><span class="en">Bangla and English</span><span class="bn">বাংলা ও ইংরেজি</span></h3><p><span class="en">One shortcut for each language. English words inside Bangla speech are written correctly too.</span><span class="bn">প্রতিটি ভাষার জন্য আলাদা শর্টকাট। বাংলা বলার মাঝে ইংরেজি শব্দ এলেও সেগুলো ঠিকভাবে লেখা হয়।</span></p></li>
     <li><h3><span class="en">Finished, punctuated text</span><span class="bn">দাঁড়ি-কমাসহ গোছানো লেখা</span></h3><p><span class="en">Smart mode adds punctuation, drops filler words and sets lists in order, so the text is ready to send.</span><span class="bn">স্মার্ট মোড দাঁড়ি-কমা বসায়, বাড়তি শব্দ বাদ দেয় এবং তালিকা সাজিয়ে দেয়। লেখাটি তাই সরাসরি পাঠানো যায়।</span></p></li>
     <li><h3><span class="en">Works in every app</span><span class="bn">সব অ্যাপে কাজ করে</span></h3><p><span class="en">The text is pasted at your cursor, so no plugin or extension is needed for any program.</span><span class="bn">লেখা কার্সরের জায়গায় বসে যায়, তাই কোনো প্রোগ্রামের জন্য আলাদা প্লাগইন বা এক্সটেনশন লাগে না।</span></p></li>
     <li><h3><span class="en">Stops by itself</span><span class="bn">নিজে থেকেই থামে</span></h3><p><span class="en">Stop talking and it finishes. It learns the sound of your room, so a fan or an AC does not confuse it.</span><span class="bn">কথা থামালেই রেকর্ডিং শেষ হয়। ঘরের আওয়াজ বুঝে নেয়, তাই ফ্যান বা এসির শব্দে আটকে থাকে না।</span></p></li>
-    <li><h3><span class="en">Your key, your data</span><span class="bn">আপনার কী, আপনার তথ্য</span></h3><p><span class="en">You use your own free Gemini key, kept in Windows Credential Manager. Your history stays on your PC.</span><span class="bn">আপনি নিজের ফ্রি Gemini কী ব্যবহার করেন, যা থাকে Windows Credential Manager-এ। হিস্ট্রি থাকে শুধু আপনার পিসিতে।</span></p></li>
+    <li><h3><span class="en">Your key, your data</span><span class="bn">আপনার কী, আপনার তথ্য</span></h3><p><span class="en">You use your own free Gemini key, kept safely on your PC. Your history stays on your PC.</span><span class="bn">আপনি নিজের ফ্রি Gemini কী ব্যবহার করেন, যা আপনার পিসিতেই নিরাপদে রাখা থাকে। হিস্ট্রি থাকে শুধু আপনার পিসিতে।</span></p></li>
     <li><h3><span class="en">Told about updates</span><span class="bn">আপডেটের খবর পাবেন</span></h3><p><span class="en">When a new version is released, SHUNCHi tells you and links to the download.</span><span class="bn">নতুন ভার্সন এলে SHUNCHi নিজেই জানায় এবং ডাউনলোডের লিংক দেখায়।</span></p></li>
   </ul>
   <div class="head" style="margin:56px 0 28px"><div class="eyebrow"><span class="en">How it works</span><span class="bn">কীভাবে কাজ করে</span></div>
@@ -474,7 +474,7 @@ home = head("", "SHUNCHi (শুনছি): Free Bangla and English Voice Typing
 <section id="apps"><div class="wrap">
   <div class="head"><div class="eyebrow"><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></div>
     <h2><span class="en">More from the developer</span><span class="bn">ডেভেলপারের আরও কাজ</span></h2>
-    <p><span class="en">Free apps and everyday tools, added one by one. Everything is in one place.</span><span class="bn">ফ্রি অ্যাপ ও দৈনন্দিন কাজের টুল, একে একে যোগ হচ্ছে। সবকিছু এক জায়গায়।</span></p></div>
+    <p><span class="en">Free apps and everyday tools, added one by one. Everything is in one place.</span><span class="bn">ফ্রি অ্যাপ ও রোজকার কাজের টুল, একে একে যোগ হচ্ছে। সবকিছু এক জায়গায়।</span></p></div>
   <div class="app-list" id="app-list">''' + apps_static("", 4) + f'''</div>
   <h3 style="margin:44px 0 18px;font-size:22px"><span class="en">Most powerful free tools, coming soon</span><span class="bn">সবচেয়ে কাজের ফ্রি টুল, শীঘ্রই আসছে</span></h3>
   <div id="tool-grid">''' + tools_static(HOME_TOOLS) + f'''</div>
@@ -561,7 +561,7 @@ hub = head("../", "Free Tools and Apps: CV Maker, Invoice, Budget and More | SHU
 <div class="wrap page-head">
   <ol class="crumbs"><li><a href="../index.html"><span class="en">Home</span><span class="bn">হোম</span></a></li><li aria-current="page"><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></li></ol>
   <h1><span class="en">More Apps</span><span class="bn">আরও অ্যাপ</span></h1>
-  <p><span class="en">Software and free everyday tools from the maker of SHUNCHi, all in one place. Private and free. New tools go live as soon as they are ready.</span><span class="bn">SHUNCHi-র নির্মাতার সফটওয়্যার ও দৈনন্দিন কাজের ফ্রি টুল, সবকিছু এক জায়গায়। প্রাইভেট ও ফ্রি। নতুন টুল তৈরি হওয়ামাত্র চালু হবে।</span></p>
+  <p><span class="en">Software and free everyday tools from the maker of SHUNCHi, all in one place. Private and free. New tools go live as soon as they are ready.</span><span class="bn">SHUNCHi-র নির্মাতার সফটওয়্যার ও রোজকার কাজের ফ্রি টুল, সবকিছু এক জায়গায়। প্রাইভেট ও ফ্রি। নতুন টুল তৈরি হওয়ামাত্র চালু হবে।</span></p>
   <div class="stats" id="stats" aria-live="polite"></div>
 </div>
 
@@ -825,7 +825,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   <div class="en">
     <h2>Your voice</h2><p>When you dictate, SHUNCHi records from your microphone only between the start and the end of that dictation. The recording is sent to Google's Gemini service to be turned into text, using your own API key. We do not receive it and we do not run a server that stores it.</p>
     <h2>Google's free tier</h2><p>On Google's free tier, content you send may be used by Google to improve its products. Please do not dictate passwords, bank details or other secrets. Paid Gemini plans have different terms.</p>
-    <h2>Your API key</h2><p>Your key is stored in Windows Credential Manager on your computer. It is sent only to Google when you dictate or press “Save &amp; test”. It never goes to this website.</p>
+    <h2>Your API key</h2><p>Your key is stored on your computer, protected by your Windows account. It is sent only to Google when you dictate or press “Save &amp; test”. It never goes to this website.</p>
     <h2>Your history</h2><p>The list of past dictations is kept on your computer only. You can clear it from the Voice History page.</p>
     <h2>This website and updates</h2><p>The app checks <code>shunchiai.com/update.json</code> to learn whether a new version exists. That request contains the app version in its user agent and nothing about you. The website does not use advertising trackers.</p>
     <h2>Optional account</h2><p>An account is optional. If you create one (email and password, or Google), we store your name, email and the details you add (phone, address), your ideas, comments you post and data saved by upcoming tools. It is stored with Google Firebase. Only you and the site admin can see it. You can download it from your account page, or email us to have your account and data deleted, and an admin can block an account that breaks the rules. Voice recordings are never stored in your account.</p>
@@ -834,7 +834,7 @@ priv = head("", "Privacy Policy | SHUNCHi", "How SHUNCHi handles your voice, tex
   <div class="bn">
     <h2>আপনার কণ্ঠ</h2><p>আপনি যখন ডিকটেট করেন, শুধু তখনই, শুরু থেকে শেষ পর্যন্ত, SHUNCHi আপনার মাইক্রোফোন থেকে রেকর্ড করে। রেকর্ডিংটি আপনার নিজের API কী দিয়ে লেখায় রূপান্তরের জন্য গুগলের Gemini সেবায় পাঠানো হয়। এটি আমরা পাই না এবং জমা রাখার মতো কোনো সার্ভারও আমাদের নেই।</p>
     <h2>গুগলের ফ্রি টিয়ার</h2><p>গুগলের ফ্রি টিয়ারে আপনার পাঠানো কনটেন্ট গুগল তাদের পণ্যের উন্নয়নে ব্যবহার করতে পারে। তাই পাসওয়ার্ড, ব্যাংকের তথ্য বা অন্য গোপন কিছু ডিকটেট করবেন না। পেইড Gemini প্ল্যানের শর্ত আলাদা।</p>
-    <h2>আপনার API কী</h2><p>কী-টি আপনার কম্পিউটারের Windows Credential Manager-এ থাকে। ডিকটেশনের সময় বা “Save &amp; test” চাপলে এটি শুধু গুগলে যায়। এই ওয়েবসাইটে কখনও আসে না।</p>
+    <h2>আপনার API কী</h2><p>কী-টি আপনার কম্পিউটারেই থাকে, আপনার Windows অ্যাকাউন্টের সুরক্ষায়। ডিকটেশনের সময় বা “Save &amp; test” চাপলে এটি শুধু গুগলে যায়। এই ওয়েবসাইটে কখনও আসে না।</p>
     <h2>আপনার হিস্ট্রি</h2><p>আগের ডিকটেশনের তালিকা শুধু আপনার কম্পিউটারেই থাকে। Voice History পাতা থেকে আপনি তা মুছে ফেলতে পারেন।</p>
     <h2>এই ওয়েবসাইট ও আপডেট</h2><p>নতুন ভার্সন আছে কিনা জানতে অ্যাপটি <code>shunchiai.com/update.json</code> দেখে। এই অনুরোধে শুধু অ্যাপের ভার্সন থাকে, আপনার সম্পর্কে কিছু থাকে না। ওয়েবসাইটে বিজ্ঞাপনের ট্র্যাকার নেই।</p>
     <h2>ঐচ্ছিক অ্যাকাউন্ট</h2><p>অ্যাকাউন্ট ঐচ্ছিক। খুললে আপনার নাম, ইমেইল, যোগ করা তথ্য (ফোন, ঠিকানা), আইডিয়া, মন্তব্য এবং আসন্ন টুলের সেভ করা ডেটা Google Firebase-এ থাকে। শুধু আপনি ও সাইটের অ্যাডমিন দেখতে পারেন। অ্যাকাউন্ট পেজ থেকে ডেটা ডাউনলোড করা যায়; অ্যাকাউন্ট ও ডেটা ডিলিট করতে আমাদের ইমেইল করুন। নিয়ম ভাঙলে অ্যাডমিন অ্যাকাউন্ট ব্লক করতে পারে। ভয়েস রেকর্ডিং অ্যাকাউন্টে কখনো সেভ হয় না।</p>

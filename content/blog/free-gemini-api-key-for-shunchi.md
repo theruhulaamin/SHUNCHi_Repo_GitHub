@@ -39,6 +39,6 @@ Google's free tier has daily limits. If you reach the limit, SHUNCHi tells you, 
 
 ## Where is my key stored?
 
-Your key is stored in Windows Credential Manager on your own PC. It is not sent to this website.
+Your key is stored safely on your own PC, protected by your Windows account. It is not sent to this website.
 
 Need the app first? [Download SHUNCHi](/download/).
