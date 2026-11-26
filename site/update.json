@@ -1,15 +1,15 @@
 {
-  "latest_version": "5.0.1",
+  "latest_version": "5.0.2",
   "download_url": "https://shunchiai.com/download/",
-  "installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/download/v5.0.1/SHUNCHi_Setup_5.0.1.exe",
-  "installer_sha256": "fc7da3ffec34895a0595df1ff67c9ebd942c5b1156ca6a958115a2929a70cbea",
-  "installer_size": 45168518,
+  "installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/download/v5.0.2/SHUNCHi_Setup_5.0.2.exe",
+  "installer_sha256": "12c3c0f4c46577c453b5a5c0a760c4e8df3810f04957a304d2e2ccd6cb211af5",
+  "installer_size": 45173593,
   "web_installer_url": "https://github.com/theruhulaamin/SHUNCHi_Repo_GitHub/releases/latest/download/SHUNCHi_Setup.exe",
-  "release_notes": "SHUNCHi is now smoother and more reliable! We've improved overall app performance, fixed minor bugs, enhanced the user interface, and made several stability improvements to provide a better user experience. We've also made internal improvements to support upcoming features and future updates. Stay tuned for more exciting improvements!",
-  "release_notes_en": "SHUNCHi is now smoother and more reliable! We've improved overall app performance, fixed minor bugs, enhanced the user interface, and made several stability improvements to provide a better user experience. We've also made internal improvements to support upcoming features and future updates. Stay tuned for more exciting improvements!",
-  "release_notes_bn": "SHUNCHi এখন আরও স্মুথ ও নির্ভরযোগ্য! অ্যাপের সামগ্রিক পারফরম্যান্স উন্নত করা হয়েছে, ছোটখাটো বাগ সমাধান করা হয়েছে এবং ইউজার ইন্টারফেস আরও সুন্দর ও ব্যবহারবান্ধব করা হয়েছে। পাশাপাশি, বিভিন্ন ফিচারের স্থিতিশীলতা বাড়ানো হয়েছে এবং ভবিষ্যতের নতুন ফিচার যুক্ত করার জন্য কিছু অভ্যন্তরীণ উন্নয়ন করা হয়েছে। আরও নতুন আপডেটের জন্য SHUNCHi-এর সঙ্গেই থাকুন!",
-  "released": "2026-11-25",
+  "release_notes": "This update makes SHUNCHi reliable after every restart. Your Gemini API key is now stored safely on your PC, so you enter it once and it stays, even after a reboot. The Win + Left Ctrl and Win + Left Shift shortcuts keep working after Windows starts, after sleep and after wake-up. SHUNCHi also starts faster: the tray icon appears first, and a microphone that Windows reports late is found automatically. Login and Google login now open shunchiai.com in your browser and bring you back to the app. Voice History has an on/off switch and fixed Copy buttons, and How to use now includes video guides. All Bangla text in the app and on the website has been rewritten in natural Bangladeshi Bangla.",
+  "release_notes_en": "This update makes SHUNCHi reliable after every restart. Your Gemini API key is now stored safely on your PC, so you enter it once and it stays, even after a reboot. The Win + Left Ctrl and Win + Left Shift shortcuts keep working after Windows starts, after sleep and after wake-up. SHUNCHi also starts faster: the tray icon appears first, and a microphone that Windows reports late is found automatically. Login and Google login now open shunchiai.com in your browser and bring you back to the app. Voice History has an on/off switch and fixed Copy buttons, and How to use now includes video guides. All Bangla text in the app and on the website has been rewritten in natural Bangladeshi Bangla.",
+  "release_notes_bn": "এই আপডেটে SHUNCHi প্রতিবার রিস্টার্টের পরেও ঠিকমতো কাজ করবে। আপনার Gemini API key এখন পিসিতে নিরাপদে থাকে, তাই একবার দিলেই হবে, রিবুটের পরেও থাকবে। Windows চালু হওয়ার পর, স্লিপ বা ওয়েক-আপের পরেও Win + Left Ctrl ও Win + Left Shift শর্টকাট কাজ করবে। অ্যাপ আরও দ্রুত চালু হয়: আগে ট্রে আইকন দেখা যায়, আর Windows দেরিতে মাইক্রোফোন দেখালেও অ্যাপ নিজেই সেটা খুঁজে নেয়। লগইন ও Google লগইন এখন ব্রাউজারে shunchiai.com খুলে কাজ করে, তারপর অ্যাপে ফিরে আসে। ভয়েস হিস্টোরিতে অন/অফ সুইচ যোগ হয়েছে, Copy বাটনও ঠিক করা হয়েছে, আর \"কীভাবে ব্যবহার করবেন\" পেজে ভিডিও গাইড আছে। অ্যাপ ও ওয়েবসাইটের সব বাংলা লেখা সহজ, স্বাভাবিক বাংলাদেশি বাংলায় নতুন করে লেখা হয়েছে।",
+  "released": "2026-11-26",
   "web_installer_size": 2130751,
   "apps": [],
-  "min_version": "5.0.1"
+  "min_version": "5.0.2"
 }

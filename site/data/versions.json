@@ -1,5 +1,13 @@
 [
   {
+    "version": "5.0.2",
+    "date": "2026-11-26",
+    "tag": "v5.0.2",
+    "notes_en": "This update makes SHUNCHi reliable after every restart. Your Gemini API key is now stored safely on your PC, so you enter it once and it stays, even after a reboot. The Win + Left Ctrl and Win + Left Shift shortcuts keep working after Windows starts, after sleep and after wake-up. SHUNCHi also starts faster: the tray icon appears first, and a microphone that Windows reports late is found automatically. Login and Google login now open shunchiai.com in your browser and bring you back to the app. Voice History has an on/off switch and fixed Copy buttons, and How to use now includes video guides. All Bangla text in the app and on the website has been rewritten in natural Bangladeshi Bangla.",
+    "notes_bn": "এই আপডেটে SHUNCHi প্রতিবার রিস্টার্টের পরেও ঠিকমতো কাজ করবে। আপনার Gemini API key এখন পিসিতে নিরাপদে থাকে, তাই একবার দিলেই হবে, রিবুটের পরেও থাকবে। Windows চালু হওয়ার পর, স্লিপ বা ওয়েক-আপের পরেও Win + Left Ctrl ও Win + Left Shift শর্টকাট কাজ করবে। অ্যাপ আরও দ্রুত চালু হয়: আগে ট্রে আইকন দেখা যায়, আর Windows দেরিতে মাইক্রোফোন দেখালেও অ্যাপ নিজেই সেটা খুঁজে নেয়। লগইন ও Google লগইন এখন ব্রাউজারে shunchiai.com খুলে কাজ করে, তারপর অ্যাপে ফিরে আসে। ভয়েস হিস্টোরিতে অন/অফ সুইচ যোগ হয়েছে, Copy বাটনও ঠিক করা হয়েছে, আর \"কীভাবে ব্যবহার করবেন\" পেজে ভিডিও গাইড আছে। অ্যাপ ও ওয়েবসাইটের সব বাংলা লেখা সহজ, স্বাভাবিক বাংলাদেশি বাংলায় নতুন করে লেখা হয়েছে।",
+    "size": 45173593
+  },
+  {
     "version": "5.0.1",
     "date": "2026-11-25",
     "tag": "v5.0.1",
